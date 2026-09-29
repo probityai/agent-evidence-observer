@@ -1,0 +1,7 @@
+.venv/
+.pytest_cache/
+pytest-of-root/
+.hypothesis/
+__pycache__/
+*.egg-info/
+sample-run*/
