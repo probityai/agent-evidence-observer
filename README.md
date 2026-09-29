@@ -9,7 +9,7 @@ The prototype does **not** launch or isolate an agent. Its records say `witnessS
 Python 3.12 or later and [`uv`](https://docs.astral.sh/uv/) are needed for these commands:
 
 ```sh
-uv venv .venv --python python3
+uv venv .venv --python python3.12
 uv pip install --python .venv/bin/python -e '.[test]'
 .venv/bin/pytest -q
 .venv/bin/agent-evidence-observer demo ./sample-run
@@ -23,7 +23,7 @@ The two CLI commands print `status: verified`, `witnessScope: PEER`, and `noDete
 | Mechanism | What the prototype checks | What it does not establish |
 | --- | --- | --- |
 | Authority and prior commitment | The observer signed the authority digest, before-root, interval ID, nonce, and commitment time before the first journaled write; a separate key checkpointed that first entry. | That the clock was honest, the authority was appropriate, or the keys belonged to an independent operator. |
-| Brokered write | A normalized path under a literal scope was replaced; the file bytes and before/after content-tree roots are recorded. An identical retry returns the prior effect. | Transient writes, reads, file modes, network effects, writes outside the workspace, or exactly-once effects outside this broker. |
+| Brokered write | A normalized path under a literal scope was replaced; its content digest and before/after content-tree roots are recorded. An identical retry returns the prior effect. | Intermediate file bytes, transient writes, reads, file modes, network effects, writes outside the workspace, or exactly-once effects outside this broker. |
 | Coverage | A direct change to the observed workspace or a symlink detected at a snapshot becomes an explicit known gap. The population is broker calls with a valid ASCII request ID, and `noDetectedGap` says only that the snapshots caught no divergence. | Complete agent effects, changes between snapshots that are later undone, or an agent prevented from bypassing the broker. The sample process is not isolated. A hostile host operator can omit or forge observations. |
 | History | An ordered SHA-256 chain and two Ed25519-signed checkpoints reject alteration, truncation, or an extension that diverges from the witness's retained head. | Non-equivocation unless a separately operated witness retains and publishes the head. The current witness runs locally under the same operator. |
 
