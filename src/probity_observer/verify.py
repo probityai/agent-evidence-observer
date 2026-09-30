@@ -97,7 +97,7 @@ def verify_incomplete(
     if terminal["reason"] == "write outcome unresolved after interruption":
         if not pending or terminal["requestIds"] != [item["requestId"] for item in pending]:
             raise VerificationError("incomplete event does not name the unresolved write")
-    elif terminal["reason"] in {"isolation setup failed", "boundary probes failed"}:
+    elif terminal["reason"] in {"isolation setup failed", "boundary probes failed", "workload failed", "broker channel incomplete"}:
         if pending or terminal["requestIds"] != []:
             raise VerificationError("aborted interval has unresolved writes")
     else:

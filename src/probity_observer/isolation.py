@@ -56,10 +56,9 @@ class _WriteHandler(socketserver.StreamRequestHandler):
 
     def handle(self) -> None:
         broker: Broker = self.server.broker  # type: ignore[attr-defined]
-        raw = self.rfile.readline(MAX_REQUEST + 1)
         try:
+            raw = self.rfile.readline(MAX_REQUEST + 1)
             if len(raw) > MAX_REQUEST or not raw.endswith(b"\n"):
-                broker._record_gap("broker request missing or oversized")
                 raise ValueError("broker request missing or oversized")
             payload = strict_loads(raw[:-1])
             if not isinstance(payload, dict) or set(payload) != {"requestId", "path", "contentHex"}:
@@ -67,10 +66,15 @@ class _WriteHandler(socketserver.StreamRequestHandler):
             if not all(isinstance(value, str) for value in payload.values()):
                 raise ValueError("broker request fields must be strings")
             content = bytes.fromhex(payload["contentHex"])
-            result = broker.write(payload["requestId"], payload["path"], content)
-            response: dict[str, Any] = {"ok": True, "replayed": result.replayed, "afterRoot": result.after_root}
         except (ValueError, OSError) as exc:
+            broker._record_gap("malformed broker request")
             response = {"ok": False, "error": str(exc)}
+        else:
+            try:
+                result = broker.write(payload["requestId"], payload["path"], content)
+                response = {"ok": True, "replayed": result.replayed, "afterRoot": result.after_root}
+            except (ValueError, OSError) as exc:
+                response = {"ok": False, "error": str(exc)}
         self.wfile.write(canonical(response) + b"\n")
 
 

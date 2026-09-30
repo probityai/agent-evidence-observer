@@ -12,6 +12,7 @@ from .crypto import SigningKey, canonical, strict_loads
 from .history import Witness
 from .isolation import run_boundary_probe, verify_boundary_bundle
 from .verify import verify_packet
+from .workload import run_workload, verify_workload_bundle
 
 
 def run_demo(output: Path) -> dict[str, str]:
@@ -50,6 +51,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     demo.add_argument("output", type=Path)
     boundary = subcommands.add_parser("boundary-probe", help="run the Linux boundary attack probe")
     boundary.add_argument("output", type=Path)
+    workload = subcommands.add_parser("run-workload", help="run a Python workload behind the write broker")
+    workload.add_argument("output", type=Path)
+    workload.add_argument("script", type=Path)
+    workload.add_argument("script_args", nargs="*")
+    checked_workload = subcommands.add_parser("verify-workload", help="check a retained workload run with pinned keys")
+    checked_workload.add_argument("directory", type=Path)
+    checked_workload.add_argument("--observer-key", required=True)
+    checked_workload.add_argument("--witness-key", required=True)
     checked = subcommands.add_parser("verify-boundary", help="check a retained boundary run with pinned keys")
     checked.add_argument("directory", type=Path)
     checked.add_argument("--observer-key", required=True)
@@ -63,6 +72,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         report = run_boundary_probe(arguments.output)
         print(json.dumps(report, sort_keys=True))
         return 0 if report["status"] == "probe-passed" else 1
+    elif arguments.command == "run-workload":
+        report = run_workload(arguments.output, arguments.script, args=arguments.script_args)
+        print(json.dumps(report, sort_keys=True))
+        return 0 if report["status"] == "completed" else 1
+    elif arguments.command == "verify-workload":
+        report = verify_workload_bundle(arguments.directory, arguments.observer_key, arguments.witness_key)
+        result = {"status": "verified", "workloadStatus": report["status"], "witnessScope": report["witnessScope"]}
     elif arguments.command == "verify-boundary":
         report = verify_boundary_bundle(arguments.directory, arguments.observer_key, arguments.witness_key)
         result = {"status": "verified", "boundaryStatus": report["status"], "witnessScope": report["witnessScope"]}
