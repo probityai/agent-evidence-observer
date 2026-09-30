@@ -14,7 +14,9 @@ from typing import Any
 
 from .broker import Broker, recover_interrupted, tree_root
 from .crypto import SigningKey, VerificationError, canonical, digest, strict_loads, verify_signature
-from .history import Witness, read_history, unresolved_intents
+from .history import CheckpointWitness, Witness, read_history, unresolved_intents
+from .ledger import verify_ledger_receipts
+from .remote_witness import RemoteLedgerWitness, export_ledger
 from .verify import verify_incomplete, verify_packet
 
 PROBE = Path(__file__).with_name("probe_agent.py")
@@ -157,6 +159,12 @@ def verify_boundary_bundle(output: Path, observer_key: str, witness_key: str) ->
     committed = entries[0]["event"]["commitment"]["preimage"]["authorityDigest"]
     if committed != payload["authorityDigest"]:
         raise VerificationError("history commitment differs from the launch authority")
+    start = packet["startCheckpoint"] if report["status"] == "probe-passed" else incomplete["startCheckpoint"]
+    terminal_checkpoint = packet["checkpoint"] if report["status"] == "probe-passed" else incomplete["checkpoint"]
+    if "ledgerReceipt" in start or "ledgerReceipt" in terminal_checkpoint:
+        if "ledgerReceipt" not in start or "ledgerReceipt" not in terminal_checkpoint:
+            raise VerificationError("witness ledger receipt is missing")
+        verify_ledger_receipts(output / "witness-ledger.jsonl", start, terminal_checkpoint, witness_key)
     return report
 
 
@@ -172,7 +180,10 @@ def _broker_events_match(history: Path) -> bool:
     )
 
 
-def run_boundary_probe(output: Path, *, bwrap: Path | None = None, interpreter: Path = Path("/usr/bin/python3")) -> dict[str, Any]:
+def run_boundary_probe(
+    output: Path, *, bwrap: Path | None = None, interpreter: Path = Path("/usr/bin/python3"),
+    observer_key: SigningKey | None = None, witness: CheckpointWitness | None = None,
+) -> dict[str, Any]:
     """Commit first, run the fixed attack probe, and retain either outcome.
 
     A passing probe documents one launch configuration. Its packet remains
@@ -201,12 +212,11 @@ def run_boundary_probe(output: Path, *, bwrap: Path | None = None, interpreter: 
         "expiresAt": (datetime.now(timezone.utc) + timedelta(minutes=5)).strftime("%Y-%m-%dT%H:%M:%SZ"),
     }
     (output / "authority.json").write_bytes(canonical(authority))
-    observer_key = SigningKey.generate()
-    witness_key = SigningKey.generate()
-    keys = {"observer": observer_key.public_hex, "witness": witness_key.public_hex}
+    observer_key = observer_key or SigningKey.generate()
+    witness = witness or Witness(output / "witness-state.json", SigningKey.generate())
+    keys = {"observer": observer_key.public_hex, "witness": witness.public_key}
     (output / "trusted-keys.json").write_bytes(canonical(keys))
     history = output / "history.jsonl"
-    witness = Witness(output / "witness-state.json", witness_key)
     broker = Broker(workspace, history, authority, observer_key, witness)
     broker.begin()
     report: dict[str, Any] = {"evidence_vantage": "artifact", "witnessScope": "PEER", "probeSha256": authority["probeSha256"]}
@@ -248,5 +258,7 @@ def run_boundary_probe(output: Path, *, bwrap: Path | None = None, interpreter: 
         report["reason"] = reason
     result = _report(output, report, stdout, stderr)
     _sign_report(output, result, authority, history, observer_key)
+    if isinstance(witness, RemoteLedgerWitness):
+        export_ledger(witness.socket_path, output / "witness-ledger.jsonl", witness.public_key)
     verify_boundary_bundle(output, keys["observer"], keys["witness"])
     return result

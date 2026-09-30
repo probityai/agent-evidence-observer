@@ -9,11 +9,24 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
 from .crypto import SigningKey, VerificationError, canonical, digest, strict_loads, verify_signature
 
 GENESIS = "0" * 64
+
+
+class CheckpointWitness(Protocol):
+    """The broker only needs checkpoints and a pinned public key."""
+
+    state_path: Path | None
+
+    @property
+    def public_key(self) -> str: ...
+
+    def checkpoint(self, history_path: Path) -> dict[str, Any]: ...
+
+    def latest_checkpoint(self, history_path: Path) -> dict[str, Any]: ...
 
 
 def read_history(path: Path) -> list[dict[str, Any]]:
@@ -122,6 +135,10 @@ class Witness:
     def __init__(self, state_path: Path, signing_key: SigningKey) -> None:
         self.state_path = state_path
         self.signing_key = signing_key
+
+    @property
+    def public_key(self) -> str:
+        return self.signing_key.public_hex
 
     def checkpoint(self, history_path: Path) -> dict[str, Any]:
         """Sign the current head after verifying prefix consistency.
