@@ -35,7 +35,13 @@ The tests exercise file-byte binding over generated contents, path traversal and
 
 The next implementation gate is a host-side launcher that gives the agent no writable path to the watched tree and no access to the observer process, key, journal, or witness state. It must demonstrate that boundary with attempted direct writes, namespace escape probes appropriate to the chosen platform, broker interruption, key access attempts, and a declared denominator for every effect channel. Until the launcher and an external operator are tested, a relying party has no basis to promote `PEER` to `EXTERNAL` or `below-observed`.
 
-The detailed acceptance criteria are in [`docs/ISOLATED-PRODUCER.md`](docs/ISOLATED-PRODUCER.md). A crash after file replacement but before the history append can leave a durable effect without a write event. The current process cannot seal a complete record after that failure; recovery needs a write-ahead journal. A retry checks the current tree before returning the prior effect, but it cannot see a transient bypass that was later undone.
+The detailed acceptance criteria are in [`docs/ISOLATED-PRODUCER.md`](docs/ISOLATED-PRODUCER.md). A retry checks the current tree before returning the prior effect, but it cannot see a transient bypass that was later undone.
+
+A write now has a durable intent before file replacement. If the process dies before the matching effect event, `recover_interrupted(history, workspace, witness)` appends an `incomplete` event with the request ID and a fresh tree root. It checkpoints that history. A consumer can check the signed prior commitment and both witnessed heads with `verify_incomplete(history, start_checkpoint, checkpoint, pinned_observer_key, pinned_witness_key)`.
+
+The snapshot describes the state at recovery, not the state at failure. An unresolved intent cannot produce a complete packet, even when recovery finds the same tree root as before.
+
+Recovery currently covers an orphaned write intent. A crash after the effect event and before `seal()` still leaves an unsealed interval.
 
 ## Proposed next milestones
 
