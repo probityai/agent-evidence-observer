@@ -62,6 +62,22 @@ The fixed probe is a test of one launch policy, not a general proof that an
 arbitrary agent has no other effect channel. See
 [`docs/BOUNDARY-GATE.md`](docs/BOUNDARY-GATE.md) for its limits and CI command.
 
+`run-workload` accepts a Python script and optional arguments without editing
+the script. The script can send `write-file` requests to `/broker/write.sock`.
+The host records accepted writes, retries, denials, and gaps in its own history.
+It does not use the script's stdout to decide whether an effect occurred.
+
+```sh
+.venv/bin/agent-evidence-observer run-workload ./workload-run examples/write_agent.py
+.venv/bin/agent-evidence-observer verify-workload ./workload-run --observer-key KEY --witness-key KEY
+```
+
+The command needs the same Linux boundary as `boundary-probe`. A zero exit
+requires one accepted write, no known gap, and a successful child exit. Any
+other outcome retains a signed incomplete record. See
+[`docs/WORKLOAD.md`](docs/WORKLOAD.md) for the socket request, coverage count,
+and trust limits.
+
 A write now has a durable intent before file replacement. If the process dies before the matching effect event, `recover_interrupted(history, workspace, witness)` appends an `incomplete` event with the request ID and a fresh tree root. It checkpoints that history. A consumer can check the signed prior commitment and both witnessed heads with `verify_incomplete(history, start_checkpoint, checkpoint, pinned_observer_key, pinned_witness_key)`.
 
 `LedgerWitness` can retain signed begin and terminal receipts for multiple intervals under one key. It refuses a second branch for an interval and serializes local writers. An offline reader checks the full receipt log with `verify_ledger_receipts`, including extension from a previously pinned log head. The packet still says `PEER`: this does not run a remote service, protect local storage from its operator, or prove that an agent could not reach it. See [`docs/WITNESS-LEDGER.md`](docs/WITNESS-LEDGER.md).
