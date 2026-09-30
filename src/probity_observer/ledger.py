@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any
 
 from .crypto import SigningKey, VerificationError, canonical, digest, strict_loads, verify_signature
-from .history import GENESIS, Witness, read_history, unresolved_intents
+from .history import GENESIS, Witness, read_history, unresolved_intents, verify_incomplete_terminal
 
 RECEIPT_DOMAIN = "probity-witness-receipt-v0"
 HEAD_DOMAIN = "probity-witness-ledger-head-v0"
@@ -186,6 +186,18 @@ def _begin_identity(entries: list[dict[str, Any]], pinned_observer_key: str) -> 
     return preimage["intervalId"], preimage["authorityDigest"]
 
 
+def _verify_terminal_intents(entries: list[dict[str, Any]]) -> None:
+    """Use the offline reader's rules before signing an incomplete terminal."""
+    terminal = entries[-1]["event"]
+    if terminal["kind"] == "incomplete":
+        verify_incomplete_terminal(terminal, unresolved_intents(entries[:-1]))
+        return
+    if unresolved_intents(entries):
+        reason = "witness terminal disagrees with write intents"
+        LOGGER.warning("witness terminal refused: %s", reason)
+        raise VerificationError(reason)
+
+
 class LedgerWitness(Witness):
     """Witness broker intervals under one key and one durable log.
 
@@ -248,9 +260,7 @@ class LedgerWitness(Witness):
                     raise VerificationError("history does not extend the witnessed begin")
                 if entries[-1]["event"]["kind"] not in {"seal", "incomplete"}:
                     raise VerificationError("witness terminal checkpoint needs a terminal event")
-                pending = unresolved_intents(entries if entries[-1]["event"]["kind"] == "seal" else entries[:-1])
-                if bool(pending) != (entries[-1]["event"]["kind"] == "incomplete"):
-                    raise VerificationError("witness terminal disagrees with write intents")
+                _verify_terminal_intents(entries)
                 phase = "terminal"
             payload = {"count": len(entries), "head": entries[-1]["hash"]}
             checkpoint = {

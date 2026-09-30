@@ -8,7 +8,7 @@ from typing import Any
 
 from .broker import CoverageError, _path_under_scope, tree_root
 from .crypto import VerificationError, digest, verify_signature
-from .history import read_history, unresolved_intents, verify_checkpoint
+from .history import read_history, unresolved_intents, verify_checkpoint, verify_incomplete_terminal
 
 UTC_SECOND = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z\Z")
 
@@ -94,14 +94,7 @@ def verify_incomplete(
     if any(entry["event"]["kind"] in {"begin", "seal", "incomplete"} for entry in entries[1:-1]):
         raise VerificationError("incomplete history has an extra interval boundary")
     pending = unresolved_intents(entries[:-1])
-    if terminal["reason"] == "write outcome unresolved after interruption":
-        if not pending or terminal["requestIds"] != [item["requestId"] for item in pending]:
-            raise VerificationError("incomplete event does not name the unresolved write")
-    elif terminal["reason"] in {"isolation setup failed", "boundary probes failed"}:
-        if pending or terminal["requestIds"] != []:
-            raise VerificationError("aborted interval has unresolved writes")
-    else:
-        raise VerificationError("incomplete event has an unknown reason")
+    verify_incomplete_terminal(terminal, pending)
     checked = entries[:-2] if pending else entries[:-1]
     _verify_request_sequence(checked + [{"event": {"kind": "seal"}}])
     begin = entries[0]["event"]

@@ -7,6 +7,12 @@ and preceding receipt hash. The first receipt requires a signed begin event
 with no effects. The second requires that same begin and a terminal seal or
 incomplete event. A reused interval ID or a second terminal is refused.
 
+A setup or boundary abort can close an interval without an unresolved write.
+Its request ID list must be empty. A boundary abort can also follow completed
+writes; it does not erase those effects or turn the outcome into success.
+An interrupted write must name exactly the pending request IDs. The witness
+and offline incomplete-history reader use the same terminal validation.
+
 The log file and its `.lock` file must be writable only by the witness process.
 Concurrent callers on one POSIX filesystem take the same advisory lock. A
 partial receipt line stops further signing until an operator investigates it.
