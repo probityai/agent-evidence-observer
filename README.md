@@ -39,6 +39,8 @@ The detailed acceptance criteria are in [`docs/ISOLATED-PRODUCER.md`](docs/ISOLA
 
 A write now has a durable intent before file replacement. If the process dies before the matching effect event, `recover_interrupted(history, workspace, witness)` appends an `incomplete` event with the request ID and a fresh tree root. It checkpoints that history. A consumer can check the signed prior commitment and both witnessed heads with `verify_incomplete(history, start_checkpoint, checkpoint, pinned_observer_key, pinned_witness_key)`.
 
+`LedgerWitness` can retain signed begin and terminal receipts for multiple intervals under one key. It refuses a second branch for an interval and serializes local writers. An offline reader checks the full receipt log with `verify_ledger_receipts`, including extension from a previously pinned log head. The packet still says `PEER`: this does not run a remote service, protect local storage from its operator, or prove that an agent could not reach it. See [`docs/WITNESS-LEDGER.md`](docs/WITNESS-LEDGER.md).
+
 The snapshot describes the state at recovery, not the state at failure. An unresolved intent cannot produce a complete packet, even when recovery finds the same tree root as before.
 
 Recovery currently covers an orphaned write intent. A crash after the effect event and before `seal()` still leaves an unsealed interval.
