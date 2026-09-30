@@ -20,6 +20,27 @@ head. The verifier checks every receipt and returns the current count and
 head. Retain or publish that returned head before accepting a later log. The
 full log is the consistency proof; there is no compact proof or remote API yet.
 
+`LedgerWitness.signed_head()` exports an Ed25519-signed log count and head under
+the `probity-witness-ledger-head-v0` domain. Export takes the same local lock as
+receipt append. The method does not publish the head. A consumer must acquire
+and retain it separately before accepting a later evidence bundle.
+
+Call `verify_ledger_head(ledger_path, retained_head, pinned_witness_key)` first.
+It authenticates the retained head and checks that the supplied log includes
+that exact prefix. A correctly signed extension is permitted. A restored
+prefix or a different branch fails even when all remaining receipts verify.
+Using only the head supplied beside the current log cannot detect that attack.
+
+The result reports `count`, `head`, `registeredIntervals`, and `missingTerminals`.
+Each missing terminal names its begin receipt's interval ID, authority digest,
+and observer key. This exposes registered intervals whose terminal receipts are
+absent from the supplied log. A terminal receipt can describe either a sealed
+or an incomplete history; verify the corresponding history to distinguish them.
+An empty missing list does not establish complete action coverage. An interval
+never registered with the witness, or a later head the consumer never acquired,
+cannot be detected by this interface. Signed heads have no trusted clock and
+do not establish freshness.
+
 This is still a local PEER prototype. If the witness operator restores an old
 log and withholds the published head, it can sign a different branch. A key
 controlled by the observed agent can also fabricate the entire log. The next
