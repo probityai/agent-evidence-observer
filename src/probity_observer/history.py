@@ -36,8 +36,11 @@ def read_history(path: Path) -> list[dict[str, Any]]:
     """
     if not path.exists():
         return []
+    raw = path.read_bytes()
+    if raw and not raw.endswith(b"\n"):
+        raise VerificationError("history ends with an incomplete line")
     entries: list[dict[str, Any]] = []
-    for line in path.read_bytes().splitlines():
+    for line in raw.splitlines():
         entry = strict_loads(line)
         expected_prev = entries[-1]["hash"] if entries else GENESIS
         if entry["sequence"] != len(entries) + 1 or entry["previous"] != expected_prev:
@@ -47,6 +50,30 @@ def read_history(path: Path) -> list[dict[str, Any]]:
             raise VerificationError("history entry digest differs")
         entries.append(entry)
     return entries
+
+
+def unresolved_intents(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Find writes whose durable intent has no matching effect event."""
+    pending: dict[str, Any] | None = None
+    seen: set[str] = set()
+    for entry in entries:
+        event = entry["event"]
+        kind = event["kind"]
+        if pending is not None and kind not in {"write", "incomplete", "seal"}:
+            raise VerificationError("history has an event inside an unresolved write")
+        if kind == "write-intent":
+            request_id = event["requestId"]
+            if pending is not None or request_id in seen:
+                raise VerificationError("history has overlapping or repeated write intents")
+            pending = event
+            seen.add(request_id)
+        elif kind == "write":
+            if pending is None:
+                raise VerificationError("history write has no durable intent")
+            if any(event[field] != pending[field] for field in ("requestId", "path", "contentDigest", "beforeRoot")):
+                raise VerificationError("history write differs from its durable intent")
+            pending = None
+    return [pending] if pending is not None else []
 
 
 def append_history(path: Path, event: dict[str, Any]) -> dict[str, Any]:

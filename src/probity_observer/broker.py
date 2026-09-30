@@ -18,8 +18,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from .crypto import SigningKey, VerificationError, canonical, digest
-from .history import Witness, append_history, read_history
+from .crypto import SigningKey, VerificationError, canonical, digest, strict_loads
+from .history import Witness, append_history, read_history, unresolved_intents, verify_checkpoint
 
 LOGGER = logging.getLogger(__name__)
 
@@ -233,7 +233,11 @@ class Broker:
             "keyid": self.observer_key.public_hex,
             "signature": self.observer_key.sign("probity-prior-commitment-v0", payload),
         }
-        append_history(self.history_path, {"kind": "begin", "commitmentDigest": digest("probity-prior-commitment-v0", payload)})
+        append_history(self.history_path, {
+            "kind": "begin",
+            "commitmentDigest": digest("probity-prior-commitment-v0", payload),
+            "commitment": self._begin,
+        })
         self._start_checkpoint = self.witness.checkpoint(self.history_path)
         self._started = True
         return {"commitment": self._begin, "checkpoint": self._start_checkpoint}
@@ -246,6 +250,7 @@ class Broker:
         success response follows durable file replacement and journal append.
         """
         self._require_active()
+        self._require_resolved_history()
         if not request_id or not request_id.isascii():
             raise CoverageError("request id must be nonempty ASCII")
         if not isinstance(content, bytes):
@@ -254,13 +259,27 @@ class Broker:
         content_digest = hashlib.sha256(content).hexdigest()
         if request_id in self._results:
             return self._retry(request_id, path, content_digest)
+        intent_written = False
         try:
             relative = _path_under_scope(self.authority["scope"], path)
             self._check_unchanged()
             before_root = self._expected_root
+            append_history(
+                self.history_path,
+                {
+                    "kind": "write-intent",
+                    "requestId": request_id,
+                    "path": path,
+                    "contentDigest": content_digest,
+                    "beforeRoot": before_root,
+                },
+            )
+            intent_written = True
             _atomic_write(self.workspace / relative, content)
             after_root = tree_root(self.workspace)
         except CoverageError as exc:
+            if intent_written:
+                raise CoverageError("write outcome unresolved; recover incomplete interval") from exc
             self._deny(request_id, path, str(exc))
             if str(exc) in {"workspace changed outside the broker", "workspace contains a symbolic link", "workspace contains a non-regular file"}:
                 self._record_gap(str(exc))
@@ -306,6 +325,10 @@ class Broker:
         if not self._started or self._sealed:
             raise CoverageError("interval must be open for writes")
 
+    def _require_resolved_history(self) -> None:
+        if unresolved_intents(read_history(self.history_path)):
+            raise CoverageError("unresolved write intent; interval cannot be sealed")
+
     def _record_gap(self, reason: str) -> None:
         if reason not in self._known_gaps:
             self._known_gaps.append(reason)
@@ -321,6 +344,7 @@ class Broker:
         checkpoint are returned so an offline verifier can recompute them.
         """
         self._require_active()
+        self._require_resolved_history()
         try:
             self._check_unchanged()
         except CoverageError as exc:
@@ -356,3 +380,39 @@ class Broker:
             "claimSignature": self.observer_key.sign("probity-claim-v0", claim),
             "checkpoint": final_checkpoint,
         }
+
+
+def recover_interrupted(history_path: Path, workspace: Path, witness: Witness) -> dict[str, Any]:
+    """Witness an incomplete interval after a broker died during a write."""
+    entries = read_history(history_path)
+    if not entries or entries[0]["event"]["kind"] != "begin":
+        raise VerificationError("interrupted history has no begin event")
+    if any(entry["event"]["kind"] in {"seal", "incomplete"} for entry in entries[1:]):
+        raise VerificationError("interval already has a terminal event")
+    pending = unresolved_intents(entries)
+    if not pending:
+        raise VerificationError("interrupted history has no unresolved write")
+    if not witness.state_path.exists():
+        raise VerificationError("the prior witness checkpoint is missing")
+    prior_checkpoint = strict_loads(witness.state_path.read_bytes())
+    verify_checkpoint(entries[:1], prior_checkpoint, witness.signing_key.public_hex)
+    try:
+        recovery_root = tree_root(workspace)
+        snapshot_error = None
+    except (CoverageError, OSError) as exc:
+        recovery_root = None
+        snapshot_error = type(exc).__name__
+    event = {
+        "kind": "incomplete",
+        "reason": "write outcome unresolved after interruption",
+        "requestIds": [item["requestId"] for item in pending],
+        "recoveryRoot": recovery_root,
+        "snapshotError": snapshot_error,
+    }
+    append_history(history_path, event)
+    return {
+        "status": "incomplete",
+        "event": event,
+        "startCheckpoint": prior_checkpoint,
+        "checkpoint": witness.checkpoint(history_path),
+    }
