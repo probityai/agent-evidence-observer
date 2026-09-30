@@ -78,6 +78,24 @@ class TestBoundaryGate:
             assert claim["authorityDigest"] == read_history(output / "history.jsonl")[0]["event"]["commitment"]["preimage"]["authorityDigest"]
             assert verify_boundary_bundle(output, keys["observer"], keys["witness"])["status"] == "probe-passed"
 
+        def test_relative_output_yields_absolute_mount_sources(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+            from probity_observer import isolation
+
+            monkeypatch.chdir(tmp_path)
+            monkeypatch.setattr(isolation, "_WriteServer", FakeServer)
+            launched: list[str] = []
+
+            def child(command: list[str], server: FakeServer) -> tuple[int, bytes, bytes]:
+                launched.extend(command)
+                run_fixed_requests(server)
+                return 0, canonical({key: True for key in EXPECTED}) + b"\n", b""
+
+            monkeypatch.setattr(isolation, "_run_child", child)
+            run_boundary_probe(Path("relative-output"))
+            sources = [launched[index + 1] for index, arg in enumerate(launched[:-1]) if arg == "--ro-bind"]
+            assert str(tmp_path / "relative-output" / "socket") in sources
+            assert str(tmp_path / "relative-output" / "agent-probe.py") in sources
+
     class TestFailingCases:
         def test_failed_socket_setup_is_a_witnessed_incomplete_interval(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
             from probity_observer import isolation
