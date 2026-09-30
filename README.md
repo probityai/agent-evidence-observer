@@ -37,6 +37,31 @@ The next implementation gate is a host-side launcher that gives the agent no wri
 
 The detailed acceptance criteria are in [`docs/ISOLATED-PRODUCER.md`](docs/ISOLATED-PRODUCER.md). A retry checks the current tree before returning the prior effect, but it cannot see a transient bypass that was later undone.
 
+## Linux boundary gate
+
+The `boundary-probe` command commits the probe bytes, observer source digest,
+interpreter, bubblewrap binary, launch arguments, before-root, and expiry before
+starting a fixed adversarial workload. It exposes one Unix socket to the host
+broker and no host workspace, key, journal, or witness path to the workload.
+
+```sh
+.venv/bin/agent-evidence-observer boundary-probe ./boundary-run
+```
+
+The command returns zero only if direct file write, observer key read, host
+process signal, and outbound TCP attempts fail, while a brokered write, exact
+retry, changed retry denial, and traversal denial produce the expected durable
+history. It writes raw child output and `boundary-report.json` even on failure.
+On failed sandbox setup or a failed probe, it writes a witnessed
+`incomplete.json` and no complete packet. The report maps to AVE's
+`evidence_vantage: artifact`; the signed packet still says `witnessScope: PEER`.
+An offline reader can run `verify-boundary ./boundary-run --observer-key KEY
+--witness-key KEY` with keys pinned outside the bundle; the command checks the
+signed report, authority, raw output, history, and terminal checkpoint.
+The fixed probe is a test of one launch policy, not a general proof that an
+arbitrary agent has no other effect channel. See
+[`docs/BOUNDARY-GATE.md`](docs/BOUNDARY-GATE.md) for its limits and CI command.
+
 A write now has a durable intent before file replacement. If the process dies before the matching effect event, `recover_interrupted(history, workspace, witness)` appends an `incomplete` event with the request ID and a fresh tree root. It checkpoints that history. A consumer can check the signed prior commitment and both witnessed heads with `verify_incomplete(history, start_checkpoint, checkpoint, pinned_observer_key, pinned_witness_key)`.
 
 `LedgerWitness` can retain signed begin and terminal receipts for multiple intervals under one key. It refuses a second branch for an interval and serializes local writers. An offline reader checks the full receipt log with `verify_ledger_receipts`, including extension from a previously pinned log head. The packet still says `PEER`: this does not run a remote service, protect local storage from its operator, or prove that an agent could not reach it. See [`docs/WITNESS-LEDGER.md`](docs/WITNESS-LEDGER.md).

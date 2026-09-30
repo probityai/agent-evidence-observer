@@ -1,6 +1,7 @@
 # Isolated producer acceptance criteria
 
-**Status:** design target; the current prototype has not passed these tests.
+**Status:** design target. The first Linux boundary probe is implemented, but
+the isolated producer has not met these acceptance criteria.
 
 ## Problem
 
