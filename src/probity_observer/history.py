@@ -157,6 +157,13 @@ class Witness:
         verify_signature(previous["keyid"], "probity-checkpoint-v0", payload, previous["signature"])
         return previous
 
+    def latest_checkpoint(self, history_path: Path) -> dict[str, Any]:
+        """Return the last checkpoint signed for this history."""
+        previous = self._previous()
+        if previous is None:
+            raise VerificationError("the prior witness checkpoint is missing")
+        return previous
+
     def _persist(self, checkpoint: dict[str, Any]) -> None:
         self.state_path.parent.mkdir(parents=True, exist_ok=True)
         temporary = self.state_path.with_suffix(".tmp")

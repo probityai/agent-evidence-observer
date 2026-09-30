@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from .crypto import SigningKey, VerificationError, canonical, digest, strict_loads
+from .crypto import SigningKey, VerificationError, canonical, digest
 from .history import Witness, append_history, read_history, unresolved_intents, verify_checkpoint
 
 LOGGER = logging.getLogger(__name__)
@@ -392,9 +392,7 @@ def recover_interrupted(history_path: Path, workspace: Path, witness: Witness) -
     pending = unresolved_intents(entries)
     if not pending:
         raise VerificationError("interrupted history has no unresolved write")
-    if not witness.state_path.exists():
-        raise VerificationError("the prior witness checkpoint is missing")
-    prior_checkpoint = strict_loads(witness.state_path.read_bytes())
+    prior_checkpoint = witness.latest_checkpoint(history_path)
     verify_checkpoint(entries[:1], prior_checkpoint, witness.signing_key.public_hex)
     try:
         recovery_root = tree_root(workspace)

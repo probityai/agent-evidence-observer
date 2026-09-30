@@ -1,0 +1,194 @@
+"""An append-only witness log for multiple broker intervals.
+
+The log is useful only when its key and storage are outside the agent's reach.
+Local use remains a PEER witness, as in the rest of this prototype.
+"""
+
+from __future__ import annotations
+
+import os
+from pathlib import Path
+from typing import Any
+
+from .crypto import SigningKey, VerificationError, canonical, digest, strict_loads, verify_signature
+from .history import GENESIS, Witness, read_history, unresolved_intents
+
+RECEIPT_DOMAIN = "probity-witness-receipt-v0"
+
+
+def read_ledger(path: Path, pinned_witness_key: str) -> list[dict[str, Any]]:
+    """Check every receipt and return the retained witness history."""
+    if not path.exists():
+        return []
+    raw = path.read_bytes()
+    if raw and not raw.endswith(b"\n"):
+        raise VerificationError("witness ledger ends with an incomplete line")
+    receipts: list[dict[str, Any]] = []
+    intervals: dict[str, dict[str, Any]] = {}
+    terminal_intervals: set[str] = set()
+    for line in raw.splitlines():
+        receipt = strict_loads(line)
+        if not isinstance(receipt, dict) or set(receipt) != {
+            "sequence", "previous", "intervalId", "authorityDigest", "observerKey", "phase",
+            "checkpoint", "hash", "keyid", "signature",
+        } or type(receipt["sequence"]) is not int:
+            raise VerificationError("witness receipt has invalid fields")
+        body = {key: receipt[key] for key in (
+            "sequence", "previous", "intervalId", "authorityDigest", "observerKey", "phase", "checkpoint",
+        )}
+        previous = receipts[-1]["hash"] if receipts else GENESIS
+        if receipt["sequence"] != len(receipts) + 1 or receipt["previous"] != previous:
+            raise VerificationError("witness ledger sequence or predecessor differs")
+        if receipt["hash"] != digest(RECEIPT_DOMAIN, body):
+            raise VerificationError("witness receipt digest differs")
+        if receipt["keyid"] != pinned_witness_key:
+            raise VerificationError("witness receipt key differs from the pinned key")
+        verify_signature(pinned_witness_key, RECEIPT_DOMAIN, body, receipt["signature"])
+        checkpoint = receipt["checkpoint"]
+        if not isinstance(checkpoint, dict) or set(checkpoint) != {"count", "head", "keyid", "signature"} or (
+            checkpoint["keyid"] != pinned_witness_key
+            or type(checkpoint["count"]) is not int
+            or checkpoint["count"] < 1
+        ):
+            raise VerificationError("witness checkpoint key or count differs")
+        checkpoint_payload = {"count": checkpoint["count"], "head": checkpoint["head"]}
+        verify_signature(pinned_witness_key, "probity-checkpoint-v0", checkpoint_payload, checkpoint["signature"])
+        interval = receipt["intervalId"]
+        earlier = intervals.get(interval)
+        if receipt["phase"] == "begin":
+            if earlier is not None or checkpoint["count"] != 1:
+                raise VerificationError("witness interval has a repeated begin")
+            intervals[interval] = receipt
+        elif receipt["phase"] == "terminal":
+            if earlier is None or interval in terminal_intervals:
+                raise VerificationError("witness interval has no unique begin")
+            if (receipt["authorityDigest"], receipt["observerKey"]) != (
+                earlier["authorityDigest"], earlier["observerKey"]
+            ) or checkpoint["count"] <= 1:
+                raise VerificationError("witness terminal differs from its begin")
+            terminal_intervals.add(interval)
+        else:
+            raise VerificationError("witness receipt has an unknown phase")
+        receipts.append(receipt)
+    return receipts
+
+
+def _begin_identity(entries: list[dict[str, Any]], pinned_observer_key: str) -> tuple[str, str]:
+    if not entries or entries[0]["event"]["kind"] != "begin":
+        raise VerificationError("witness history has no begin event")
+    begin = entries[0]["event"]
+    commitment = begin["commitment"]
+    payload = {"preimage": commitment["preimage"], "committedAt": commitment["committedAt"]}
+    if commitment["keyid"] != pinned_observer_key:
+        raise VerificationError("witness history has an unpinned observer key")
+    verify_signature(pinned_observer_key, "probity-prior-commitment-v0", payload, commitment["signature"])
+    if begin["commitmentDigest"] != digest("probity-prior-commitment-v0", payload):
+        raise VerificationError("witness history differs from the signed commitment")
+    preimage = commitment["preimage"]
+    return preimage["intervalId"], preimage["authorityDigest"]
+
+
+class LedgerWitness(Witness):
+    """Witness broker intervals under one key and one durable log.
+
+    The lock prevents concurrent local writers from signing competing heads.
+    An external operator must protect the log and publish its head for a
+    relying party to detect a restored or withheld log.
+    """
+
+    def __init__(self, ledger_path: Path, signing_key: SigningKey, observer_key: str) -> None:
+        super().__init__(ledger_path, signing_key)
+        self.observer_key = observer_key
+
+    def checkpoint(self, history_path: Path) -> dict[str, Any]:
+        import fcntl
+
+        self.state_path.parent.mkdir(parents=True, exist_ok=True)
+        lock_path = self.state_path.with_name(self.state_path.name + ".lock")
+        with lock_path.open("a+b") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)
+            entries = read_history(history_path)
+            interval, authority_digest = _begin_identity(entries, self.observer_key)
+            receipts = read_ledger(self.state_path, self.signing_key.public_hex)
+            prior = next((r for r in receipts if r["intervalId"] == interval and r["phase"] == "begin"), None)
+            if prior is None:
+                if len(entries) != 1:
+                    raise VerificationError("witness first checkpoint must precede effects")
+                phase = "begin"
+            else:
+                if any(r["intervalId"] == interval and r["phase"] == "terminal" for r in receipts):
+                    raise VerificationError("witness interval already has a terminal head")
+                if entries[0]["hash"] != prior["checkpoint"]["head"]:
+                    raise VerificationError("history does not extend the witnessed begin")
+                if entries[-1]["event"]["kind"] not in {"seal", "incomplete"}:
+                    raise VerificationError("witness terminal checkpoint needs a terminal event")
+                pending = unresolved_intents(entries if entries[-1]["event"]["kind"] == "seal" else entries[:-1])
+                if bool(pending) != (entries[-1]["event"]["kind"] == "incomplete"):
+                    raise VerificationError("witness terminal disagrees with write intents")
+                phase = "terminal"
+            payload = {"count": len(entries), "head": entries[-1]["hash"]}
+            checkpoint = {
+                **payload,
+                "keyid": self.signing_key.public_hex,
+                "signature": self.signing_key.sign("probity-checkpoint-v0", payload),
+            }
+            body = {
+                "sequence": len(receipts) + 1,
+                "previous": receipts[-1]["hash"] if receipts else GENESIS,
+                "intervalId": interval,
+                "authorityDigest": authority_digest,
+                "observerKey": self.observer_key,
+                "phase": phase,
+                "checkpoint": checkpoint,
+            }
+            receipt = {
+                **body,
+                "hash": digest(RECEIPT_DOMAIN, body),
+                "keyid": self.signing_key.public_hex,
+                "signature": self.signing_key.sign(RECEIPT_DOMAIN, body),
+            }
+            with self.state_path.open("ab") as stream:
+                stream.write(canonical(receipt) + b"\n")
+                stream.flush()
+                os.fsync(stream.fileno())
+            parent = os.open(self.state_path.parent, os.O_RDONLY)
+            try:
+                os.fsync(parent)
+            finally:
+                os.close(parent)
+            return {**checkpoint, "ledgerReceipt": receipt}
+
+    def latest_checkpoint(self, history_path: Path) -> dict[str, Any]:
+        entries = read_history(history_path)
+        interval, _ = _begin_identity(entries, self.observer_key)
+        receipts = read_ledger(self.state_path, self.signing_key.public_hex)
+        found = [r for r in receipts if r["intervalId"] == interval]
+        if len(found) != 1 or found[0]["phase"] != "begin":
+            raise VerificationError("the prior witness checkpoint is missing")
+        return {**found[0]["checkpoint"], "ledgerReceipt": found[0]}
+
+
+def verify_ledger_receipts(
+    ledger_path: Path,
+    start_checkpoint: dict[str, Any],
+    terminal_checkpoint: dict[str, Any],
+    pinned_witness_key: str,
+    pinned_head: str | None = None,
+) -> dict[str, Any]:
+    """Check inclusion in the full log and extension from a pinned head."""
+    receipts = read_ledger(ledger_path, pinned_witness_key)
+    if pinned_head is not None and not any(r["hash"] == pinned_head for r in receipts):
+        raise VerificationError("ledger does not extend the pinned head")
+    start = start_checkpoint["ledgerReceipt"]
+    terminal = terminal_checkpoint["ledgerReceipt"]
+    if start not in receipts or terminal not in receipts:
+        raise VerificationError("witness checkpoint is absent from the ledger")
+    if start["phase"] != "begin" or terminal["phase"] != "terminal":
+        raise VerificationError("witness receipts lack begin and terminal phases")
+    if start["intervalId"] != terminal["intervalId"] or start["sequence"] >= terminal["sequence"]:
+        raise VerificationError("witness receipts name different intervals or order")
+    if start["checkpoint"] != {k: v for k, v in start_checkpoint.items() if k != "ledgerReceipt"}:
+        raise VerificationError("begin checkpoint differs from its witness receipt")
+    if terminal["checkpoint"] != {k: v for k, v in terminal_checkpoint.items() if k != "ledgerReceipt"}:
+        raise VerificationError("terminal checkpoint differs from its witness receipt")
+    return {"count": len(receipts), "head": receipts[-1]["hash"]}
