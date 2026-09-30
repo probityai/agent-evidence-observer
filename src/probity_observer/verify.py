@@ -86,7 +86,7 @@ def verify_incomplete(
 ) -> dict[str, Any]:
     """Check the retained history and witness head for an interrupted write."""
     entries = read_history(history_path)
-    if len(entries) < 3 or entries[0]["event"]["kind"] != "begin":
+    if len(entries) < 2 or entries[0]["event"]["kind"] != "begin":
         raise VerificationError("incomplete history has no begin event")
     terminal = entries[-1]["event"]
     if terminal["kind"] != "incomplete":
@@ -94,10 +94,16 @@ def verify_incomplete(
     if any(entry["event"]["kind"] in {"begin", "seal", "incomplete"} for entry in entries[1:-1]):
         raise VerificationError("incomplete history has an extra interval boundary")
     pending = unresolved_intents(entries[:-1])
-    if not pending or terminal["requestIds"] != [item["requestId"] for item in pending]:
-        raise VerificationError("incomplete event does not name the unresolved write")
-    if terminal["reason"] != "write outcome unresolved after interruption":
+    if terminal["reason"] == "write outcome unresolved after interruption":
+        if not pending or terminal["requestIds"] != [item["requestId"] for item in pending]:
+            raise VerificationError("incomplete event does not name the unresolved write")
+    elif terminal["reason"] in {"isolation setup failed", "boundary probes failed"}:
+        if pending or terminal["requestIds"] != []:
+            raise VerificationError("aborted interval has unresolved writes")
+    else:
         raise VerificationError("incomplete event has an unknown reason")
+    checked = entries[:-2] if pending else entries[:-1]
+    _verify_request_sequence(checked + [{"event": {"kind": "seal"}}])
     begin = entries[0]["event"]
     commitment = begin["commitment"]
     payload = {"preimage": commitment["preimage"], "committedAt": commitment["committedAt"]}

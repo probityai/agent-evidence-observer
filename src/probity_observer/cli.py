@@ -10,6 +10,7 @@ from typing import Sequence
 from .broker import Broker
 from .crypto import SigningKey, canonical, strict_loads
 from .history import Witness
+from .isolation import run_boundary_probe, verify_boundary_bundle
 from .verify import verify_packet
 
 
@@ -47,11 +48,24 @@ def main(argv: Sequence[str] | None = None) -> int:
     subcommands = parser.add_subparsers(dest="command", required=True)
     demo = subcommands.add_parser("demo", help="write a sample packet and verify it")
     demo.add_argument("output", type=Path)
+    boundary = subcommands.add_parser("boundary-probe", help="run the Linux boundary attack probe")
+    boundary.add_argument("output", type=Path)
+    checked = subcommands.add_parser("verify-boundary", help="check a retained boundary run with pinned keys")
+    checked.add_argument("directory", type=Path)
+    checked.add_argument("--observer-key", required=True)
+    checked.add_argument("--witness-key", required=True)
     verify = subcommands.add_parser("verify", help="check a retained sample offline")
     verify.add_argument("directory", type=Path)
     arguments = parser.parse_args(argv)
     if arguments.command == "demo":
         result = run_demo(arguments.output)
+    elif arguments.command == "boundary-probe":
+        report = run_boundary_probe(arguments.output)
+        print(json.dumps(report, sort_keys=True))
+        return 0 if report["status"] == "probe-passed" else 1
+    elif arguments.command == "verify-boundary":
+        report = verify_boundary_bundle(arguments.directory, arguments.observer_key, arguments.witness_key)
+        result = {"status": "verified", "boundaryStatus": report["status"], "witnessScope": report["witnessScope"]}
     else:
         directory = arguments.directory
         packet = strict_loads((directory / "packet.json").read_bytes())
