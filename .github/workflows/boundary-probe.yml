@@ -1,0 +1,28 @@
+name: Linux boundary probe
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  boundary:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y bubblewrap
+      - run: python -m pip install -e '.[test]'
+      - run: pytest -q
+      - run: agent-evidence-observer boundary-probe ./boundary-run
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: boundary-run
+          path: boundary-run/
