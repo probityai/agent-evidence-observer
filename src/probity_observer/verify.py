@@ -8,7 +8,7 @@ from typing import Any
 
 from .broker import CoverageError, _path_under_scope, tree_root
 from .crypto import VerificationError, digest, verify_signature
-from .history import read_history, verify_checkpoint
+from .history import read_history, unresolved_intents, verify_checkpoint
 
 UTC_SECOND = re.compile(r"[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z\Z")
 
@@ -43,7 +43,10 @@ def _verify_events(packet: dict[str, Any], entries: list[dict[str, Any]]) -> Non
     _verify_request_sequence(entries)
     commitment = packet["commitment"]
     payload = {"preimage": commitment["preimage"], "committedAt": commitment["committedAt"]}
-    if entries[0]["event"]["commitmentDigest"] != digest("probity-prior-commitment-v0", payload):
+    if (
+        entries[0]["event"]["commitmentDigest"] != digest("probity-prior-commitment-v0", payload)
+        or entries[0]["event"]["commitment"] != commitment
+    ):
         raise VerificationError("history begin does not bind the commitment")
     claim = packet["claim"]
     if entries[-1]["event"]["claimDigest"] != digest("probity-claim-v0", claim):
@@ -59,7 +62,7 @@ def _verify_request_sequence(entries: list[dict[str, Any]]) -> None:
     for index, entry in enumerate(entries):
         event = entry["event"]
         kind = event["kind"]
-        if kind not in {"begin", "write", "denied", "retry", "gap", "seal"}:
+        if kind not in {"begin", "write-intent", "write", "denied", "retry", "gap", "seal"}:
             raise VerificationError("history has an unknown event kind")
         if kind in {"begin", "seal"} and index not in {0, len(entries) - 1}:
             raise VerificationError("history has a duplicate interval boundary")
@@ -70,6 +73,42 @@ def _verify_request_sequence(entries: list[dict[str, Any]]) -> None:
             seen[request_id] = event["path"]
         if kind == "retry" and seen.get(event["requestId"]) != event["path"]:
             raise VerificationError("history retry has no matching write")
+    if unresolved_intents(entries):
+        raise VerificationError("history has an unresolved write intent")
+
+
+def verify_incomplete(
+    history_path: Path,
+    start_checkpoint: dict[str, Any],
+    checkpoint: dict[str, Any],
+    pinned_observer_key: str,
+    pinned_witness_key: str,
+) -> dict[str, Any]:
+    """Check the retained history and witness head for an interrupted write."""
+    entries = read_history(history_path)
+    if len(entries) < 3 or entries[0]["event"]["kind"] != "begin":
+        raise VerificationError("incomplete history has no begin event")
+    terminal = entries[-1]["event"]
+    if terminal["kind"] != "incomplete":
+        raise VerificationError("history has no incomplete terminal event")
+    if any(entry["event"]["kind"] in {"begin", "seal", "incomplete"} for entry in entries[1:-1]):
+        raise VerificationError("incomplete history has an extra interval boundary")
+    pending = unresolved_intents(entries[:-1])
+    if not pending or terminal["requestIds"] != [item["requestId"] for item in pending]:
+        raise VerificationError("incomplete event does not name the unresolved write")
+    if terminal["reason"] != "write outcome unresolved after interruption":
+        raise VerificationError("incomplete event has an unknown reason")
+    begin = entries[0]["event"]
+    commitment = begin["commitment"]
+    payload = {"preimage": commitment["preimage"], "committedAt": commitment["committedAt"]}
+    if begin["commitmentDigest"] != digest("probity-prior-commitment-v0", payload):
+        raise VerificationError("history begin does not bind the commitment")
+    if commitment["keyid"] != pinned_observer_key:
+        raise VerificationError("commitment key is not the pinned observer key")
+    verify_signature(pinned_observer_key, "probity-prior-commitment-v0", payload, commitment["signature"])
+    verify_checkpoint(entries[:1], start_checkpoint, pinned_witness_key)
+    verify_checkpoint(entries, checkpoint, pinned_witness_key)
+    return terminal
 
 
 def _verify_roots(claim: dict[str, Any], entries: list[dict[str, Any]]) -> None:

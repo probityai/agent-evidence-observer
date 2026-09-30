@@ -4,17 +4,21 @@ from __future__ import annotations
 
 import copy
 import logging
+import os
+import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
 import pytest
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from hypothesis import HealthCheck, given, settings, strategies as st
 
 from probity_observer import Broker, CoverageError, SigningKey, VerificationError, Witness, verify_packet
-from probity_observer.broker import tree_root
+from probity_observer.broker import recover_interrupted, tree_root
 from probity_observer.crypto import canonical, strict_loads
 from probity_observer.history import read_history
-from probity_observer.verify import _verify_commitment, _verify_request_sequence
+from probity_observer.verify import _verify_commitment, _verify_request_sequence, verify_incomplete
 
 
 class TestBroker:
@@ -50,7 +54,7 @@ class TestPassingCases(TestBroker):
             assert replay.after_root == first.after_root == tree_root(workspace)
             assert claim["coverage"]["noDetectedGap"] is True
             assert claim["witnessScope"] == "PEER"
-            assert [entry["event"]["kind"] for entry in read_history(history)] == ["begin", "write", "retry", "seal"]
+            assert [entry["event"]["kind"] for entry in read_history(history)] == ["begin", "write-intent", "write", "retry", "seal"]
 
     def test_unbrokered_change_is_reported_as_gap(self, tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
         broker, observer_key, witness_key, workspace, history = self.build(tmp_path)
@@ -118,7 +122,112 @@ class TestFailingCases(TestBroker):
         packet = broker.seal()
         claim = verify_packet(packet, history, observer_key.public_hex, witness_key.public_hex)
         assert claim["coverage"]["noDetectedGap"] is False
-        assert [entry["event"]["kind"] for entry in read_history(history)] == ["begin", "write", "denied", "gap", "seal"]
+        assert [entry["event"]["kind"] for entry in read_history(history)] == ["begin", "write-intent", "write", "denied", "gap", "seal"]
+
+    @pytest.mark.parametrize("identical", [False, True])
+    def test_replacement_then_process_death_is_witnessed_as_incomplete(self, tmp_path: Path, identical: bool) -> None:
+        source = Path(__file__).resolve().parents[1] / "src"
+        script = """
+import os
+from pathlib import Path
+from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+from probity_observer import Broker, SigningKey, Witness
+from probity_observer import broker as broker_module
+
+root = Path(os.environ["OBSERVER_TEST_ROOT"])
+workspace = root / "workspace"
+workspace.mkdir()
+if os.environ["OBSERVER_TEST_IDENTICAL"] == "1":
+    (workspace / "result").write_bytes(b"same")
+witness_key = SigningKey(Ed25519PrivateKey.from_private_bytes(bytes(range(32))))
+observer_key = SigningKey(Ed25519PrivateKey.from_private_bytes(bytes(range(32, 64))))
+broker = Broker(workspace, root / "history.jsonl",
+                {"intervalId": "crash", "scope": "/work", "operation": "write-file"},
+                observer_key, Witness(root / "witness-state.json", witness_key))
+broker.begin()
+original_write = broker_module._atomic_write
+
+def stop_after_replace(target, content):
+    original_write(target, content)
+    os._exit(91)
+
+broker_module._atomic_write = stop_after_replace
+broker.write("one", "/work/result", b"same" if os.environ["OBSERVER_TEST_IDENTICAL"] == "1" else b"changed")
+"""
+        env = dict(
+            os.environ,
+            PYTHONPATH=str(source),
+            OBSERVER_TEST_ROOT=str(tmp_path),
+            OBSERVER_TEST_IDENTICAL=str(int(identical)),
+        )
+        child = subprocess.run([sys.executable, "-c", script], env=env, capture_output=True, check=False)
+        assert child.returncode == 91, child.stderr.decode()
+
+        history = tmp_path / "history.jsonl"
+        workspace = tmp_path / "workspace"
+        assert (workspace / "result").read_bytes() == (b"same" if identical else b"changed")
+        assert [entry["event"]["kind"] for entry in read_history(history)] == ["begin", "write-intent"]
+        witness_key = SigningKey(Ed25519PrivateKey.from_private_bytes(bytes(range(32))))
+        observer_key = SigningKey(Ed25519PrivateKey.from_private_bytes(bytes(range(32, 64))))
+        recovered = recover_interrupted(history, workspace, Witness(tmp_path / "witness-state.json", witness_key))
+        assert recovered["status"] == "incomplete"
+        assert recovered["event"]["recoveryRoot"] == tree_root(workspace)
+        if identical:
+            before_root = read_history(history)[0]["event"]["commitment"]["preimage"]["beforeRoot"]
+            assert recovered["event"]["recoveryRoot"] == before_root
+        assert recovered["event"]["requestIds"] == ["one"]
+        assert verify_incomplete(
+            history,
+            recovered["startCheckpoint"],
+            recovered["checkpoint"],
+            observer_key.public_hex,
+            witness_key.public_hex,
+        ) == recovered["event"]
+        with pytest.raises(VerificationError, match="pinned witness key"):
+            verify_incomplete(
+                history,
+                recovered["startCheckpoint"],
+                recovered["checkpoint"],
+                observer_key.public_hex,
+                SigningKey.generate().public_hex,
+            )
+        with pytest.raises(VerificationError, match="terminal event"):
+            recover_interrupted(history, workspace, Witness(tmp_path / "witness-state.json", witness_key))
+
+    def test_pending_write_cannot_be_sealed(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        from probity_observer import broker as broker_module
+
+        broker, _, _, workspace, history = self.build(tmp_path)
+        original_write = broker_module._atomic_write
+
+        def stop_after_replace(target: Path, content: bytes) -> None:
+            original_write(target, content)
+            raise OSError("simulated interruption")
+
+        monkeypatch.setattr(broker_module, "_atomic_write", stop_after_replace)
+        with pytest.raises(OSError, match="simulated interruption"):
+            broker.write("one", "/work/result", b"changed")
+        assert (workspace / "result").read_bytes() == b"changed"
+        assert read_history(history)[-1]["event"]["kind"] == "write-intent"
+        with pytest.raises(CoverageError, match="unresolved write intent"):
+            broker.seal()
+        with pytest.raises(CoverageError, match="unresolved write intent"):
+            broker.write("two", "/work/next", b"other")
+
+    def test_partial_history_line_is_refused(self, tmp_path: Path) -> None:
+        _, _, _, _, history = self.build(tmp_path)
+        history.write_bytes(history.read_bytes().rstrip(b"\n"))
+        with pytest.raises(VerificationError, match="incomplete line"):
+            read_history(history)
+
+    def test_intent_must_match_effect_event(self) -> None:
+        begin = {"kind": "begin"}
+        intent = {"kind": "write-intent", "requestId": "one", "path": "/work/result", "contentDigest": "a", "beforeRoot": "b"}
+        changed = {"kind": "write", "requestId": "one", "path": "/work/result", "contentDigest": "c", "beforeRoot": "b"}
+        with pytest.raises(VerificationError, match="differs from its durable intent"):
+            _verify_request_sequence([{"event": event} for event in (begin, intent, changed, {"kind": "seal"})])
+        with pytest.raises(VerificationError, match="unresolved write intent"):
+            _verify_request_sequence([{"event": event} for event in (begin, intent, {"kind": "seal"})])
 
     def test_changed_history_fails_offline_check(self, tmp_path: Path) -> None:
         broker, observer_key, witness_key, _, history = self.build(tmp_path)
