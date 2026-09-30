@@ -179,6 +179,7 @@ def run_boundary_probe(output: Path, *, bwrap: Path | None = None, interpreter: 
     PEER because the witness is local and this is not an independent audit.
     """
     output.mkdir(parents=True, exist_ok=True)
+    output = output.resolve(strict=True)
     if any(output.iterdir()):
         raise ValueError("boundary output directory must be empty")
     workspace = output / "workspace"
