@@ -1,0 +1,40 @@
+name: Brokered workload
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  workload:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: sudo apt-get update && sudo apt-get install -y bubblewrap
+      - run: python -m pip install -e '.[test]'
+      - run: sudo "$(command -v agent-evidence-observer)" run-workload /tmp/probity-workload-run examples/write_agent.py
+      - run: |
+          sudo cp -a /tmp/probity-workload-run ./workload-run
+          sudo chown -R "$(id -u):$(id -g)" ./workload-run
+          sudo diff -qr /tmp/probity-workload-run ./workload-run
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from probity_observer.workload import verify_workload_bundle
+          output = Path("workload-run")
+          keys = json.loads((output / "trusted-keys.json").read_text())
+          assert verify_workload_bundle(output, keys["observer"], keys["witness"])["status"] == "completed"
+          PY
+        if: always()
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: workload-run
+          path: workload-run/
