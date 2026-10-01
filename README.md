@@ -1,10 +1,12 @@
 # Agent Evidence Observer (prototype)
 
-This repository is a **local protocol prototype** for an agent action record made by a broker outside the action's claimed effects. It fixes an authority digest and a before-state before the interval, mediates file replacements, records each accepted, denied, and repeated request in a durable hash chain, and signs a final bounded claim. A second key witnesses the chain head before and after the interval. The offline verifier recomputes the bindings from retained bytes and consumer-pinned public keys.
+The [Protected Action Kit](docs/PROTECTED-ACTION-KIT.md) checks a signed grant before the broker writes a file. The grant identifies who may act, which tool and target they may use, the permitted content, and when permission expires. The [example](examples/protected_action_demo.py) then verifies the signed link between that grant and the recorded write before the consumer accepts it. This is a local experiment: one operator controls the keys, and the signed-action path is not yet connected to the Linux isolation probe.
 
-The prototype does **not** launch or isolate an agent. Its records say `witnessScope: PEER`; neither the broker code nor a second local key proves that the agent could not control the observer. This is the implementation boundary for the next milestone, not a label to change in the sample output.
+This repository is a local prototype for recording brokered file writes. Before a run, the broker signs the declared authority and starting file-tree state. It records accepted, denied, and repeated requests in a durable hash chain, then signs the final record. A second key signs the chain head before and after the run. The offline verifier checks those records using retained files and public keys pinned by the consumer.
 
-## Run the bounded demonstration
+The basic demo runs without agent isolation. A separate Linux command tests a fixed workload under bubblewrap, as described below. Both produce `witnessScope: PEER` records: neither a second local key nor this launch test establishes an independently operated observer.
+
+## Run the demo
 
 Python 3.12 or later and [`uv`](https://docs.astral.sh/uv/) are needed for these commands:
 
@@ -16,7 +18,7 @@ uv pip install --python .venv/bin/python -e '.[test]'
 .venv/bin/agent-evidence-observer verify ./sample-run
 ```
 
-The two CLI commands print `status: verified`, `witnessScope: PEER`, and `noDetectedGap: true`. The last value means no divergence was detected during the broker's sequential file-tree snapshots; it does **not** mean every agent effect was observed. `sample-run/` contains the authority-bound packet, all history entries, both public verification keys, witness state, and the current file tree. Private keys are ephemeral and are not written to disk. `verify` needs no network connection. It verifies the retained packet against the supplied keys; a real consumer must obtain and pin those keys independently rather than trusting `trusted-keys.json` from the same bundle.
+The two CLI commands print `status: verified`, `witnessScope: PEER`, and `noDetectedGap: true`. The last field means the broker's sequential file-tree snapshots found no divergence; it does not mean every agent effect was observed. `sample-run/` contains the signed packet, history, public keys, witness state, and current file tree. Private keys exist only in memory. Verification works offline. Outside this demo, consumers need independently obtained key pins; the bundle's own `trusted-keys.json` is not a source of trust.
 
 ## Claim and trust boundary
 
@@ -27,13 +29,13 @@ The two CLI commands print `status: verified`, `witnessScope: PEER`, and `noDete
 | Coverage | A direct change to the observed workspace or a symlink detected at a snapshot becomes an explicit known gap. The population is broker calls with a valid ASCII request ID, and `noDetectedGap` says only that the snapshots caught no divergence. | Complete agent effects, changes between snapshots that are later undone, or an agent prevented from bypassing the broker. The sample process is not isolated. A hostile host operator can omit or forge observations. |
 | History | An ordered SHA-256 chain and two Ed25519-signed checkpoints reject alteration, truncation, or an extension that diverges from the witness's retained head. | Non-equivocation unless a separately operated witness retains and publishes the head. The current witness runs locally under the same operator. |
 
-The JSON signature profile deliberately accepts ASCII strings and safe integers, and rejects floats and non-ASCII values. It is a restricted deterministic JSON profile, **not** a full RFC 8785/JCS implementation. The packet is a `probity-observer-prototype-v0` record, **not** a DSSE envelope or a conformant Observed Effect v0.4.0 statement. Those formats are integration targets after the observer vantage is real. The current format reserves `doesNotAssert` and fixes `witnessScope` to `PEER`; the verifier refuses a packet that claims a stronger value. The file-tree walk is sequential, not an atomic filesystem snapshot. A race can be missed or attributed to the wrong broker call. `noDetectedGap` must never be read as a proof of absence.
+The signature format accepts ASCII strings and safe integers, but rejects floats and non-ASCII values. It is deterministic JSON, not a full RFC 8785/JCS implementation. A `probity-observer-prototype-v0` packet is neither a DSSE envelope nor an Observed Effect v0.4.0 statement. Those integrations are planned. The format reserves `doesNotAssert` and fixes `witnessScope` to `PEER`; the verifier rejects stronger claims. File-tree walks are sequential rather than atomic, so a race may go undetected or be attributed to the wrong call. `noDetectedGap` is not proof that no other effect occurred.
 
-## Reached and unreached attacks
+## Tests and remaining gaps
 
-The tests exercise file-byte binding over generated contents, path traversal and prefix confusion, idempotency-key reuse, direct workspace mutation, symlink gaps, changed and truncated history, forged claim content, an unpinned witness, duplicate JSON members, and unsafe integers. A passing suite measures these code paths in this version. It is not a security audit of an isolation boundary.
+Tests cover generated file contents, path traversal and prefix confusion, idempotency-key reuse, direct workspace changes, symlinks, altered and truncated history, forged claims, unpinned witness keys, duplicate JSON members, and unsafe integers. Passing these tests is not a security audit of the isolation boundary.
 
-The next implementation gate is a host-side launcher that gives the agent no writable path to the watched tree and no access to the observer process, key, journal, or witness state. It must demonstrate that boundary with attempted direct writes, namespace escape probes appropriate to the chosen platform, broker interruption, key access attempts, and a declared denominator for every effect channel. Until the launcher and an external operator are tested, a relying party has no basis to promote `PEER` to `EXTERNAL` or `below-observed`.
+The next isolation milestone extends the fixed Linux probe to an unmodified agent. The agent must have no direct writable path to the watched tree and no access to the observer process, key, journal, or witness state. Tests need to cover direct writes, platform-specific namespace escapes, broker interruption, key access, and a defined set of attempted effects for each channel. An outside-operated run is also needed before consumers can treat the records as `EXTERNAL` or `below-observed` rather than `PEER`.
 
 The detailed acceptance criteria are in [`docs/ISOLATED-PRODUCER.md`](docs/ISOLATED-PRODUCER.md). A retry checks the current tree before returning the prior effect, but it cannot see a transient bypass that was later undone.
 
@@ -90,14 +92,14 @@ brokered write, bounded verification, admission, and replay refusal. See
 ordering, storage ownership, and evidence limits. This same-operator fixture
 and the admitted records remain PEER.
 
-## Proposed next milestones
+## Roadmap
 
-1. **Below-agent producer.** Run an unmodified agent under a pinned Linux isolation configuration. Mediate one `write-file` effect through a host broker; keep the observed workspace read-only or unreachable to the agent except through that broker. Publish the launch configuration digest and an attempted-bypass result. Refuse strong coverage when the broker, snapshot, or journal loses a record.
-2. **Standard record.** Emit the existing [Observed Effect draft](https://github.com/probityai/agent-evidence-vectors/blob/main/spec/predicates/observed-effect.md) and run its [conformance corpus](https://github.com/probityai/agent-evidence-vectors/tree/main/vectors-observed-effect) through a named external verifier. Bind the in-toto subject to the after-root and the observer's prior commitment to the authority digest, before-root, interval ID, and nonce. Use `jcs-admit` and `dsse` for production byte and signature handling.
-3. **Independent history.** Move the witness to a separate principal or operator that stores the highest accepted head and refuses forks; publish checkpoint, inclusion, and consistency evidence for offline consumers. A signed chain head held only by the host is insufficient against host equivocation.
-4. **Evidence-led adoption.** Give an independent implementer the verifier, attack corpus, pinned keys, run bundle, and a one-command replay. Report the number of attempts and observed effects, declared coverage population, dropped or unresolved observations, refusal reasons, and measured overhead. Preserve null and incomplete results.
+1. **Agent isolation.** A pinned Linux launch will run an unmodified agent with file writes available only through the host broker. The published result will include the launch digest, bypass attempts, and missing broker, snapshot, or journal records. Missing records must prevent a complete-coverage claim.
+2. **Standard records.** An adapter will emit the [Observed Effect draft](https://github.com/probityai/agent-evidence-vectors/blob/main/spec/predicates/observed-effect.md) and run its [corpus](https://github.com/probityai/agent-evidence-vectors/tree/main/vectors-observed-effect) through a named external verifier. The in-toto subject will bind the final tree root, and the prior commitment will bind authority, starting root, interval, and nonce. The integration will use `jcs-admit` and `dsse` for byte and signature handling.
+3. **Independent history.** A separately operated witness will retain the highest accepted head, refuse forks, and publish checkpoint, inclusion, and consistency records for offline readers. Host-held signatures alone cannot prevent host equivocation.
+4. **Independent use.** Replay packages for other implementers will include the verifier, attack corpus, key pins, run bundle, and a one-command replay. Reports will include attempted and observed effects, coverage, missing or unresolved observations, refusals, and overhead, including null and incomplete results.
 
-The vocabulary and corpus define and test claims. This repository builds the producer boundary. Its first release is a PEER prototype; the isolated producer and independent witness are tracked in [`docs/ISOLATED-PRODUCER.md`](docs/ISOLATED-PRODUCER.md).
+The vocabulary and corpus define the records and their checks; this repository implements the broker and producer boundary. The current release remains a PEER prototype. Isolation and independent witnessing are tracked in [`docs/ISOLATED-PRODUCER.md`](docs/ISOLATED-PRODUCER.md).
 
 ## License
 
