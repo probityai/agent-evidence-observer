@@ -1,0 +1,174 @@
+{
+  "repository": "MoltyCel/aae-conformance-vectors",
+  "commit": "531f880155ea1ce993a7ca74137b12c255d5b2ee",
+  "files": [
+    {
+      "path": "LICENSE",
+      "ownerPath": "LICENSE",
+      "gitBlobSha": "dc4046c6c6fc1f3daa9d22ef49ee2836d23a9db0",
+      "sha256": "a48db0d598b78ff9d42a2cdd102415c6a6b7911f64bc93a15a04e9883d691def"
+    },
+    {
+      "path": "NOTICE",
+      "ownerPath": "NOTICE",
+      "gitBlobSha": "d1e4e7f75eb9dacfc9b75762c66bbcea63533a8e",
+      "sha256": "dad99c735f48d46f8955b696350f08d79e1b05a3d3e2e6e90540f90ad29a3bf1"
+    },
+    {
+      "path": "01-type-form-matches-permit.json",
+      "ownerPath": "vectors/enforce/01-type-form-matches-permit.json",
+      "gitBlobSha": "02ca2a05e6a296408662fdc94b34090b03c94453",
+      "sha256": "7bf8785c51259508ca6985dd5fe171e7553c8d35bf30581a68992e1d12e17fa7"
+    },
+    {
+      "path": "02-instance-value-inside-the-action-deny.json",
+      "ownerPath": "vectors/enforce/02-instance-value-inside-the-action-deny.json",
+      "gitBlobSha": "c8fbe34747556aa305fc9d9ddfb0e696d0585b9c",
+      "sha256": "6d36d57280d2fd880bad7191493d15a51eddd0f0201c1c5e389bf15c0e785cf6"
+    },
+    {
+      "path": "03-type-field-missing-from-the-action-deny.json",
+      "ownerPath": "vectors/enforce/03-type-field-missing-from-the-action-deny.json",
+      "gitBlobSha": "e6fbe2a6f9b38369e8a5ff3adeca206e33edb977",
+      "sha256": "ca3890e324344ac9a1626c3cd8f000b4c6e5128cfe99bc6f5a5483b8e77316ad"
+    },
+    {
+      "path": "04-action-is-a-string-deny.json",
+      "ownerPath": "vectors/enforce/04-action-is-a-string-deny.json",
+      "gitBlobSha": "6033f7d3667ed74e1ccbe5ab5a9f4d62d2cc6db2",
+      "sha256": "2e0cde3709f4b742357f381a307bb538d63e645ec86b052a42f6befa147a6f0c"
+    },
+    {
+      "path": "05-action-is-an-array-deny.json",
+      "ownerPath": "vectors/enforce/05-action-is-an-array-deny.json",
+      "gitBlobSha": "9a8ce5ad5b568b346b4f7f4eb8161c08c2677414",
+      "sha256": "aed5918e3d40ac6496f087cd6f6e677bd55474c54b6eb60dd395a9f2850291d6"
+    },
+    {
+      "path": "06-action-is-a-number-deny.json",
+      "ownerPath": "vectors/enforce/06-action-is-a-number-deny.json",
+      "gitBlobSha": "03f6d57225cfce45405f320df94f5fc44c1c300f",
+      "sha256": "c57ffa7b4fbae04b0731e52f36e9754c68995a016d35a4a152cf6e37edc529a4"
+    },
+    {
+      "path": "07-action-is-null-deny.json",
+      "ownerPath": "vectors/enforce/07-action-is-null-deny.json",
+      "gitBlobSha": "ee9f85dd9240e3421a3447a83268a1edeb9d69b7",
+      "sha256": "532ddc05282acb1560d34e182978732f2007353fa9f9d2412ff3b906fe63a728"
+    },
+    {
+      "path": "08-grant-without-type_fields-deny.json",
+      "ownerPath": "vectors/enforce/08-grant-without-type_fields-deny.json",
+      "gitBlobSha": "40a767a30b61da4eaf1bb2af6fe53ae281c6cd4e",
+      "sha256": "ae28eee7693711bee7274be39275d35fca97d4b68415f878576c0511730e66de"
+    },
+    {
+      "path": "09-type_fields-without-verb-deny.json",
+      "ownerPath": "vectors/enforce/09-type_fields-without-verb-deny.json",
+      "gitBlobSha": "a7300dd54536214823b4eca430800d52a96fc62f",
+      "sha256": "ea5a4f3ef250654499e7b74c2a48cc2c58dd24f797e4c7acaf4751fab207be02"
+    },
+    {
+      "path": "10-duplicate-name-in-type_fields-deny.json",
+      "ownerPath": "vectors/enforce/10-duplicate-name-in-type_fields-deny.json",
+      "gitBlobSha": "25c99cdd49ca87f37d140582542b10e2692b880a",
+      "sha256": "7df442fa0ef375e93bf14d89c67af7e768d25d3936852e2327fdb1bba0ca03e0"
+    },
+    {
+      "path": "11-exact-holds-permit.json",
+      "ownerPath": "vectors/enforce/11-exact-holds-permit.json",
+      "gitBlobSha": "f4248314262cc06e9f97e8a09e2fc58665ebda65",
+      "sha256": "2f2e577dd0a87fb2bf0bee111b6e35761e216526a13ae82981504bf63507ec98"
+    },
+    {
+      "path": "12-exact-fails-on-a-vanity-prefix-deny.json",
+      "ownerPath": "vectors/enforce/12-exact-fails-on-a-vanity-prefix-deny.json",
+      "gitBlobSha": "7e17605abeca76dc4abbbd49f83da714edb9ceba",
+      "sha256": "3ed78d58dcaec79954c2c5dc2f8d092a7cc228c08c1298e8eaf8ea3c6a0500ec"
+    },
+    {
+      "path": "13-enum-holds-permit.json",
+      "ownerPath": "vectors/enforce/13-enum-holds-permit.json",
+      "gitBlobSha": "1d858a51d52cc8a75959d6f9c10707f8a2b9e809",
+      "sha256": "1f7eb0c41f91564dbd2992496aa285e8afb5382c4d4c02d0b066b6b396211069"
+    },
+    {
+      "path": "14-enum-fails-deny.json",
+      "ownerPath": "vectors/enforce/14-enum-fails-deny.json",
+      "gitBlobSha": "30d59acfaa51e1a333fb9d14ed91183f77fa1ef9",
+      "sha256": "500c22696fedb12c13ec9c7b7977b39fcf6820a72c5e9a79877e907a4be8ce93"
+    },
+    {
+      "path": "15-range-holds-at-the-upper-bound-permit.json",
+      "ownerPath": "vectors/enforce/15-range-holds-at-the-upper-bound-permit.json",
+      "gitBlobSha": "424a322549344a2f1a564195157966f5c1fb4d72",
+      "sha256": "be036eb09a860cbecd4102c5522beadefe71a4c57daafeb2e878664bc2fbd12e"
+    },
+    {
+      "path": "16-range-fails-one-over-the-bound-deny.json",
+      "ownerPath": "vectors/enforce/16-range-fails-one-over-the-bound-deny.json",
+      "gitBlobSha": "0e14d259700aa980c5d16b671e6946e9dcef4dfe",
+      "sha256": "59417754517f6b38c36b81fd3217523c2a24e0de8ca975a71aefbb2ae9c7c7c5"
+    },
+    {
+      "path": "17-unknown-constraint-type-deny.json",
+      "ownerPath": "vectors/enforce/17-unknown-constraint-type-deny.json",
+      "gitBlobSha": "866e0f1bfea1865be0c663219555c48829457a7a",
+      "sha256": "a6b513709d711feecd2a28ec5b1b56ec3548adcda2d3c55cc29c5430eef098b0"
+    },
+    {
+      "path": "18-field-path-with-an-empty-segment-deny.json",
+      "ownerPath": "vectors/enforce/18-field-path-with-an-empty-segment-deny.json",
+      "gitBlobSha": "c993f6a5094d148abb7d39f58b25fe80bda22bef",
+      "sha256": "fcff79d09a726f39dc039f442748d73563bbbe5fb18bf61dece0b63ac17cd25e"
+    },
+    {
+      "path": "19-explicit-hold-pending.json",
+      "ownerPath": "vectors/enforce/19-explicit-hold-pending.json",
+      "gitBlobSha": "1428c2c2de82db1c44b313a47f17bd688a5e1751",
+      "sha256": "5dcf685762770f405154fc1a662136414cd775bbad746bbf21c6b768c299f440"
+    },
+    {
+      "path": "20-unaddressed-action-is-never-pending-deny.json",
+      "ownerPath": "vectors/enforce/20-unaddressed-action-is-never-pending-deny.json",
+      "gitBlobSha": "ef3654d658f65378b69f2732fa124832ab24c421",
+      "sha256": "bb88637ff6f5d53e726c5441b6b95874ca59ca96199c267bcf3d922334f59baf"
+    },
+    {
+      "path": "21-forbid-outranks-an-allowing-grant-deny.json",
+      "ownerPath": "vectors/enforce/21-forbid-outranks-an-allowing-grant-deny.json",
+      "gitBlobSha": "f8cc982741e5b6605a2fc5dcd7012d27f7a0f9a0",
+      "sha256": "6f9defa3b4ec87f49846bf0495ef8034b64cdae89e7a5ff3ba8075f053eb99d0"
+    },
+    {
+      "path": "22-ratified-by-the-issuing-principal.json",
+      "ownerPath": "vectors/enforce/22-ratified-by-the-issuing-principal.json",
+      "gitBlobSha": "370d4389925782753fd983b14e79da58e6eaab63",
+      "sha256": "b0beef60e1df70306fda59210183f8c178d0216cd6db3ff1c413cdc94d052a3c"
+    },
+    {
+      "path": "23-stranger-with-a-valid-signature-rejected.json",
+      "ownerPath": "vectors/enforce/23-stranger-with-a-valid-signature-rejected.json",
+      "gitBlobSha": "722e4527407a502efc5b88186130f001f5f550ee",
+      "sha256": "0ce06165ab72873cc85b99de6ca50ea9308ff28f96a7dd8ae5586ac714548fdc"
+    },
+    {
+      "path": "24-a-permit-is-not-ratifiable-caller-error.json",
+      "ownerPath": "vectors/enforce/24-a-permit-is-not-ratifiable-caller-error.json",
+      "gitBlobSha": "59a3c2d5c36beed275747c6dbf6db63f7884e9bb",
+      "sha256": "466dfaf3b136fbb671809cb71d77692561b1117028f13c72e38492fca769cb83"
+    },
+    {
+      "path": "25-chain-link-pointing-elsewhere-caller-error.json",
+      "ownerPath": "vectors/enforce/25-chain-link-pointing-elsewhere-caller-error.json",
+      "gitBlobSha": "53465b3a7e2cc806f92cad34b71e7e49ac166c67",
+      "sha256": "a489b1a5064aa99212636b42c52cf4148e60225d0cd9f13f560363b663338e85"
+    },
+    {
+      "path": "26-chain-link-set-explicitly-to-the-ratified-record.json",
+      "ownerPath": "vectors/enforce/26-chain-link-set-explicitly-to-the-ratified-record.json",
+      "gitBlobSha": "e8f7a77e521c5d5952c4d4a0fb25ff78395cca58",
+      "sha256": "2e48fd8a2acd3ffd5c674b2d8bd053519828fc7ba8332d031e5c23054b99b03d"
+    }
+  ]
+}
