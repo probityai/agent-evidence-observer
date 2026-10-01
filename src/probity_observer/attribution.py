@@ -65,7 +65,7 @@ def check_artifact(
         raise VerificationError("artifact bytes differ from the consumer pin")
     result = checker(raw)
     if not isinstance(result, dict):
-        raise VerificationError("artifact checker must return a bounded result object")
+        raise VerificationError("artifact checker must return a result object")
     canonical(result)
     return {"role": role, "input": provenance, "result": result}
 
@@ -93,33 +93,52 @@ def sign_consumption(
 
 
 def _shape(payload: dict[str, Any]) -> None:
-    """Require a closed profile, unique roles and explicit bounded coverage."""
+    """Require a closed profile, unique roles and listed-check coverage."""
     if set(payload) != {"profile", "actionId", "claimDigest", "checks", "coverage"}:
         raise VerificationError("consumption payload fields differ from the profile")
     if payload["profile"] != DOMAIN or payload["coverage"] != "listed-checks-only":
         raise VerificationError("unsupported consumption profile or coverage")
-    if not isinstance(payload["actionId"], str) or not payload["actionId"]:
-        raise VerificationError("consumption action id is empty")
-    if not isinstance(payload["claimDigest"], str) or HEX.fullmatch(payload["claimDigest"]) is None:
-        raise VerificationError("consumption claim digest is invalid")
+    _identity_fields(payload)
     checks = payload["checks"]
     if not isinstance(checks, list) or not checks:
         raise VerificationError("consumption record has no checks")
     roles: set[str] = set()
     for check in checks:
-        if not isinstance(check, dict) or set(check) != {"role", "input", "result"}:
-            raise VerificationError("consumption check fields differ from the profile")
-        role = check["role"]
-        if not isinstance(role, str) or not role or role in roles:
-            raise VerificationError("consumption roles are empty or repeated")
-        roles.add(role)
-        provenance = check["input"]
-        if not isinstance(provenance, dict) or set(provenance) != set(ArtifactPin.__annotations__):
-            raise VerificationError("consumption input provenance is incomplete")
-        ArtifactPin(**provenance).fields()
-        if not isinstance(check["result"], dict):
-            raise VerificationError("consumption check result is not an object")
+        _check_shape(check, roles)
     canonical(payload)
+
+
+def _identity_fields(payload: dict[str, Any]) -> None:
+    """Check the action identifier and exact claim digest."""
+    if not isinstance(payload["actionId"], str) or not payload["actionId"]:
+        raise VerificationError("consumption action id is empty")
+    if (
+        not isinstance(payload["claimDigest"], str)
+        or HEX.fullmatch(payload["claimDigest"]) is None
+    ):
+        raise VerificationError("consumption claim digest is invalid")
+
+
+def _check_shape(check: Any, roles: set[str]) -> None:
+    """Validate one check while preserving role uniqueness and order."""
+    if not isinstance(check, dict) or set(check) != {"role", "input", "result"}:
+        raise VerificationError("consumption check fields differ from the profile")
+    role = check["role"]
+    if not isinstance(role, str) or not role or role in roles:
+        raise VerificationError("consumption roles are empty or repeated")
+    roles.add(role)
+    _provenance_shape(check["input"])
+    if not isinstance(check["result"], dict):
+        raise VerificationError("consumption check result is not an object")
+
+
+def _provenance_shape(provenance: Any) -> None:
+    """Require every input provenance field before validating its values."""
+    if not isinstance(provenance, dict) or set(provenance) != set(
+        ArtifactPin.__annotations__
+    ):
+        raise VerificationError("consumption input provenance is incomplete")
+    ArtifactPin(**provenance).fields()
 
 
 def verify_consumption(
@@ -137,6 +156,21 @@ def verify_consumption(
     This function verifies the signer's reported results, not those results'
     substantive correctness. Source URLs are never fetched during verification.
     """
+    payload = _signed_payload(record, pinned_signer)
+    if payload["actionId"] != action_id or payload["claimDigest"] != claim_digest:
+        raise VerificationError("consumption record binds another action or claim")
+    _verify_inputs(payload, inputs, pins)
+    return {
+        "status": "bindings-verified",
+        "actionId": action_id,
+        "claimDigest": claim_digest,
+        "coverage": "listed-checks-only",
+        "resultAuthority": "signer-asserted",
+    }
+
+
+def _signed_payload(record: dict[str, Any], pinned_signer: str) -> dict[str, Any]:
+    """Check the envelope, profile and consumer-pinned signature."""
     if not isinstance(record, dict) or set(record) != {"payload", "keyid", "signature"}:
         raise VerificationError("consumption envelope fields differ from the profile")
     payload = record["payload"]
@@ -146,17 +180,23 @@ def verify_consumption(
     if record["keyid"] != pinned_signer:
         raise VerificationError("consumption signer is not the pinned signer")
     verify_signature(pinned_signer, DOMAIN, payload, record["signature"])
-    if payload["actionId"] != action_id or payload["claimDigest"] != claim_digest:
-        raise VerificationError("consumption record binds another action or claim")
+    return payload
+
+
+def _verify_inputs(
+    payload: dict[str, Any],
+    inputs: Mapping[str, bytes],
+    pins: Mapping[str, ArtifactPin],
+) -> None:
+    """Check the exact retained role set, provenance and input bytes."""
     roles = {check["role"] for check in payload["checks"]}
     if roles != set(inputs) or roles != set(pins):
         raise VerificationError("retained inputs differ from the declared check set")
     for check in payload["checks"]:
         role = check["role"]
         if check["input"] != pins[role].fields():
-            raise VerificationError("consumption provenance differs from the consumer pin")
+            raise VerificationError(
+                "consumption provenance differs from the consumer pin"
+            )
         if hashlib.sha256(inputs[role]).hexdigest() != pins[role].sha256:
             raise VerificationError("retained artifact bytes differ")
-    return {"status": "bindings-verified", "actionId": action_id,
-            "claimDigest": claim_digest, "coverage": "listed-checks-only",
-            "resultAuthority": "signer-asserted"}

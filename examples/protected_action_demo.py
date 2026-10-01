@@ -41,7 +41,7 @@ from probity_observer.crypto import canonical, digest
 
 
 def _require_refusal(operation: Callable[[], Any]) -> str:
-    """Return an actual verification refusal, propagating unrelated failures.
+    """Return a verification refusal, propagating unrelated failures.
 
     Parameters
     ----------
@@ -51,7 +51,7 @@ def _require_refusal(operation: Callable[[], Any]) -> str:
     Returns
     -------
     str
-        Actual bounded refusal message, retained in the author-produced report.
+        Refusal message retained in the demo report.
 
     Raises
     ------
@@ -82,7 +82,7 @@ def _runtime_controls(
     Returns
     -------
     dict[str, str]
-        Negative case names mapped to actual refusal messages.
+        Control names mapped to their refusal messages.
 
     Notes
     -----

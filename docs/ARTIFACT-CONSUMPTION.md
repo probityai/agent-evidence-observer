@@ -14,6 +14,9 @@ input byte digests, source revision, attribution, license, checker results,
 action ID and verified claim digest. Offline checks refuse another action,
 another claim, changed input bytes and unpinned provenance or signers.
 
+The example's source revision identifies the protected-action input profile.
+It is not a digest of the checker or its complete execution environment.
+
 The consumption record is the signer's account. Its signature does not prove
 that the checks ran, that all checks were recorded, or that the signer has
 independent custody. The demo performs the checks and retains their inputs;
