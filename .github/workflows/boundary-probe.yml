@@ -22,6 +22,9 @@ jobs:
       - run: pytest -q
       - run: python examples/admission_demo.py ./admission-run
       - run: python examples/protected_action_demo.py ./protected-action-run
+      - run: python examples/attribution_demo.py ./attribution-run
+      - run: python examples/replay_demo.py ./replay-run --source-revision "$GITHUB_SHA"
+      - run: python examples/replay_demo.py ./replay-run --replay --trusted-policy ./replay-run/replay-policy.json
       - run: sudo "$(command -v python)" examples/protected_dispatch_demo.py /tmp/probity-protected-run
       - run: |
           sudo cp -a /tmp/probity-protected-run ./protected-run
@@ -49,6 +52,16 @@ jobs:
         with:
           name: protected-action-run
           path: protected-action-run/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: attribution-run
+          path: attribution-run/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: replay-run
+          path: replay-run/
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -1,5 +1,14 @@
 # Agent Evidence Observer (prototype)
 
+[Artifact consumption records](docs/ARTIFACT-CONSUMPTION.md) retain checked input
+bytes and attribution, bound to one action and claim. The runnable example keeps
+authorization, observation and use separate; it does not assign economic value.
+
+[Declared pilot replay](docs/PILOT-REPLAY.md) reruns native authorization,
+history and target checks against a consumer-pinned context. A valid signature
+over a fabricated success is not enough: contradictory replay blocks the gate.
+This is post-action checking, not durable admission or independent custody.
+
 The [Protected Action Kit](docs/PROTECTED-ACTION-KIT.md) checks a signed grant before the broker writes a file. The grant binds principal and tenant labels, tool, target, content and validity window. The [reference example](examples/protected_action_demo.py) verifies its link to the recorded write before consumer admission.
 
 The [protected socket](docs/PROTECTED-DISPATCH.md) adds a measured Linux launch: an isolated child sends exact requests to a host-owned authorization gate, which witnesses the grant relation before dispatch. Completed responses survive restart without another write; ambiguous pending effects are refused. Run `python examples/protected_dispatch_demo.py ./protected-run` on a host that permits bubblewrap. A passing gate requires all 26 child checks, a matching host-recorded effect, restart replay and consumer admission. A denied launch retains an incomplete result. Both paths remain local `PEER` / `artifact` experiments; signed identity labels do not authenticate a remote caller or establish independent custody.
