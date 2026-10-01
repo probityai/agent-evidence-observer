@@ -1,0 +1,103 @@
+name: Dispatch observer validation on exact main
+
+on:
+  push:
+    branches: ['ops/validate-observer-main-2026-10-01']
+    paths: ['.github/workflows/validate-main.yml']
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: dispatch-observer-main-8562c25
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TARGET_SHA: 8562c25fb7ec97596ea9d0297c495340298914b6
+      WORKFLOW_FILE: boundary-probe.yml
+    steps:
+      - name: Dispatch native CI and verify its actual commit
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import subprocess
+          import time
+          from pathlib import Path
+
+          repository = os.environ['GITHUB_REPOSITORY']
+          target_sha = os.environ['TARGET_SHA']
+          workflow_file = os.environ['WORKFLOW_FILE']
+          headers = [
+              '-H', 'Accept: application/vnd.github+json',
+              '-H', 'X-GitHub-Api-Version: 2026-03-10',
+          ]
+
+          def api(endpoint, payload=None):
+              command = ['gh', 'api', *headers, endpoint]
+              options = {'capture_output': True, 'text': True, 'check': True}
+              if payload is not None:
+                  command.extend(['--method', 'POST', '--input', '-'])
+                  options['input'] = json.dumps(payload)
+              response = subprocess.run(command, **options)
+              return json.loads(response.stdout)
+
+          main = api(f'repos/{repository}/git/ref/heads/main')
+          if main['object']['sha'] != target_sha:
+              raise SystemExit(f"Main moved: expected {target_sha}; found {main['object']['sha']}")
+
+          dispatched = api(
+              f'repos/{repository}/actions/workflows/{workflow_file}/dispatches',
+              {'ref': 'main'},
+          )
+          run_id = dispatched['workflow_run_id']
+          if not isinstance(run_id, int):
+              raise SystemExit('Dispatch response has no integer workflow_run_id')
+
+          for attempt in range(30):
+              run = api(f'repos/{repository}/actions/runs/{run_id}')
+              if run.get('head_sha'):
+                  break
+              time.sleep(2)
+          else:
+              raise SystemExit(f'Dispatched run {run_id} has no observable head_sha')
+
+          expected = {
+              'head_sha': target_sha,
+              'head_branch': 'main',
+              'event': 'workflow_dispatch',
+              'path': f'.github/workflows/{workflow_file}',
+          }
+          for field, value in expected.items():
+              if run.get(field) != value:
+                  raise SystemExit(f"Run {run_id} has {field}={run.get(field)!r}; expected {value!r}")
+
+          evidence = {
+              'repository': repository,
+              'target_sha': target_sha,
+              'launcher_sha': os.environ['GITHUB_SHA'],
+              'launcher_run_id': os.environ['GITHUB_RUN_ID'],
+              'native_run_id': run_id,
+              'native_run_url': run['html_url'],
+              'native_head_sha': run['head_sha'],
+              'native_status_at_dispatch': run['status'],
+              'native_conclusion_at_dispatch': run['conclusion'],
+          }
+          print(json.dumps(evidence, indent=2))
+          Path('dispatch-evidence.json').write_text(json.dumps(evidence, indent=2) + '\n')
+          with Path(os.environ['GITHUB_STEP_SUMMARY']).open('a') as summary:
+              summary.write(f"Native CI dispatched for `{target_sha}`: {run['html_url']}\n\n")
+              summary.write('This launcher confirms dispatch and commit identity. Follow the native run for its test result.\n')
+          PY
+      - name: Retain dispatch evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: observer-main-dispatch-evidence
+          path: dispatch-evidence.json
+          if-no-files-found: error
