@@ -25,6 +25,12 @@ jobs:
       - run: python examples/attribution_demo.py ./attribution-run
       - run: python examples/replay_demo.py ./replay-run --source-revision "$GITHUB_SHA"
       - run: python examples/replay_demo.py ./replay-run --replay --trusted-policy ./replay-run/replay-policy.json
+      - run: sudo "$(command -v python)" examples/protected_dispatch_demo.py /tmp/probity-protected-run
+      - run: |
+          sudo cp -a /tmp/probity-protected-run ./protected-run
+          sudo chown -R "$(id -u):$(id -g)" ./protected-run
+          sudo diff -qr /tmp/probity-protected-run ./protected-run
+        if: always()
       - run: sudo "$(command -v agent-evidence-observer)" boundary-probe /tmp/probity-boundary-run
       - run: |
           sudo cp -a /tmp/probity-boundary-run ./boundary-run
@@ -56,3 +62,8 @@ jobs:
         with:
           name: replay-run
           path: replay-run/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: protected-run
+          path: protected-run/
