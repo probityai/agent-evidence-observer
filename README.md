@@ -1,5 +1,9 @@
 # Agent Evidence Observer (prototype)
 
+[Artifact consumption records](docs/ARTIFACT-CONSUMPTION.md) retain checked input
+bytes and attribution, bound to one action and claim. The runnable example keeps
+authorization, observation and use separate; it does not assign economic value.
+
 The [Protected Action Kit](docs/PROTECTED-ACTION-KIT.md) checks a signed grant before the broker writes a file. The grant identifies who may act, which tool and target they may use, the permitted content, and when permission expires. The [example](examples/protected_action_demo.py) then verifies the signed link between that grant and the recorded write before the consumer accepts it. This is a local experiment: one operator controls the keys, and the signed-action path is not yet connected to the Linux isolation probe.
 
 This repository is a local prototype for recording brokered file writes. Before a run, the broker signs the declared authority and starting file-tree state. It records accepted, denied, and repeated requests in a durable hash chain, then signs the final record. A second key signs the chain head before and after the run. The offline verifier checks those records using retained files and public keys pinned by the consumer.
