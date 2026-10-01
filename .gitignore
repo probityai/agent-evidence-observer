@@ -5,3 +5,4 @@ pytest-of-root/
 __pycache__/
 *.egg-info/
 sample-run*/
+admission-run*/

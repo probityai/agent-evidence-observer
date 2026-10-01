@@ -77,6 +77,19 @@ The snapshot describes the state at recovery, not the state at failure. An unres
 
 Recovery currently covers an orphaned write intent. A crash after the effect event and before `seal()` still leaves an unsealed interval.
 
+## Consumer admission
+
+`AdmissionPolicy` and `AdmissionStore` add consumer-selected authority,
+interval, key, and retained witness-head checks to packet verification. A
+protected local store refuses repeated admissions and receipt-log rollback,
+and retains decisions linked to the verified claim and history. Initialization
+is explicit; a missing store does not reset replay protection. Run
+`python examples/admission_demo.py ./admission-run` for a retained declaration,
+brokered write, bounded verification, admission, and replay refusal. See
+[`docs/CONSUMER-ADMISSION.md`](docs/CONSUMER-ADMISSION.md) for CLI commands,
+ordering, storage ownership, and evidence limits. This same-operator fixture
+and the admitted records remain PEER.
+
 ## Proposed next milestones
 
 1. **Below-agent producer.** Run an unmodified agent under a pinned Linux isolation configuration. Mediate one `write-file` effect through a host broker; keep the observed workspace read-only or unreachable to the agent except through that broker. Publish the launch configuration digest and an attempted-bypass result. Refuse strong coverage when the broker, snapshot, or journal loses a record.
