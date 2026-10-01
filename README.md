@@ -1,10 +1,33 @@
 # Agent Evidence Observer (prototype)
 
+[Artifact consumption records](docs/ARTIFACT-CONSUMPTION.md) retain checked input
+bytes and attribution, bound to one action and claim. The runnable example keeps
+authorization, observation and use separate; it does not assign economic value.
+
+[Declared pilot replay](docs/PILOT-REPLAY.md) reruns native authorization,
+history and target checks against a consumer-pinned context. A valid signature
+over a fabricated success is not enough: contradictory replay blocks the gate.
+This is post-action checking, not durable admission or independent custody.
+
+The [evaluation-history reference](docs/EVALUATION-HISTORY.md) retains every
+declared sample and epoch, including wrong answers, errors, interruptions, and
+absent native entries. Its optional Inspect AI example runs the official mock
+provider locally and checks native-log, source, score mapping, and summary bindings.
+This is a harness contract, not LLM performance or independent custody.
+
 The [AAE enforcement adapter](docs/AAE-ENFORCEMENT.md) recomputes pinned enforce-core fixtures and links a consumer-pinned local write decision to an observer record.
 
-The [Protected Action Kit](docs/PROTECTED-ACTION-KIT.md) checks a signed grant before the broker writes a file. The grant identifies who may act, which tool and target they may use, the permitted content, and when permission expires. The [example](examples/protected_action_demo.py) then verifies the signed link between that grant and the recorded write before the consumer accepts it. This is a local experiment: one operator controls the keys, and the signed-action path is not yet connected to the Linux isolation probe.
+The [Protected Action Kit](docs/PROTECTED-ACTION-KIT.md) checks a signed grant before the broker writes a file. The grant binds principal and tenant labels, tool, target, content and validity window. The [reference example](examples/protected_action_demo.py) verifies its link to the recorded write before consumer admission.
+
+The [protected socket](docs/PROTECTED-DISPATCH.md) adds a measured Linux launch: an isolated child sends exact requests to a host-owned authorization gate, which witnesses the grant relation before dispatch. Completed responses survive restart without another write; ambiguous pending effects are refused. Run `python examples/protected_dispatch_demo.py ./protected-run` on a host that permits bubblewrap. A passing gate requires all 26 child checks, a matching host-recorded effect, restart replay and consumer admission. A denied launch retains an incomplete result. Both paths remain local `PEER` / `artifact` experiments; signed identity labels do not authenticate a remote caller or establish independent custody.
 
 This repository is a local prototype for recording brokered file writes. Before a run, the broker signs the declared authority and starting file-tree state. It records accepted, denied, and repeated requests in a durable hash chain, then signs the final record. A second key signs the chain head before and after the run. The offline verifier checks those records using retained files and public keys pinned by the consumer.
+
+The [declaration-to-action crosswalk](docs/DECLARATION-CROSSWALK.md) compares a
+pinned Agent Manifest payload with supplied runtime values, local grant-verifier
+results and actual file read-back. Its optional native run checks a pinned
+upstream COSE vector and SDK. A matching comparison is not permission, native
+conformance, hardware measurement or independent custody.
 
 The basic demo runs without agent isolation. A separate Linux command tests a fixed workload under bubblewrap, as described below. Both produce `witnessScope: PEER` records: neither a second local key nor this launch test establishes an independently operated observer.
 

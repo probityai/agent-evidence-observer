@@ -40,7 +40,7 @@ The Linux boundary probe is a separate command:
 agent-evidence-observer boundary-probe ./boundary-run
 ```
 
-Passing that probe does not mean the signed-action wrapper ran inside its sandbox. A failed isolation launch produces an incomplete result. The next integration will connect authorization to the broker socket and test altered requests from the isolated child.
+Passing that probe does not mean this reference wrapper ran inside its sandbox. A failed isolation launch produces an incomplete result. The separate [protected socket integration](PROTECTED-DISPATCH.md) checks signed exact requests on the host dispatch path and runs altered requests from an isolated child; it has its own measured gate and retained result.
 
 ## Planned integrations
 
