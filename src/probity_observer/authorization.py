@@ -402,8 +402,9 @@ class AuthorizedBroker:
     Parameters
     ----------
     broker : Broker
-        Begun native interval whose authority is a ``/work`` file-write profile
-        and whose interval ID equals the expected request's ``run_id``.
+        Native broker configured for ``/work`` file writes, with an interval ID
+        matching the expected request's ``run_id``. Call
+        :meth:`~probity_observer.broker.Broker.begin` before :meth:`write`.
     grant : Mapping[str, Any]
         Signed grant captured into this wrapper's private immutable bytes.
     policy : GrantPolicy

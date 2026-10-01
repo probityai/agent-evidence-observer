@@ -20,6 +20,7 @@ from typing import Any
 import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
+
 from probity_observer import (
     AdmissionPolicy,
     AdmissionStore,
@@ -58,7 +59,7 @@ REQUEST_FIELDS = (*IDENTITY_FIELDS, "target_path", "content_sha256")
 
 @dataclass
 class AuthorizedRun:
-    """Own one finite write and separately pinned, same-operator signer roles."""
+    """Hold one test write and three separately pinned keys under one operator."""
 
     root: Path
     request: ActionRequest
@@ -123,7 +124,7 @@ def make_run(root: Path, content: bytes = CONTENT) -> AuthorizedRun:
     Returns
     -------
     AuthorizedRun
-        A precommitted request, signed grant, pinned policy and unopened broker.
+        A validated request, signed grant, pinned policy and unopened broker.
         :meth:`AuthorizedRun.produce` opens and seals this interval once.
     """
     workspace = root / "workspace"
@@ -164,7 +165,7 @@ def make_run(root: Path, content: bytes = CONTENT) -> AuthorizedRun:
 
 @pytest.fixture
 def run(tmp_path: Path) -> AuthorizedRun:
-    """Supply a fresh grant and empty workspace to one contract regression."""
+    """Supply a fresh grant and empty workspace for each test."""
     return make_run(tmp_path)
 
 
