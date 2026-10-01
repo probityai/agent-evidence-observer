@@ -15,6 +15,8 @@ absent native entries. Its optional Inspect AI example runs the official mock
 provider locally and checks native-log, source, score mapping, and summary bindings.
 This is a harness contract, not LLM performance or independent custody.
 
+The [AAE enforcement adapter](docs/AAE-ENFORCEMENT.md) recomputes pinned enforce-core fixtures and links a consumer-pinned local write decision to an observer record.
+
 The [Protected Action Kit](docs/PROTECTED-ACTION-KIT.md) checks a signed grant before the broker writes a file. The grant binds principal and tenant labels, tool, target, content and validity window. The [reference example](examples/protected_action_demo.py) verifies its link to the recorded write before consumer admission.
 
 The [protected socket](docs/PROTECTED-DISPATCH.md) adds a measured Linux launch: an isolated child sends exact requests to a host-owned authorization gate, which witnesses the grant relation before dispatch. Completed responses survive restart without another write; ambiguous pending effects are refused. Run `python examples/protected_dispatch_demo.py ./protected-run` on a host that permits bubblewrap. A passing gate requires all 26 child checks, a matching host-recorded effect, restart replay and consumer admission. A denied launch retains an incomplete result. Both paths remain local `PEER` / `artifact` experiments; signed identity labels do not authenticate a remote caller or establish independent custody.
@@ -35,7 +37,7 @@ Python 3.12 or later and [`uv`](https://docs.astral.sh/uv/) are needed for these
 
 ```sh
 uv venv .venv --python python3.12
-uv pip install --python .venv/bin/python -e '.[test]'
+uv pip install --python .venv/bin/python -e '.[test,aae]'
 .venv/bin/pytest -q
 .venv/bin/agent-evidence-observer demo ./sample-run
 .venv/bin/agent-evidence-observer verify ./sample-run
