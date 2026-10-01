@@ -41,13 +41,35 @@ def local_transaction(request: ActionRequest) -> dict[str, Any]:
     }
 
 
-def _checked(
+def verify_local_decision(
     mandate: Any,
     transaction: Any,
     record: dict[str, Any],
     request: ActionRequest,
     pinned_mandate_digest: str,
 ) -> dict[str, Any]:
+    """Replay an unsigned native decision against an exact consumer action.
+
+    Parameters
+    ----------
+    mandate, transaction, record
+        Candidate native inputs and reported core. The core is recomputed.
+    request : ActionRequest
+        Independently selected exact local file replacement.
+    pinned_mandate_digest : str
+        Consumer-selected native mandate digest, never sourced from the record.
+
+    Returns
+    -------
+    dict[str, Any]
+        Recomputed PERMIT with exact constraints for every invocation field.
+
+    Raises
+    ------
+    VerificationError
+        If pins, transaction, core, verdict or constraint coverage disagree.
+        A successful replay does not authenticate the unsigned AAE issuer.
+    """
     if (
         not isinstance(pinned_mandate_digest, str)
         or DIGEST.fullmatch(pinned_mandate_digest) is None
@@ -154,7 +176,7 @@ def write_local_action(
         If the core, exact invocation, content, consumer pin or broker authority
         does not match. No write is attempted for these mismatches.
     """
-    _checked(mandate, transaction, record, request, pinned_mandate_digest)
+    verify_local_decision(mandate, transaction, record, request, pinned_mandate_digest)
     if hashlib.sha256(content).hexdigest() != request.content_sha256:
         raise VerificationError(
             "AAE write content differs from the expected local action"
@@ -266,7 +288,9 @@ def verify_effect_link(
         For substituted core/input/request/claim bytes, unpinned signers or a
         native observer packet/history that fails verification.
     """
-    actual = _checked(mandate, transaction, record, request, pinned_mandate_digest)
+    actual = verify_local_decision(
+        mandate, transaction, record, request, pinned_mandate_digest
+    )
     result = {
         "kernelVerdict": actual["verdict"],
         "coreDigest": actual["core_digest"],
