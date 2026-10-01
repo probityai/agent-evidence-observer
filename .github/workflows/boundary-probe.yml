@@ -22,6 +22,31 @@ jobs:
       - run: pytest -q
       - run: python examples/admission_demo.py ./admission-run
       - run: python examples/protected_action_demo.py ./protected-action-run
+      - run: python examples/attribution_demo.py ./attribution-run
+      - run: python examples/replay_demo.py ./replay-run --source-revision "$GITHUB_SHA"
+      - run: python examples/replay_demo.py ./replay-run --replay --trusted-policy ./replay-run/replay-policy.json
+      - run: sudo "$(command -v python)" examples/protected_dispatch_demo.py /tmp/probity-protected-run
+      - run: |
+          sudo cp -a /tmp/probity-protected-run ./protected-run
+          sudo chown -R "$(id -u):$(id -g)" ./protected-run
+          sudo diff -qr /tmp/probity-protected-run ./protected-run
+        if: always()
+      - name: Check out pinned native Manifest source
+        uses: actions/checkout@v4
+        with:
+          repository: agentrust-io/agent-manifest
+          ref: fed9aeb091e4c77e0b40e12e959bee30b52e3c75
+          path: native-manifest
+          persist-credentials: false
+      - name: Install isolated native parser dependencies
+        run: >-
+          python -m pip install --target native-deps
+          cbor2==6.1.4 pydantic==2.13.5 pydantic-core==2.46.5
+          annotated-types==0.8.0 typing-extensions==4.16.0 typing-inspection==0.4.4
+      - name: Run declaration and native COSE controls
+        env:
+          PYTHONPATH: src:native-deps
+        run: python examples/declaration_demo.py --output declaration-run --native-sdk-root native-manifest
       - run: sudo "$(command -v agent-evidence-observer)" boundary-probe /tmp/probity-boundary-run
       - run: |
           sudo cp -a /tmp/probity-boundary-run ./boundary-run
@@ -43,3 +68,23 @@ jobs:
         with:
           name: protected-action-run
           path: protected-action-run/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: attribution-run
+          path: attribution-run/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: replay-run
+          path: replay-run/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: protected-run
+          path: protected-run/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: declaration-run
+          path: declaration-run/
