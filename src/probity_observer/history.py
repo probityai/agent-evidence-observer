@@ -7,13 +7,15 @@ keys generated on one laptop are only a protocol demonstration.
 
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, NoReturn
 
 from .crypto import SigningKey, VerificationError, canonical, digest, strict_loads, verify_signature
 
 GENESIS = "0" * 64
+LOGGER = logging.getLogger(__name__)
 
 
 def read_history(path: Path) -> list[dict[str, Any]]:
@@ -74,6 +76,43 @@ def unresolved_intents(entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 raise VerificationError("history write differs from its durable intent")
             pending = None
     return [pending] if pending is not None else []
+
+
+def _refuse_incomplete(reason: str) -> NoReturn:
+    """Log a bounded terminal refusal and raise the shared verifier error."""
+    LOGGER.warning("incomplete terminal refused: %s", reason)
+    raise VerificationError(reason)
+
+
+def _verify_unresolved_request_ids(terminal: dict[str, Any], pending: list[dict[str, Any]]) -> None:
+    """Require an interruption to name every unresolved intent exactly once."""
+    expected = [item["requestId"] for item in pending]
+    if not pending or terminal["requestIds"] != expected:
+        _refuse_incomplete("incomplete event does not name the unresolved write")
+
+
+def verify_incomplete_terminal(terminal: dict[str, Any], pending: list[dict[str, Any]]) -> None:
+    """Validate an incomplete outcome against pending write intents.
+
+    Args:
+        terminal: Terminal incomplete event.
+        pending: Unresolved intents from the preceding history.
+
+    Raises:
+        VerificationError: Unknown reason or inconsistent pending request IDs.
+
+    Setup and boundary aborts require no pending intent or request IDs.
+    Completed writes may precede an abort. An interruption must name every
+    pending ID exactly once. This check establishes neither absence of effects
+    nor independent custody.
+    """
+    if terminal["reason"] == "write outcome unresolved after interruption":
+        _verify_unresolved_request_ids(terminal, pending)
+        return
+    if terminal["reason"] not in {"isolation setup failed", "boundary probes failed"}:
+        _refuse_incomplete("incomplete event has an unknown reason")
+    if pending or terminal["requestIds"] != []:
+        _refuse_incomplete("aborted interval has unresolved writes")
 
 
 def append_history(path: Path, event: dict[str, Any]) -> dict[str, Any]:

@@ -66,9 +66,29 @@ A write now has a durable intent before file replacement. If the process dies be
 
 `LedgerWitness` can retain signed begin and terminal receipts for multiple intervals under one key. It refuses a second branch for an interval and serializes local writers. An offline reader checks the full receipt log with `verify_ledger_receipts`, including extension from a previously pinned log head. The packet still says `PEER`: this does not run a remote service, protect local storage from its operator, or prove that an agent could not reach it. See [`docs/WITNESS-LEDGER.md`](docs/WITNESS-LEDGER.md).
 
+`LedgerWitness.signed_head()` exports a signed count and log head for separate
+consumer retention. `verify_ledger_head` checks a later log against that head
+and names registered intervals missing a terminal receipt. This detects a
+withheld suffix only when the consumer already holds a head beyond it. It does
+not establish independent witness custody, freshness, or coverage of intervals
+that never reached the witness.
+
 The snapshot describes the state at recovery, not the state at failure. An unresolved intent cannot produce a complete packet, even when recovery finds the same tree root as before.
 
 Recovery currently covers an orphaned write intent. A crash after the effect event and before `seal()` still leaves an unsealed interval.
+
+## Consumer admission
+
+`AdmissionPolicy` and `AdmissionStore` add consumer-selected authority,
+interval, key, and retained witness-head checks to packet verification. A
+protected local store refuses repeated admissions and receipt-log rollback,
+and retains decisions linked to the verified claim and history. Initialization
+is explicit; a missing store does not reset replay protection. Run
+`python examples/admission_demo.py ./admission-run` for a retained declaration,
+brokered write, bounded verification, admission, and replay refusal. See
+[`docs/CONSUMER-ADMISSION.md`](docs/CONSUMER-ADMISSION.md) for CLI commands,
+ordering, storage ownership, and evidence limits. This same-operator fixture
+and the admitted records remain PEER.
 
 ## Proposed next milestones
 
