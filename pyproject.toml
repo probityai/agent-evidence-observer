@@ -11,6 +11,7 @@ dependencies = ["cryptography>=46,<47"]
 
 [project.optional-dependencies]
 test = ["pytest>=8,<10", "hypothesis>=6,<7"]
+inspect = ["inspect-ai==0.3.273"]
 
 [project.scripts]
 agent-evidence-observer = "probity_observer.cli:main"
