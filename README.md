@@ -1,5 +1,9 @@
 # Agent Evidence Observer (prototype)
 
+[Artifact consumption records](docs/ARTIFACT-CONSUMPTION.md) retain checked input
+bytes and attribution, bound to one action and claim. The runnable example keeps
+authorization, observation and use separate; it does not assign economic value.
+
 The [Protected Action Kit](docs/PROTECTED-ACTION-KIT.md) adds an experimental signed-request authorization path to the bounded file broker. Its [runnable example](examples/protected_action_demo.py) verifies the issuer, exact tenant/principal/tool/target/request/content binding and finite validity before applying a durable effect, then checks the retained grant-to-claim relation before consumer admission. Native evidence remains PEER/artifact and same-operator; this reference increment does not claim external protocol conformance or independently operated isolation.
 
 This repository is a **local protocol prototype** for an agent action record made by a broker outside the action's claimed effects. It fixes an authority digest and a before-state before the interval, mediates file replacements, records each accepted, denied, and repeated request in a durable hash chain, and signs a final bounded claim. A second key witnesses the chain head before and after the interval. The offline verifier recomputes the bindings from retained bytes and consumer-pinned public keys.
