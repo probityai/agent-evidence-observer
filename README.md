@@ -15,6 +15,12 @@ The [protected socket](docs/PROTECTED-DISPATCH.md) adds a measured Linux launch:
 
 This repository is a local prototype for recording brokered file writes. Before a run, the broker signs the declared authority and starting file-tree state. It records accepted, denied, and repeated requests in a durable hash chain, then signs the final record. A second key signs the chain head before and after the run. The offline verifier checks those records using retained files and public keys pinned by the consumer.
 
+The [declaration-to-action crosswalk](docs/DECLARATION-CROSSWALK.md) compares a
+pinned Agent Manifest payload with supplied runtime values, local grant-verifier
+results and actual file read-back. Its optional native run checks a pinned
+upstream COSE vector and SDK. A matching comparison is not permission, native
+conformance, hardware measurement or independent custody.
+
 The basic demo runs without agent isolation. A separate Linux command tests a fixed workload under bubblewrap, as described below. Both produce `witnessScope: PEER` records: neither a second local key nor this launch test establishes an independently operated observer.
 
 ## Run the demo
