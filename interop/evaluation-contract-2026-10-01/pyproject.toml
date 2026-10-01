@@ -1,0 +1,19 @@
+[project]
+name = "probity-evaluation-contract-reference"
+version = "0.0.1"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest==9.1.1", "hypothesis==6.168.3"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["evaluation_contract", "demo"]

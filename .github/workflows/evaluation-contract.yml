@@ -1,0 +1,36 @@
+name: Five-tier evaluation contract
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: interop/evaluation-contract-2026-10-01
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install standalone test dependencies
+        run: python -m pip install -e '.[test]'
+      - name: Check declared populations and mutation controls
+        run: python -m pytest -q --junitxml=test-results.xml
+      - name: Retain five-tier synthetic contract exercise
+        run: python demo.py contract-run
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: five-tier-contract-reference
+          path: |
+            interop/evaluation-contract-2026-10-01/contract-run/
+            interop/evaluation-contract-2026-10-01/test-results.xml
+          if-no-files-found: error

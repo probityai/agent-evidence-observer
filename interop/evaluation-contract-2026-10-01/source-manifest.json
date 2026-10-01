@@ -1,0 +1,26 @@
+{
+  "sources": [
+    {
+      "url": "https://github.com/probityai/agent-evidence-observer/blob/f02130fba3659a077cc6cfc446c2b0712210ec41/src/probity_observer/evaluation_history.py",
+      "source_revision": "f02130fba3659a077cc6cfc446c2b0712210ec41",
+      "sha256": "175467e7eac8381cc0a79c8f35efb80b406c99dbdc0b05bb5cec65afb41532c7",
+      "size_bytes": 23576,
+      "role": "read-only public source comparison; not imported"
+    },
+    {
+      "url": "https://github.com/probityai/agent-evidence-observer/blob/f02130fba3659a077cc6cfc446c2b0712210ec41/src/probity_observer/inspect_history.py",
+      "source_revision": "f02130fba3659a077cc6cfc446c2b0712210ec41",
+      "sha256": "1d0fc978360c60f8e57cfdb8f3f7b6d07b56bfefc92b4dcdc928006222ca041c",
+      "size_bytes": 26903,
+      "role": "read-only public source comparison; not imported"
+    },
+    {
+      "url": "https://github.com/probityai/agent-evidence-observer/blob/f02130fba3659a077cc6cfc446c2b0712210ec41/examples/evaluation_history_demo.py",
+      "source_revision": "f02130fba3659a077cc6cfc446c2b0712210ec41",
+      "sha256": "14adba985683f2377ac54abfc5056b2d36907f6d7377c60b8ae106e362e3c2a4",
+      "size_bytes": 14383,
+      "role": "read-only public source comparison; not imported"
+    }
+  ],
+  "relationship": "Standalone original optional reference; no changes to evaluation_history or inspect_history"
+}
