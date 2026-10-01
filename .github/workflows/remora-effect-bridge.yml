@@ -1,0 +1,39 @@
+name: REMORA local effect crosswalk
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  local-effect:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: darklordVirtual/REMORA-research
+          ref: b25e735d36590154ff53768b4d245ad4c7996f64
+          path: remora-source
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[test]'
+      - run: pytest -q tests/test_remora_effect_bridge.py
+      - name: Run and check local effects
+        run: |
+          python examples/remora_effect_bridge.py ./remora-bridge-run --remora-vectors ./remora-source/conformance/autoreview-to-effect-v1/vectors.json > bridge-stdout.json
+          python examples/remora_effect_bridge.py ./remora-bridge-run --remora-vectors ./remora-source/conformance/autoreview-to-effect-v1/vectors.json --verify > bridge-verification.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: remora-local-effect-run
+          path: |
+            remora-bridge-run/
+            bridge-stdout.json
+            bridge-verification.json
