@@ -240,6 +240,10 @@ def verify_run(output: Path, source: Path) -> dict:
     for item, vector in zip(report["results"], vectors, strict=True):
         if item["sourceExpectation"] != vector["expect"] or item["sourceToolBodies"] != vector["executions"]:
             raise ValueError("retained source expectation differs from the pinned vector")
+        local_outcome = "UNSUPPORTED" if item["id"] == "AR-03" else vector["expect"]
+        relationship = "unsupported-exact-vector" if item["id"] == "AR-03" else "bounded-local-file-analogue"
+        if item["localOutcome"] != local_outcome or item["relationship"] != relationship:
+            raise ValueError("retained result exceeds the checked local scope")
         directory = output / item["id"]
         state_dir = directory / "state"
         consumer = strict_loads((directory / "consumer-pins.json").read_bytes())
