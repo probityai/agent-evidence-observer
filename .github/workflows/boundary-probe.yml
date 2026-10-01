@@ -21,6 +21,7 @@ jobs:
       - run: python -m pip install -e '.[test]'
       - run: pytest -q
       - run: python examples/admission_demo.py ./admission-run
+      - run: python examples/protected_action_demo.py ./protected-action-run
       - run: sudo "$(command -v agent-evidence-observer)" boundary-probe /tmp/probity-boundary-run
       - run: |
           sudo cp -a /tmp/probity-boundary-run ./boundary-run
@@ -37,3 +38,8 @@ jobs:
         with:
           name: admission-run
           path: admission-run/
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: protected-action-run
+          path: protected-action-run/
