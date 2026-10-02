@@ -21,8 +21,9 @@ exactly-once guarantee. The native AAE mandate is still unsigned.
 The resume-after-effect case does **not** prove that arbitrary tools are safe to
 replay. Its cached-return behavior comes from this exact service's fresh grant
 check and retained completed state. The checkpoint store is `InMemorySaver` in
-one process; process restart, durable LangGraph checkpoint recovery and actual
-host failures remain unexercised. The pending-intent case does not automatically
+one process; the original six-case packet does not exercise process restart or durable
+LangGraph recovery. The additive [durable restart profile](DURABLE-RESTART.md)
+executes those controls with distinct hard-exiting workers and `SqliteSaver`. The pending-intent case does not automatically
 replay. It preserves the original service behavior rather than infer a success.
 
 ## Run and consume
@@ -31,7 +32,7 @@ Use Python 3.13 in a fresh environment from the repository root:
 
 ```sh
 python -m venv .venv-lg
-.venv-lg/bin/python -m pip install --require-hashes --only-binary=:all: -r interop/langgraph-ticket-2026-10-02/requirements.lock --report lg-install-report.json
+.venv-lg/bin/python -m pip install --require-hashes --only-binary=:all: -r interop/langgraph-ticket-2026-10-02/requirements-restart.lock --report lg-install-report.json
 .venv-lg/bin/python -m pip install --no-deps -e .
 cd interop/langgraph-ticket-2026-10-02
 ../../.venv-lg/bin/python -m pytest -q tests
