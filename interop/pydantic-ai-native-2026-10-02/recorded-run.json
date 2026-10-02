@@ -1,6 +1,6 @@
 {
   "classification": "Probity-operated actual-framework integration with deterministic local FunctionModel",
-  "source": "installed wheels from working tree on recorded Observer base",
+  "source": "installed wheels from working-tree import-classification repair on PR28 head9bdba51dfe65c7ce52445db840b34b56037a97a9",
   "observerBase": "bec8e5082d82e99aa0238d8488d511373437bd1b",
   "tests": {
     "pytestCasesPassed": 37,
@@ -16,9 +16,9 @@
   },
   "installedProducerAndSeparateFrameworkFreeReader": "fresh reports equal; no pydantic_ai installed in reader environment",
   "selectedPins": {
-    "artifactManifestSha256": "147de845fe0b41e6e2d89b318f61080fcd8fa8eb810ac6f9bde831c4a952d5e7",
-    "evaluationTime": "2026-10-02T11:43:13.289410+00:00",
-    "planSha256": "9a41110008cf69076dc1ce9113bde459e3878824ca929e45fd093f4fb7b3ec5b",
+    "artifactManifestSha256": "626038dfcfc76a39437ba392ccddeaf779b160ca9b74367a56ce9ceea48a8449",
+    "evaluationTime": "2026-10-02T11:52:44.497642+00:00",
+    "planSha256": "14e4bf916441bbc6b3e60dcb4a4203ce2066fdcafe45f59af003981e54255ab8",
     "sourceManifestSha256": "532679d8eed03d4f57983be629fb6a30d44c6fba65127281cd4e93417bbf1324"
   },
   "selectedPinsScope": "same-operator demonstration selection; not independent policy selection or witnessed prior commitment",
@@ -82,19 +82,27 @@
     "tokenAccounting": "FunctionModel estimates-not-measured-inference"
   },
   "artifactManifest": {
-    "changed-arguments-0-http.json": "9a15061c2d4658db58715d03ed90be0007276194bda9da264e086be28a870dc8",
-    "changed-arguments-execution.json": "1a4b70223bed8bf67ba99301e350233b905c5a7e6d3d6bf8262452311c5001dd",
-    "changed-arguments-messages.json": "4dc18bc9ffa6e9099012e308bfcf4687d67fda7fe45c5893a43790d7eea08034",
-    "deny-0-http.json": "e72cace2dc488f81b062b589dab5b40609183a47e4184aa64f8a5477379ac3c5",
-    "deny-execution.json": "549b0d0900afb7f80e7aafb3313a2e82204e56778eda89035740040c05fd534d",
-    "deny-messages.json": "1835ee3b1fd807b6f5f60edcbe69ae4a7d0a03ccf0fba576958dee9e05c8710e",
-    "permit-0-http.json": "a4adc0e69dbdde8ee436b037e9e4aa97e87558fe8663781e677a1d4e176ad548",
-    "permit-execution.json": "bed8111bb5d785187bab83c78fdc4c7d5a4f8d7c19cc6b0952fc7345643b713c",
-    "permit-messages.json": "c82a8cc8ef7373ac3141b58f8a1adaafa0c2af787d17452a043581428340bd9b",
-    "producer-error-execution.json": "e7443ec76993b9b8ebaf892b201f59a15d3c9427353a6faa96a22d5bcca102ee",
-    "producer-error-messages.json": "60c2693aab5822f4b8490ddaefd51f81565de9d18415d3f8854502e579ed1079",
-    "retry-1-http.json": "912a68a37c0fc4ca1975c7c25a94f88ca68b6d33321a975a2c322ce718619baa",
-    "retry-execution.json": "e125ecf86848dfee1e467e59f519733a50b90148a5e68b98372ad993110924b1",
-    "retry-messages.json": "5d025ac731034715273375862f72f7e74d1f3cd793fb71d93b5d533b4ad2b606"
+    "changed-arguments-0-http.json": "0dbc903a7751d60b0f10ffc100a1824cd54cdc481815ac56b1c97d516b3bf2b5",
+    "changed-arguments-execution.json": "d895033024b674e78b115d144ed9a48710f075704bd198860c5110719b693ace",
+    "changed-arguments-messages.json": "1aaf1f85664588fb5ec1f5c2d4d4543fb680dc6f9479771597ef00c146811c8f",
+    "deny-0-http.json": "ce1bd9f9b4807c9b564745384dd25377d56d89a5ae116cf85dcbb04bcb735176",
+    "deny-execution.json": "224afc69f743e9bf658a3ddb62c229b49b8959d2eb7dc7f9c21f84163f18c2a9",
+    "deny-messages.json": "cac8cdaaf8205699ae2b0bcf81f25c1cfbf32f611ffff48cccd40faeab308c27",
+    "permit-0-http.json": "22ee89f4422dd89d8289bd68761c7d63c6df09ed3cc612ed5c1f754491cc6509",
+    "permit-execution.json": "3a7881a9b6b2dae4a560f8fda6333b46e3bc275fb1273999f126038d839e84b2",
+    "permit-messages.json": "998d7813c37b53f90f3e0fcaa83062c8a4de0de76702d2099d87636916128fbc",
+    "producer-error-execution.json": "86b380b26e75a0aa93b2391753ad8a4b9d1063d3498b6feca2f2447f9f61c64a",
+    "producer-error-messages.json": "5ca7896d8918b899162406384e141ae5801017bb8644f81428b7554e6a0fb01e",
+    "retry-1-http.json": "63fb2ee81a24766d3848504b24554275b51eb0eb6d0807e6bf13a6bc69bd5020",
+    "retry-execution.json": "db04ba7c23a6a75f54839b502369df13efee74b23ceb6d8d84eb2e6c08416be3",
+    "retry-messages.json": "70f0b6215c4eee80d53a53f85c4d33a98c1d967d5bb3ea31d87ba7bc7282d3e9"
+  },
+  "ciImportClassificationRepair": {
+    "originalHead": "9bdba51dfe65c7ce52445db840b34b56037a97a9",
+    "runId": 37002785026,
+    "jobId": 110824059816,
+    "result": "dependency installation,wheel builds,37 pytest cases passed; Ruff I001 rejected two test import blocks before fresh execution",
+    "repair": "profile Ruff explicitly knows probity_pydantic as first-party and probity_observer as third-party; test imports match installed-wheel topology",
+    "validation": "37 cases passed with installed wheels from profile working directory; E,F,I,C901 checks pass from both workspace and profile cwd; fresh producer and separate framework-free consumer reports match"
   }
 }

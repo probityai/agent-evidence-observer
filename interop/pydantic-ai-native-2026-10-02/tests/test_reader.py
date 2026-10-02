@@ -16,6 +16,7 @@ import pytest
 from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 from probity_observer.crypto import VerificationError
+
 from probity_pydantic.contract import CONTENT, ERROR, decode, encode, sha
 from probity_pydantic.reader import native_parts, verify_saved
 
