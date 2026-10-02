@@ -376,7 +376,8 @@ class TestTrustSelection:
             # GitHub's selected base interpreter may have no virtual environment.
             bindings = selected["manifest"]["launcherConfiguration"]
             if not bindings:
-                assert selected["manifest"]["python"]["invocationPath"] == selected["manifest"]["python"]["path"]
+                python = selected["manifest"]["python"]
+                assert Path(python["invocationPath"]).resolve(strict=True) == Path(python["path"])
                 return
             path = Path(bindings[0]["path"])
             original = path.read_bytes()
@@ -385,6 +386,24 @@ class TestTrustSelection:
                 result = run_case(selected, candidate, tmp_path / "run")
             finally:
                 path.write_bytes(original)
+            assert_no_dispatch(result, caplog, "host-selected executable policy or key bytes differ")
+            assert result["childProcesses"] == 0
+
+        def test_changed_launcher_invocation_mapping_cannot_start_a_child(
+            self, selected: dict[str, Any], candidate: Path, tmp_path: Path,
+            caplog: pytest.LogCaptureFixture,
+        ) -> None:
+            manifest = copy.deepcopy(selected["manifest"])
+            previous = copy.deepcopy(manifest["python"])
+            launcher = tmp_path / "redirected-python"
+            launcher.write_text("unselected harmless launcher bytes\n")
+            manifest["python"]["invocationPath"] = str(launcher)
+            manifest["selectedFiles"] = [manifest["python"] if item == previous else item
+                                        for item in manifest["selectedFiles"]]
+            path = tmp_path / "installation.json"
+            write_json(path, manifest)
+            changed = {"path": path, "digest": sha256(path.read_bytes()), "manifest": manifest}
+            result = run_case(changed, candidate, tmp_path / "run")
             assert_no_dispatch(result, caplog, "host-selected executable policy or key bytes differ")
             assert result["childProcesses"] == 0
 
