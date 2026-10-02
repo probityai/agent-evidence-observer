@@ -17,7 +17,11 @@ def main():
     args = parser.parse_args()
     try:
         candidates = []
-        for name in ("model_task_reader", "model_comparison_reader"):
+        for name in (
+            "model_task_reader",
+            "model_comparison_reader",
+            "model_format_reader",
+        ):
             spec = importlib.util.find_spec(name)
             if spec is not None and spec.origin:
                 raw = Path(spec.origin).read_bytes()

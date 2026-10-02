@@ -9,6 +9,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+FORMAT_PROFILE = "probity-local-cpu-format-control-v1"
 DIGEST_KEYS = ("pinsSha256", "readerSha256")
 LIMIT_KEYS = (
     "elapsedNs",
@@ -52,26 +53,31 @@ def integer(value):
 def row_id(row):
     if type(row) is not dict:
         raise ValueError("quality row must be an object")
-    names = (
-        ("model", "configuration", "family")
-        if "model" in row
-        else ("configuration", "family")
-    )
+    names = ("configuration", "family")
+    if "model" in row:
+        names = ("model", *names)
+    if "decoder" in row:
+        if "model" not in row:
+            raise ValueError("decoder selection requires a model identity")
+        names = ("decoder", *names)
     if any(type(row.get(name)) is not str or not row[name] for name in names):
         raise ValueError("row selection requires nonempty string identities")
     return tuple((name, row[name]) for name in names)
 
 
-def validate_row(row):
+def validate_row(row, format_profile=False):
     names = {"configuration", "family", "planned", "minCorrect", "minFormatValid"}
     if "model" in row:
         names.add("model")
+    if format_profile:
+        names.update({"model", "decoder", "minSchemaValid"})
     if set(row) != names:
         raise ValueError("policy row fields differ")
     row_id(row)
-    counts = [
-        integer(row[name]) for name in ("planned", "minCorrect", "minFormatValid")
-    ]
+    count_names = ("planned", "minCorrect", "minFormatValid")
+    if format_profile:
+        count_names += ("minSchemaValid",)
+    counts = [integer(row[name]) for name in count_names]
     if counts[0] == 0 or max(counts[1:]) > counts[0]:
         raise ValueError("policy row threshold exceeds selected population")
 
@@ -80,7 +86,13 @@ def validate_policy(policy):
     keys = {"schema", "profile", "planned", "rows", "limits", *DIGEST_KEYS}
     if type(policy) is not dict or set(policy) != keys:
         raise ValueError("policy fields differ")
-    if policy["schema"] != "probity-model-publication-policy-v1":
+    format_profile = policy.get("profile") == FORMAT_PROFILE
+    expected_schema = (
+        "probity-model-publication-policy-v2"
+        if format_profile
+        else "probity-model-publication-policy-v1"
+    )
+    if policy["schema"] != expected_schema:
         raise ValueError("policy schema differs")
     if type(policy["profile"]) is not str or not policy["profile"]:
         raise ValueError("policy profile requires a nonempty string")
@@ -97,7 +109,7 @@ def validate_policy(policy):
     if type(policy["rows"]) is not list or not policy["rows"]:
         raise ValueError("policy requires every quality row")
     for row in policy["rows"]:
-        validate_row(row)
+        validate_row(row, format_profile)
     identities = [row_id(row) for row in policy["rows"]]
     if len(set(identities)) != len(identities):
         raise ValueError("duplicate selected quality row")
@@ -119,6 +131,9 @@ def report_rows(report, policy):
         "incomplete": 0,
         "unknown-start": 0,
     }
+    format_profile = policy["profile"] == FORMAT_PROFILE
+    if format_profile:
+        expected["unsupported"] = 0
     if population != expected or any(type(x) is not int for x in population.values()):
         raise ValueError("report population differs from host selection")
     if report["profile"] != policy["profile"]:
@@ -155,6 +170,10 @@ def report_rows(report, policy):
             or not row["correct"] <= row["formatValid"] <= row["planned"]
         ):
             raise ValueError("quality row counts are inconsistent")
+        if format_profile and not (
+            row["correct"] <= integer(row["schemaValid"]) <= row["formatValid"]
+        ):
+            raise ValueError("schema-valid quality counts are inconsistent")
     if sum(row["planned"] for row in rows) != policy["planned"]:
         raise ValueError("quality row counts differ from population")
     tokens = report["nativeTokens"]
@@ -178,10 +197,10 @@ def decide(report, policy):
         measured = rows[row_id(selected)]
         if measured["planned"] != selected["planned"]:
             raise ValueError("selected row denominator differs")
-        for threshold, field in (
-            ("minCorrect", "correct"),
-            ("minFormatValid", "formatValid"),
-        ):
+        thresholds = [("minCorrect", "correct"), ("minFormatValid", "formatValid")]
+        if policy["profile"] == FORMAT_PROFILE:
+            thresholds.append(("minSchemaValid", "schemaValid"))
+        for threshold, field in thresholds:
             if measured[field] < selected[threshold]:
                 failures.append(
                     {

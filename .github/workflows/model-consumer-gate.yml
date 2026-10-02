@@ -7,6 +7,7 @@ on:
       - 'interop/model-consumer-2026-10-02/**'
       - 'interop/local-model-tasks-2026-10-02/**'
       - 'interop/local-model-comparison-2026-10-02/**'
+      - 'interop/local-model-format-control-2026-10-02/**'
       - '.github/workflows/model-consumer-gate.yml'
   push:
     branches: [main]
@@ -14,6 +15,7 @@ on:
       - 'interop/model-consumer-2026-10-02/**'
       - 'interop/local-model-tasks-2026-10-02/**'
       - 'interop/local-model-comparison-2026-10-02/**'
+      - 'interop/local-model-format-control-2026-10-02/**'
       - '.github/workflows/model-consumer-gate.yml'
 permissions:
   contents: read
@@ -30,6 +32,11 @@ jobs:
           ref: 3a5efd16d242dc9044fc7492278a524c5c08a0cc
           path: historical-model-reader
           persist-credentials: false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: 37ec3b29882f7ce82133ee934f7e01889810db06
+          path: previous-model-reader
+          persist-credentials: false
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
         with:
           python-version: '3.13.15'
@@ -39,11 +46,17 @@ jobs:
       - name: Build the frozen0.0.1 baseline and install both clean environments
         run: |
           python historical-model-reader/interop/model-consumer-2026-10-02/build_reader.py "$GITHUB_WORKSPACE/historical-model-reader" "$RUNNER_TEMP/baseline-model-wheels"
-          for environment in baseline-consumer consumer; do
+          for environment in baseline-consumer previous-consumer; do
             python -m venv "$RUNNER_TEMP/$environment"
             "$RUNNER_TEMP/$environment/bin/python" -m pip install --no-index --no-deps "$RUNNER_TEMP/baseline-model-wheels/"*.whl
           done
-      - name: Build exact0.0.2 sources and normally upgrade without frameworks
+      - name: Build the frozen 0.0.2 wheel and install the next upgrade baseline
+        run: |
+          python previous-model-reader/interop/model-consumer-2026-10-02/build_reader.py "$GITHUB_WORKSPACE/previous-model-reader" "$RUNNER_TEMP/previous-model-wheels"
+          "$RUNNER_TEMP/previous-consumer/bin/python" -m pip install --no-index --no-deps --upgrade "$RUNNER_TEMP/previous-model-wheels/"*.whl
+          python -m venv "$RUNNER_TEMP/consumer"
+          "$RUNNER_TEMP/consumer/bin/python" -m pip install --no-index --no-deps "$RUNNER_TEMP/previous-model-wheels/"*.whl
+      - name: Build exact 0.0.3 sources and normally upgrade without frameworks
         run: |
           python interop/model-consumer-2026-10-02/build_reader.py "$GITHUB_WORKSPACE" "$RUNNER_TEMP/model-reader-wheels"
           "$RUNNER_TEMP/consumer/bin/python" -m pip install --no-index --no-deps --upgrade "$RUNNER_TEMP/model-reader-wheels/"*.whl
@@ -53,7 +66,10 @@ jobs:
         run: python interop/model-consumer-2026-10-02/run_host_example.py "$RUNNER_TEMP/model-host-result"
       - name: Retain actual installed profile upgrade and model quality refusal
         run: |
-          python interop/model-consumer-2026-10-02/run_upgrade_example.py "$RUNNER_TEMP/model-upgrade-result" --baseline-python "$RUNNER_TEMP/baseline-consumer/bin/python" --candidate-python "$RUNNER_TEMP/consumer/bin/python"
+          python interop/model-consumer-2026-10-02/run_upgrade_example.py "$RUNNER_TEMP/model-upgrade-result" --baseline-python "$RUNNER_TEMP/baseline-consumer/bin/python" --candidate-python "$RUNNER_TEMP/previous-consumer/bin/python"
+      - name: Retain actual decoder upgrade and semantic refusal despite valid schemas
+        run: |
+          python interop/model-consumer-2026-10-02/run_format_upgrade_example.py "$RUNNER_TEMP/model-format-upgrade-result" --baseline-python "$RUNNER_TEMP/previous-consumer/bin/python" --candidate-python "$RUNNER_TEMP/consumer/bin/python"
       - name: Execute installation, policy, runtime and native refusal controls
         run: |
           python -m pip install pytest==8.4.2 ruff==0.15.6
@@ -68,6 +84,8 @@ jobs:
           path: |
             ${{ runner.temp }}/model-reader-wheels/
             ${{ runner.temp }}/baseline-model-wheels/
+            ${{ runner.temp }}/previous-model-wheels/
+            ${{ runner.temp }}/model-format-upgrade-result/
             ${{ runner.temp }}/model-upgrade-result/
             ${{ runner.temp }}/model-host-result/
             model-consumer-tests.xml

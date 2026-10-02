@@ -8,15 +8,15 @@
     },
     "model_reader_cli.py": {
       "path": "interop/model-consumer-2026-10-02/model_reader_cli.py",
-      "sha256": "a1092ec412156a2284e239adaf1c2d5c7dd323023929a53fc002f018660dd2fa"
+      "sha256": "757f1211be4ca32ee242ee8b43690a2a20d56815a38baaa41a280fb414730775"
     },
     "model_gate.py": {
       "path": "interop/model-consumer-2026-10-02/model_gate.py",
-      "sha256": "4e99c2e97c92c090e56a8b6b484e4149247314695068ff19a8e10fe4537d9191"
+      "sha256": "171163488d524dab2e458165850e4ee974cb33552a658059727c49a3709bf58c"
     },
     "pyproject.toml": {
       "path": "interop/model-consumer-2026-10-02/READER.toml",
-      "sha256": "0168dd74fb2bc19e2176269e102e8c9f4f592839e28d081c823c64243ea09b5c"
+      "sha256": "daa6a99817459153ba83f7600569f5fc0b155b4a6e028318fe6805867f8e94d4"
     },
     "LICENSE": {
       "path": "LICENSE",
@@ -25,11 +25,16 @@
     "model_comparison_reader.py": {
       "path": "interop/local-model-comparison-2026-10-02/task_matrix.py",
       "sha256": "744eb9a5af0328be0a4d4916b972770aa9babf91f97d4866abff34c37c453897"
+    },
+    "model_format_reader.py": {
+      "path": "interop/local-model-format-control-2026-10-02/task_matrix.py",
+      "sha256": "3f386686ea0666dda06d68dc01c7a53157a19e8c82ba2957b46dda399169c072"
     }
   },
   "profiles": [
     "probity-local-cpu-task-matrix-v1",
-    "probity-local-cpu-model-comparison-v1"
+    "probity-local-cpu-model-comparison-v1",
+    "probity-local-cpu-format-control-v1"
   ],
-  "version": "0.0.2"
+  "version": "0.0.3"
 }
