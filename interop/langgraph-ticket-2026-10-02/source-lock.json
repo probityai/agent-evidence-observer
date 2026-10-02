@@ -1,0 +1,52 @@
+{
+  "profile": "probity-langgraph-aae-ticket-v0",
+  "observerBaseRevision": "bec8e5082d82e99aa0238d8488d511373437bd1b",
+  "frameworkVersion": "1.0.10",
+  "localPython": "3.13.15",
+  "dependencyCount": 49,
+  "dependencyRequirementLockSha256": "8c51635900445ff74a4753aa3895f8a3c865ad513b33e83214eece6adb7f7fe3",
+  "requirementsInputSha256": "1976fc22236923c32d23e77f03b0c57831f089506f014d99ae15c2eb10bb2bfe",
+  "localFrameworkDistributions": {
+    "langgraph": {
+      "version": "1.0.10",
+      "distributionFileManifestSha256": "78d4dab44e87c1cb60f856fc5ab357399eff8421517fffd6ab0ba1724b1d5ae0",
+      "fileCount": 72
+    },
+    "langgraph-checkpoint": {
+      "version": "4.2.0",
+      "distributionFileManifestSha256": "ec3836b4dffba3cf4406f34c8a80027425ae62cb6863156bbf73321ebc3c0997",
+      "fileCount": 29
+    },
+    "langgraph-prebuilt": {
+      "version": "1.0.13",
+      "distributionFileManifestSha256": "75428f95cba68779fe871aa5485ba038e0d80fe0b35cc46845136ca175724f56",
+      "fileCount": 12
+    },
+    "langgraph-sdk": {
+      "version": "0.3.15",
+      "distributionFileManifestSha256": "780bd32c623e2c2862321e2ae59767c7e8f1e1d7446a6c364f9728da6de698d7",
+      "fileCount": 38
+    },
+    "langchain-core": {
+      "version": "1.6.6",
+      "distributionFileManifestSha256": "2f28e17a4afca5e6cfca6547f99f5ccd2baf4e2ddd6d3fbd1d9d5110cc270b98",
+      "fileCount": 188
+    }
+  },
+  "sourceFilesSha256": {
+    "adapter/lg_common.py": "68e5f0ca53fc39043829e1feeaa9ccc09ae5adbb305153797a7ba530d775a83d",
+    "adapter/lg_reader.py": "1bc96bf3bc4b7730e4dcf84042563357ee934a73b5b6e34be7ebb874e39252e1",
+    "adapter/lg_run.py": "cacbab012a05807fa56387a56ef892cbebdd956ebbc3855827dd5d89706b06ba",
+    "observer/aae_enforce.py": "5b79dacd2fbd873ae073af5186e606b5baa1c6c9d8e627a0387ae9fc7bb96a94",
+    "observer/aae_ticket.py": "ac12299c5d3bd5de030937d55358031a6ba72f152571ef20c521437fabe54743",
+    "observer/authorization.py": "35e28320cc6aa344938d9e678efa6de9b803b7b22e2431e8e918a8b57c08e4a9",
+    "observer/crypto.py": "a334d7d2776d362788ce5e8687a916a62ba1614e97c0ccb8994d2acb22bc315f",
+    "observer/ticket_service.py": "c6df218d6a81c21ab99ff2549b07f0691ff00e4e44b3f7520562d5c90fcdbda7"
+  },
+  "selectedRunPins": {
+    "artifactManifestSha256": "d5afe42ee7b4fe1aa914c5aea89fe17f7e5f8e80b4ccc2fd297a0f376e5e9cb8",
+    "evaluationTime": "2026-10-02T11:41:35+00:00",
+    "planSha256": "a5225735154708aaa9565f986883612b5ae3fe2528df2d2c5559aea6523fc970"
+  },
+  "scope": "Local exact source and dependency provenance; not independently selected authority or remote CI evidence"
+}
