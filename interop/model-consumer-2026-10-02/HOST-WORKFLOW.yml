@@ -1,0 +1,77 @@
+# Copy into the consumer repository and review all source/policy/pins selections.
+# The selected packet and policy files belong to this consumer checkout.
+name: Consumer model report publication
+on:
+  workflow_call:
+    inputs:
+      reader-revision:
+        type: string
+        required: true
+      packet-path:
+        type: string
+        required: true
+      pins-path:
+        type: string
+        required: true
+      policy-path:
+        type: string
+        required: true
+      policy-sha256:
+        type: string
+        required: true
+permissions:
+  contents: read
+jobs:
+  admit-report:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: probityai/agent-evidence-observer
+          ref: ${{ inputs.reader-revision }}
+          path: selected-reader-source
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.13.15'
+      - name: Require the exact reviewed reader revision
+        env:
+          READER_REVISION: ${{ inputs.reader-revision }}
+        run: |
+          python -c 'import os,re; assert re.fullmatch(r"[0-9a-f]{40}",os.environ["READER_REVISION"])'
+          test "$(git -C selected-reader-source rev-parse HEAD)" = "$READER_REVISION"
+      - name: Install the source-selected reader
+        run: |
+          python -m pip install --require-hashes --only-binary=:all: -r selected-reader-source/interop/framework-consumer-2026-10-02/FRAMEWORK-CONSUMER-REQUIREMENTS-2026-10-02.lock
+          python selected-reader-source/interop/model-consumer-2026-10-02/build_reader.py "$GITHUB_WORKSPACE/selected-reader-source" "$RUNNER_TEMP/reader-wheels"
+          python -m venv "$RUNNER_TEMP/consumer"
+          "$RUNNER_TEMP/consumer/bin/python" -m pip install --no-index --no-deps "$RUNNER_TEMP/reader-wheels/"*.whl
+          "$RUNNER_TEMP/consumer/bin/python" -m pip check
+      - name: Admit only selected complete evidence and selected score/resources
+        env:
+          PACKET_PATH: ${{ inputs.packet-path }}
+          PINS_PATH: ${{ inputs.pins-path }}
+          POLICY_PATH: ${{ inputs.policy-path }}
+          POLICY_SHA256: ${{ inputs.policy-sha256 }}
+        run: |
+          export PATH="$RUNNER_TEMP/consumer/bin:$PATH"
+          probity-model-publication-gate "$PACKET_PATH" "$RUNNER_TEMP/model-gate" --pins-file "$PINS_PATH" --policy-file "$POLICY_PATH" --policy-sha256 "$POLICY_SHA256" --timeout-seconds 60
+      - name: Retain success and refusal evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: consumer-model-admission
+          path: |
+            ${{ runner.temp }}/model-gate/
+            ${{ runner.temp }}/reader-wheels/build-record.json
+          if-no-files-found: error
+          retention-days: 90
+  publish:
+    needs: admit-report
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo 'Replace this step with the host report publication command after reviewing its permissions.'

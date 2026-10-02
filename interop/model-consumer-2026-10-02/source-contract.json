@@ -1,0 +1,26 @@
+{
+  "schema": "probity-model-reader-source-v1",
+  "profile": "probity-local-cpu-task-matrix-v1",
+  "files": {
+    "model_task_reader.py": {
+      "path": "interop/local-model-tasks-2026-10-02/task_matrix.py",
+      "sha256": "1ced4b0875d56ee33e1bc8749c44669aa44ce87036ad0bbbdfc798cdffa5cee2"
+    },
+    "model_reader_cli.py": {
+      "path": "interop/model-consumer-2026-10-02/model_reader_cli.py",
+      "sha256": "2af0e5fff5cdaed4e262d4f4be47d7a52c7c0e465f0bc01dae9e1abe49542124"
+    },
+    "model_gate.py": {
+      "path": "interop/model-consumer-2026-10-02/model_gate.py",
+      "sha256": "b39920dcbdfc11466e467b5cbd7767fb7de4b219400cd761dc45f7217a2854d8"
+    },
+    "pyproject.toml": {
+      "path": "interop/model-consumer-2026-10-02/READER.toml",
+      "sha256": "588d4de29fc7ce72243c15dc9f1aff451e457b3f9cef498623e615d9f67a86f6"
+    },
+    "LICENSE": {
+      "path": "LICENSE",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    }
+  }
+}

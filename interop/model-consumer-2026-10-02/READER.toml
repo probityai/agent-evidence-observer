@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools==84.0.0", "wheel==0.48.0"]
+build-backend = "setuptools.build_meta"
+[project]
+name = "probity-model-task-reader"
+version = "0.0.1"
+description = "Selected offline model task evidence and host publication gate"
+requires-python = ">=3.12"
+dependencies = []
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+[project.scripts]
+probity-model-task-read = "model_reader_cli:main"
+probity-model-publication-gate = "model_gate:main"
+[tool.setuptools]
+py-modules = ["model_task_reader", "model_reader_cli", "model_gate"]
