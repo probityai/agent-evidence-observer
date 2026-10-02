@@ -1,0 +1,61 @@
+name: LangGraph protected ticket integration
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'interop/langgraph-ticket-2026-10-02/**'
+      - 'src/probity_observer/**'
+      - '.github/workflows/langgraph-native-ticket.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'interop/langgraph-ticket-2026-10-02/**'
+      - 'src/probity_observer/**'
+      - '.github/workflows/langgraph-native-ticket.yml'
+permissions:
+  contents: read
+jobs:
+  reproduce:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: interop/langgraph-ticket-2026-10-02
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.13'
+      - name: Install hash-pinned profile dependencies
+        run: |
+          python -m pip install --require-hashes --only-binary=:all: -r requirements.lock --report install-report.json
+      - name: Install this exact Observer checkout without changing dependency selection
+        run: python -m pip install --no-deps -e ../..
+      - name: Check adapter code and complexity
+        run: |
+          python -m ruff check lg_common.py lg_run.py lg_reader.py tests
+          python -m ruff check --select C901 --config 'lint.mccabe.max-complexity=5' lg_common.py lg_run.py lg_reader.py tests
+      - name: Test original native executions and semantic refusal controls
+        run: python -m pytest -q tests --junitxml=test-results.xml
+      - name: Execute all six real LangGraph graphs in a fresh finite packet
+        run: timeout --signal=TERM --kill-after=5s 180s python lg_run.py fresh-run --source-revision "$GITHUB_SHA" > fresh-report.json
+      - name: Reconstruct offline using separately copied local selected pins
+        run: |
+          cp fresh-run/consumer-pins.json "$RUNNER_TEMP/langgraph-selected-pins.json"
+          python lg_reader.py fresh-run --pins-file "$RUNNER_TEMP/langgraph-selected-pins.json" > fresh-reader.json
+      - name: Retain native checkpoints, HTTP bytes, sources, resource and install evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: langgraph-native-ticket-${{ github.sha }}
+          path: |
+            interop/langgraph-ticket-2026-10-02/fresh-run/
+            interop/langgraph-ticket-2026-10-02/fresh-report.json
+            interop/langgraph-ticket-2026-10-02/fresh-reader.json
+            interop/langgraph-ticket-2026-10-02/install-report.json
+            interop/langgraph-ticket-2026-10-02/test-results.xml
+          if-no-files-found: error
+          retention-days: 90

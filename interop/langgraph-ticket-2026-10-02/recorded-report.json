@@ -1,0 +1,78 @@
+{
+  "checkpointScope": "in-memory-same-process-native-snapshots",
+  "effectScope": "selected-loopback-service-local-SQLite-row",
+  "exactlyOnce": "not-established",
+  "independentCustody": "not-established",
+  "inputTokens": 0,
+  "issuerAuthentication": "not-established",
+  "outputTokens": 0,
+  "peakMemoryBytes": null,
+  "plannedAttempts": 6,
+  "priorSelection": "author-local-plan-consumer-must-select-pins",
+  "profile": "probity-langgraph-aae-ticket-v0",
+  "providerCalls": 0,
+  "records": [
+    {
+      "attemptId": "permit",
+      "effectOutcome": "verified-local-ticket-update",
+      "elapsedNs": 18211756,
+      "httpCalls": 1,
+      "kernelVerdict": "PERMIT",
+      "nativeRevision": 1,
+      "status": "complete",
+      "taskOutcome": "controlled-scenario-matched"
+    },
+    {
+      "attemptId": "deny",
+      "effectOutcome": "refused-no-local-row",
+      "elapsedNs": 8001684,
+      "httpCalls": 1,
+      "kernelVerdict": "DENY",
+      "nativeRevision": 0,
+      "status": "complete",
+      "taskOutcome": "controlled-scenario-matched"
+    },
+    {
+      "attemptId": "altered-argument",
+      "effectOutcome": "refused-no-local-row",
+      "elapsedNs": 8929932,
+      "httpCalls": 1,
+      "kernelVerdict": "PERMIT",
+      "nativeRevision": 0,
+      "status": "complete",
+      "taskOutcome": "controlled-scenario-matched"
+    },
+    {
+      "attemptId": "interrupt-before",
+      "effectOutcome": "verified-local-ticket-update",
+      "elapsedNs": 16012402,
+      "httpCalls": 1,
+      "kernelVerdict": "PERMIT",
+      "nativeRevision": 1,
+      "status": "complete",
+      "taskOutcome": "controlled-scenario-matched"
+    },
+    {
+      "attemptId": "resume-after-effect",
+      "effectOutcome": "verified-local-ticket-update",
+      "elapsedNs": 24301862,
+      "httpCalls": 2,
+      "kernelVerdict": "PERMIT",
+      "nativeRevision": 1,
+      "status": "complete",
+      "taskOutcome": "controlled-scenario-matched"
+    },
+    {
+      "attemptId": "pending-intent",
+      "effectOutcome": "incomplete-no-automatic-replay",
+      "elapsedNs": 10907932,
+      "httpCalls": 1,
+      "kernelVerdict": "PERMIT",
+      "nativeRevision": 0,
+      "status": "complete",
+      "taskOutcome": "controlled-scenario-matched"
+    }
+  ],
+  "status": "verified",
+  "taskScope": "deterministic-real-framework-integration-control"
+}
