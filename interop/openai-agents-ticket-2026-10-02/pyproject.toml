@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools==84.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "probity-openai-agents-reference"
+version = "0.0.1"
+description = "Native Agents SDK tracing and bounded protected HTTP ticket reference"
+requires-python = ">=3.13"
+dependencies = ["agent-evidence-observer==0.0.1"]
+
+[project.optional-dependencies]
+producer = ["openai-agents==0.23.1"]
+
+[project.scripts]
+probity-openai-run = "probity_openai.producer:main"
+probity-openai-read = "probity_openai.reader:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["probity_openai"]
+known-third-party = ["probity_observer"]
