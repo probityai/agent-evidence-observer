@@ -155,6 +155,8 @@ def adapt(
     raw: dict[str, bytes],
     sources: dict[str, bytes],
     selected_native_pins: dict[str, str],
+    *,
+    expected_sources_sha256: str | None = None,
 ) -> tuple[dict, dict, dict[str, bytes]]:
     """Join raw requests/responses to the selected finite declaration and rubric.
 
@@ -172,7 +174,40 @@ def adapt(
         "native_pin_mismatch",
     )
     require(raw.get("native-plan.json") == encode(native_plan), "native_plan_pin")
-    require(sources == runtime_sources(), "runtime_source_changed")
+    if expected_sources_sha256 is None:
+        require(sources == runtime_sources(), "runtime_source_changed")
+    else:
+        # Explicit offline mode: the consumer selects retained producer source
+        # bytes rather than installing that producer's SDK/runtime again.
+        require(
+            digest(encode({name: digest(value) for name, value in sources.items()}))
+            == expected_sources_sha256,
+            "retained_source_pin_mismatch",
+        )
+        # Recompute the pinned SDK release's retained source commitments without
+        # importing the SDK. Retained runtime versions describe the producer.
+        manifest = decode(sources["sdk-source-pins.json"])
+        require(
+            manifest == decode((ROOT / "sdk-source-pins.json").read_bytes()),
+            "retained_sdk_manifest_changed",
+        )
+        modules = decode(sources["sdk-source.json"])
+        require(
+            type(modules) is dict
+            and set(modules) == set(MODULES)
+            and all(type(code) is str for code in modules.values())
+            and {name: digest(code.encode()) for name, code in modules.items()}
+            == manifest["modules"],
+            "retained_sdk_source_changed",
+        )
+        require(
+            sources["sdk-license.txt"] == (ROOT / "SDK-LICENSE").read_bytes(),
+            "retained_sdk_license_changed",
+        )
+        require(
+            decode(sources["runtime.json"])["packages"]["a2a-sdk"] == SDK_VERSION,
+            "retained_sdk_runtime_version",
+        )
     require(
         {
             "native-plan.json",
@@ -509,8 +544,15 @@ def verify(
     *,
     expected_plan_sha256,
     expected_history_sha256,
+    expected_sources_sha256=None,
 ) -> dict:
-    plan, history, retained = adapt(native_plan, raw, sources, selected_native_pins)
+    plan, history, retained = adapt(
+        native_plan,
+        raw,
+        sources,
+        selected_native_pins,
+        expected_sources_sha256=expected_sources_sha256,
+    )
     require(decode(plan_bytes) == plan, "native_plan_mapping_mismatch")
     require(decode(history_bytes) == history, "native_history_mapping_mismatch")
     require(artifacts == retained, "native_artifact_mapping_mismatch")

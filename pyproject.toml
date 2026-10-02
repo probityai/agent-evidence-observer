@@ -17,6 +17,7 @@ aae = ["rfc8785==0.1.4"]
 [project.scripts]
 agent-evidence-observer = "probity_observer.cli:main"
 agent-evidence-admit = "probity_observer.admission:main"
+agent-evidence-read-native = "probity_observer.native_reader:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
