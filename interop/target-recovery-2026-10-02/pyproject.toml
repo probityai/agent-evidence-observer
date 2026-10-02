@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools==84.0.0", "wheel==0.48.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "probity-target-recovery-reader"
+version = "0.0.1"
+requires-python = ">=3.12"
+dependencies = ["agent-evidence-observer==0.0.1"]
+description = "Offline selected-reader for bounded native HTTP target process restart evidence"
+
+[project.scripts]
+probity-read-target-recovery = "target_reader:main"
+
+[tool.setuptools]
+py-modules = ["target_common", "target_reader"]
