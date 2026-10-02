@@ -41,6 +41,40 @@ def test_actual_sdk_two_party_exchange(packet):
     assert result["custody"] == "same-operator"
 
 
+def test_explicit_source_pinned_reader_never_loads_sdk_runtime(packet, monkeypatch):
+    import a2a_contract
+
+    native, raw, sources, pins, _ = packet
+    selected = digest(encode({name: digest(value) for name, value in sources.items()}))
+
+    def unavailable():
+        raise RuntimeError("producer-runtime-unavailable")
+
+    monkeypatch.setattr(a2a_contract, "runtime_sources", unavailable)
+    plan, history, artifacts = adapt(
+        native, raw, sources, pins, expected_sources_sha256=selected
+    )
+    result = verify(
+        native,
+        raw,
+        sources,
+        pins,
+        encode(plan),
+        encode(history),
+        artifacts,
+        expected_plan_sha256=digest(encode(plan)),
+        expected_history_sha256=digest(encode(history)),
+        expected_sources_sha256=selected,
+    )
+    assert result["planned"] == 6
+    with pytest.raises(RuntimeError, match="producer-runtime-unavailable"):
+        adapt(native, raw, sources, pins)
+    changed_sources = dict(sources)
+    changed_sources["runtime.json"] += b" "
+    with pytest.raises(ContractError, match="retained_source_pin_mismatch"):
+        adapt(native, raw, changed_sources, pins, expected_sources_sha256=selected)
+
+
 def test_raw_measured_elapsed_not_tokens_or_effects(packet):
     native, raw, sources, pins, _ = packet
     _, history, _ = adapt(native, raw, sources, pins)

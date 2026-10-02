@@ -1,5 +1,7 @@
 # Agent Evidence Observer (prototype)
 
+The [installed native reader and CI action](docs/NATIVE-CONSUMER-CI.md) recompute retained Inspect execution and A2A packets using separately selected native, common and reader-source pins. A normal wheel install supplies the consumer command; the profile scripts come from a separate immutable checkout. Fresh receipts retain reader failures and the original attempt denominators. Outside recurring use remains a separate adoption event.
+
 The [HTTP ticket service](docs/HTTP-TICKET-SERVICE.md) owns a persistent native
 ticket, checks exact grants before dispatch, and joins retained completion with
 a separate HTTP read-back. Its local demo covers restart, revocation, persistent

@@ -1,0 +1,49 @@
+name: Installed native consumer reader
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-consumer:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install producer and test environment
+        run: |
+          python -m pip install -e '.[test,inspect]' build
+          python -m pip install -e 'interop/a2a-native-2026-10-02[test]'
+      - name: Check reader process and failure controls
+        run: python -m pytest -q tests/test_native_reader.py --junitxml=native-consumer-tests.xml
+      - name: Retain two native controlled packets
+        run: |
+          mkdir -p native-producer/inspect-execution native-producer/a2a
+          python interop/evaluation-contract-2026-10-01/inspect_execution.py native-producer/inspect-execution/native
+          python interop/a2a-native-2026-10-02/a2a_demo.py native-producer/a2a/native
+      - name: Build wheel and use it from an outside consumer directory
+        run: |
+          python -m build --wheel --outdir dist
+          python -m venv "$RUNNER_TEMP/native-consumer-env"
+          "$RUNNER_TEMP/native-consumer-env/bin/python" -m pip install dist/*.whl
+          mkdir "$RUNNER_TEMP/native-consumer-cwd"
+          cd "$RUNNER_TEMP/native-consumer-cwd"
+          "$RUNNER_TEMP/native-consumer-env/bin/python" "$GITHUB_WORKSPACE/examples/native_consumer_demo.py" --source-checkout "$GITHUB_WORKSPACE" --native-root "$GITHUB_WORKSPACE/native-producer" --output "$GITHUB_WORKSPACE/native-consumer-result"
+          "$RUNNER_TEMP/native-consumer-env/bin/python" -c 'import importlib.util; assert importlib.util.find_spec("inspect_ai") is None; assert importlib.util.find_spec("a2a") is None'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-consumer-reader
+          path: |
+            native-producer/
+            native-consumer-result/
+            native-consumer-tests.xml
+            dist/*.whl
+          if-no-files-found: error

@@ -1,0 +1,46 @@
+name: Read a retained native evidence packet
+description: Recompute a selected Inspect execution or A2A packet without launching native work
+inputs:
+  packet:
+    description: Absolute path to the retained packet
+    required: true
+  selection:
+    description: Absolute path to the consumer-selected manifest outside the packet
+    required: true
+  selection-sha256:
+    description: SHA-256 of the separately reviewed manifest bytes
+    required: true
+  output:
+    description: Absolute path to a new consumer receipt directory
+    required: true
+  timeout:
+    description: Reader timeout in seconds
+    default: '120'
+outputs:
+  report:
+    description: Fresh report path (the caller should retain the complete output directory)
+    value: ${{ steps.read.outputs.report }}
+runs:
+  using: composite
+  steps:
+    - name: Install this selected reader
+      shell: bash
+      env:
+        PROBITY_SOURCE: ${{ github.action_path }}
+      run: |
+        set -euo pipefail
+        python -m pip install "$PROBITY_SOURCE"
+    - name: Recompute selected native bytes
+      id: read
+      shell: bash
+      env:
+        PROBITY_SOURCE: ${{ github.action_path }}
+        PROBITY_PACKET: ${{ inputs.packet }}
+        PROBITY_SELECTION: ${{ inputs.selection }}
+        PROBITY_SELECTION_SHA256: ${{ inputs.selection-sha256 }}
+        PROBITY_OUTPUT: ${{ inputs.output }}
+        PROBITY_TIMEOUT: ${{ inputs.timeout }}
+      run: |
+        set -euo pipefail
+        agent-evidence-read-native --source-checkout "$PROBITY_SOURCE" --packet "$PROBITY_PACKET" --selection "$PROBITY_SELECTION" --selection-sha256 "$PROBITY_SELECTION_SHA256" --output "$PROBITY_OUTPUT" --timeout "$PROBITY_TIMEOUT"
+        printf 'report=%s/report.json\n' "$PROBITY_OUTPUT" >> "$GITHUB_OUTPUT"
