@@ -277,3 +277,13 @@ def test_calibration_cannot_be_promoted_into_claimed_interval(selected):
     rewrite(packet, pins, "calibration.json", calibration)
     with pytest.raises(ValueError, match="calibration-interval-join"):
         c.read_packet(packet, pins)
+
+
+@pytest.mark.parametrize("field", ["name", "platform", "architecture", "capabilities", "limitations"])
+def test_backend_semantics_cannot_be_relabelled(selected, field):
+    packet, pins = selected
+    observation = c.strict_json((packet / "observation.json").read_bytes())
+    observation["backend"][field] = [] if field in {"capabilities", "limitations"} else "unsupported"
+    rewrite(packet, pins, "observation.json", observation)
+    with pytest.raises(ValueError, match="selected-backend-mismatch"):
+        c.read_packet(packet, pins)

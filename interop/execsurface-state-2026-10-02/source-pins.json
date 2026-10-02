@@ -2,6 +2,34 @@
   "binarySha256": "11d1f70d3e6bd6526eff4889b90cba4a0ad95ce09d489643e7f3b703e455f646",
   "execsurfaceMainCommit": "37a8d89ec931422a37171e742a198fb4966a5152",
   "execsurfaceReleaseSource": "9e73b925d55557e33de1b0813995609aaefdc037",
+  "expectedBackend": {
+    "architecture": "x86_64",
+    "capabilities": [
+      "descendant_tracking",
+      "exec_path",
+      "path_syscall_attempts",
+      "trace_time_dirfd_resolution",
+      "openat2_metadata",
+      "fd_read_write_attribution",
+      "fd_dup_close_lifecycle",
+      "clone_files_fd_sharing",
+      "close_on_exec_tracking",
+      "connect_destination",
+      "fail_closed_event_budget"
+    ],
+    "limitations": [
+      "selected syscall metadata only; memory-mapped I/O and io_uring data access are not attributed",
+      "file open/create/delete/rename records are syscall attempts; fd read/write records require successful positive-byte I/O",
+      "kernel fd paths are runtime object evidence, not causal source-code provenance",
+      "ptrace can perturb scheduling and trace-aware programs can behave differently",
+      "hostname intent is not inferred from connect(2)",
+      "Linux x86_64 only",
+      "observation event budget is 1000000; overflow marks evidence incomplete",
+      "observation sessions are serialized within one host process to avoid cross-reaping ptrace children"
+    ],
+    "name": "linux-ptrace-metadata-v2",
+    "platform": "linux"
+  },
   "files": {
     "LICENSE": "8b506a9d145be0a6fbef3f0519996faf84c770f8ab8d32d120c8682f2ad6181f",
     "execsurface/LICENSE": "b070fa0358f5dc2593d9a9d742408904245c9808020b50d1b0bf2551d3660581",
@@ -13,7 +41,7 @@
     "vectors-observed-effect/digest.py": "2cb7a56f17bb88988ee9fb2a0c5fff5dcda935580c242a5a9ffe32d5fe6c4c32"
   },
   "ownedFiles": {
-    "companion.py": "af3154900bf6be10e734e66b51306c213b0c522746de2641fea963d7c51c0067",
+    "companion.py": "8fa2c583b92bf233e442a1c6513e4cbbcfd718f5f9013a3fccfea1cd8f0e9fe5",
     "download_binary.py": "930c795954cfeb9254d415d7154ae4967421108ed4813d15986c2cd6f6322119",
     "publication-policy.json": "5db6392a15d17396555986513f948f064ede8a67eb37d7bcd404b7c3408191f9",
     "requirements.lock": "0d7918115196e40121b2e350e8f01243be59d52b6e590cbdc44525ba84dd5f9b",

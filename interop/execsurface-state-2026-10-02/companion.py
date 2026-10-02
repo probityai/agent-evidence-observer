@@ -270,6 +270,7 @@ def read_packet(packet: Path, pins):
     require(plan["binarySha256"] == selection["binarySha256"], "plan-binary-join")
     require(plan["workloadSha256"] == sha((HERE / "workload.py").read_bytes()), "workload-source-join")
     observation = strict_json((packet / "observation.json").read_bytes())
+    require(observation["backend"] == selection["expectedBackend"], "selected-backend-mismatch")
     statement = joined_statement(packet, plan, observation)
     raw = (packet / "envelope.json").read_bytes()
     envelope = strict_json(raw)
