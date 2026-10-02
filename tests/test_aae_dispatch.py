@@ -14,6 +14,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
+from probity_observer import broker as native
 from probity_observer.aae_binding import local_transaction
 from probity_observer.aae_dispatch import (
     AaeProtectedDispatcher,
@@ -29,9 +30,18 @@ from probity_observer.protected_dispatch import (
 )
 
 
-def make_case(root: Path, content: bytes = b"protected AAE effect\n") -> dict:
-    """Configure an exact native decision and a distinct local issuer grant."""
-    now = datetime.now(UTC).replace(microsecond=0)
+def make_case(
+    root: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    content: bytes = b"protected AAE effect\n",
+) -> dict:
+    """Configure a native decision and local grant on one controlled test clock."""
+    now = datetime(2026, 10, 1, tzinfo=UTC)
+    monkeypatch.setattr(
+        native,
+        "utc_now",
+        lambda: now.isoformat(timespec="seconds").replace("+00:00", "Z"),
+    )
     issuer, observer, witness = (SigningKey.generate() for _ in range(3))
     request = ActionRequest(
         "run",
@@ -92,12 +102,13 @@ def make_case(root: Path, content: bytes = b"protected AAE effect\n") -> dict:
         "content": content,
         "request": request,
         "root": root,
+        "now": now,
     }
 
 
 @pytest.fixture
-def case(tmp_path):
-    return make_case(tmp_path)
+def case(tmp_path, monkeypatch):
+    return make_case(tmp_path, monkeypatch)
 
 
 def verify(case, **changes):
@@ -199,13 +210,35 @@ class TestAaeProtectedDispatcher:
         @given(content=st.binary(max_size=512))
         @settings(max_examples=12, deadline=None)
         def test_arbitrary_content_has_one_effect_and_replay(self, content):
-            with tempfile.TemporaryDirectory() as directory:
-                case = make_case(Path(directory), content)
+            with (
+                tempfile.TemporaryDirectory() as directory,
+                pytest.MonkeyPatch.context() as monkeypatch,
+            ):
+                case = make_case(Path(directory), monkeypatch, content)
                 assert complete(case).replayed is False
                 assert complete(case).replayed is True
                 assert verify(case)["linkage"] == "verified"
 
     class TestFailingCases:
+        @pytest.mark.parametrize("native_offset", [-1, 1])
+        def test_host_clock_outside_native_interval_refused_before_effect(
+            self, case, monkeypatch, native_offset, caplog
+        ):
+            native_now = case["now"] + timedelta(seconds=native_offset)
+            monkeypatch.setattr(
+                native,
+                "utc_now",
+                lambda: native_now.isoformat(timespec="seconds").replace(
+                    "+00:00", "Z"
+                ),
+            )
+            refuse(
+                lambda: complete(case),
+                "authorization dispatch time is outside the native interval",
+                caplog,
+            )
+            assert list(case["host"]["workspace"].iterdir()) == []
+
         @pytest.mark.parametrize("field", list(ActionRequest.__dataclass_fields__))
         def test_all_request_substitutions_refused_before_effect(
             self, case, field, caplog
