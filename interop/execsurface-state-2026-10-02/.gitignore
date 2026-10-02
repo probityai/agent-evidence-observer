@@ -1,6 +1,6 @@
 native-run/
 *.tar.gz
-execsurface
+/execsurface
 selected-pins.json
 *-report.json
 install-report.json
