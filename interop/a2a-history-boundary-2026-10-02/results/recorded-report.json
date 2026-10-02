@@ -1,0 +1,120 @@
+{
+  "profile": "probity-a2a-native-history-boundary-v1",
+  "status": "verified",
+  "witnessScope": "PEER",
+  "doesNotAssert": [
+    "independent-custody",
+    "network-server-process",
+    "production-authentication",
+    "models",
+    "all-concurrency-schedules",
+    "normative-tck-adoption",
+    "producer-acceptance",
+    "recurring-adoption"
+  ],
+  "plannedAttempts": 20,
+  "acceptedAndPersisted": 10,
+  "rejectedAndAbsentInternalError": 10,
+  "records": [
+    {
+      "id": "accepted-retry-00",
+      "decision": "accepted-and-persisted",
+      "taskId": "4b496080-2180-41dc-8311-02d2e5997c89"
+    },
+    {
+      "id": "rejected-absent-00",
+      "decision": "rejected-and-absent-with-InternalError",
+      "taskId": "abbe957a-0a84-4fcc-8147-3fb7102b78d0"
+    },
+    {
+      "id": "accepted-retry-01",
+      "decision": "accepted-and-persisted",
+      "taskId": "0f75dcf5-ed5e-4d66-be99-4bd06860e54d"
+    },
+    {
+      "id": "rejected-absent-01",
+      "decision": "rejected-and-absent-with-InternalError",
+      "taskId": "77c99266-d2ab-46dd-8296-127ec8eab3fd"
+    },
+    {
+      "id": "accepted-retry-02",
+      "decision": "accepted-and-persisted",
+      "taskId": "5fc2a225-08e2-4bd1-aab0-1c6d93547be2"
+    },
+    {
+      "id": "rejected-absent-02",
+      "decision": "rejected-and-absent-with-InternalError",
+      "taskId": "99b71708-736d-4a4a-b9a1-efe5acd4bcf0"
+    },
+    {
+      "id": "accepted-retry-03",
+      "decision": "accepted-and-persisted",
+      "taskId": "a0fec99c-579d-47aa-acd3-4e8d50d944f1"
+    },
+    {
+      "id": "rejected-absent-03",
+      "decision": "rejected-and-absent-with-InternalError",
+      "taskId": "ad86c6dd-6128-4db1-9d55-65de306da38f"
+    },
+    {
+      "id": "accepted-retry-04",
+      "decision": "accepted-and-persisted",
+      "taskId": "8653ebf6-23f3-4f04-add8-9da8e22e06b5"
+    },
+    {
+      "id": "rejected-absent-04",
+      "decision": "rejected-and-absent-with-InternalError",
+      "taskId": "320378ea-c8ff-44b3-b1dd-c4a7b45e3e6c"
+    },
+    {
+      "id": "accepted-retry-05",
+      "decision": "accepted-and-persisted",
+      "taskId": "94219c52-ff27-4345-8f66-2a710fd8e775"
+    },
+    {
+      "id": "rejected-absent-05",
+      "decision": "rejected-and-absent-with-InternalError",
+      "taskId": "85f7752f-c394-441d-99c1-4f93a1fed498"
+    },
+    {
+      "id": "accepted-retry-06",
+      "decision": "accepted-and-persisted",
+      "taskId": "ccd402b5-bc50-4549-9c1f-6c3d9163307e"
+    },
+    {
+      "id": "rejected-absent-06",
+      "decision": "rejected-and-absent-with-InternalError",
+      "taskId": "be6e134e-b6b0-470b-8126-f7489921a885"
+    },
+    {
+      "id": "accepted-retry-07",
+      "decision": "accepted-and-persisted",
+      "taskId": "1752a54b-c9a8-4c23-ac69-db851c874ff3"
+    },
+    {
+      "id": "rejected-absent-07",
+      "decision": "rejected-and-absent-with-InternalError",
+      "taskId": "2eadea2e-a6e6-4377-a744-fbfcdaa7153b"
+    },
+    {
+      "id": "accepted-retry-08",
+      "decision": "accepted-and-persisted",
+      "taskId": "6d48fb2a-faae-4765-98f3-df26866e2af2"
+    },
+    {
+      "id": "rejected-absent-08",
+      "decision": "rejected-and-absent-with-InternalError",
+      "taskId": "6093b3f7-b43a-4f75-91a1-a483a86b8457"
+    },
+    {
+      "id": "accepted-retry-09",
+      "decision": "accepted-and-persisted",
+      "taskId": "70173308-08e7-410d-81b9-1d6aaf23a809"
+    },
+    {
+      "id": "rejected-absent-09",
+      "decision": "rejected-and-absent-with-InternalError",
+      "taskId": "61326e6b-77ec-4274-81d4-00ec4b2169f3"
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools==84.0.0", "wheel==0.48.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "probity-a2a-history-reader"
+version = "0.0.1"
+requires-python = ">=3.12"
+dependencies = ["protobuf==7.36.2", "googleapis-common-protos==1.75.0"]
+description = "Offline selected native A2A caller/committed-history boundary reader"
+license = "Apache-2.0"
+license-files = ["A2A-SCHEMA-LICENSE", "A2A-SCHEMA-NOTICE"]
+
+[project.scripts]
+probity-read-a2a-history = "boundary_reader:main"
+
+[tool.setuptools]
+py-modules = ["boundary_common", "boundary_reader", "a2a_history_pb2"]

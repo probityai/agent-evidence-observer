@@ -1,0 +1,10 @@
+{
+  "src/a2a/server/agent_execution/active_task.py": "00206df64d77bcd26749abc20d86cb1ead30061c06fe5701ebff8e25e58f8e00",
+  "src/a2a/server/cluster/database_task_store.py": "680d5e48c58545a5c570318b396f2ea573087898aad48549f4b768a8fe40b416",
+  "src/a2a/server/cluster/task_store.py": "c75dcb36d081526f7a809552dc7bc31630cc5211af9353a634db0c7cbd3173ed",
+  "src/a2a/server/request_handlers/default_request_handler_v2.py": "31fe7f23b7086bdd40b7332f17a32a15dadc4b7982912df3d0bb2d90e02e4427",
+  "src/a2a/server/routes/jsonrpc_dispatcher.py": "b46a2baa065ba7f8e150b03ffee9bf5864a73bf49a9f9bcece6b2d54d01a0f86",
+  "src/a2a/server/tasks/task_manager.py": "fae8ea37c727d44dc41048646fd5030c685228f5ab876920637959d9f61a40a1",
+  "src/a2a/types/a2a_pb2.py": "d0aac0be3a3b639b17be3f3c42ac2aab185a10e3d085f38c05410472769483ba",
+  "uv.lock": "dcdc91b35a5409ff03c834cd8613799d919249244b737313d5c1117ab3e4ac07"
+}
