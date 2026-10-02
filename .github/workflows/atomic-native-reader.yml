@@ -1,0 +1,55 @@
+name: Installed Atomic native reader
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  atomic-native-reader:
+    runs-on: ubuntu-24.04
+    env:
+      CARGO_PROFILE_TEST_DEBUG: '0'
+      CARGO_INCREMENTAL: '0'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check out the native test producer at its exact revision
+        uses: actions/checkout@v4
+        with:
+          repository: astrogilda/atomic
+          ref: 80be8dae6feb8b9106181b78fba2c7c6a7c8f4d8
+          path: native-atomic
+          persist-credentials: false
+      - name: Install the native producer toolchain
+        run: rustup toolchain install 1.90.0 --profile minimal && rustup default 1.90.0
+      - name: Generate original native observations and retain the executable
+        run: python native-atomic/tools/native-evaluation/run.py --output atomic-native-run --jobs 2
+      - name: Build the consumer wheel and check refusal controls
+        run: |
+          python -m pip install -e '.[test,aae]' build
+          python -m pytest -q tests/test_atomic_reader.py --junitxml=atomic-reader-tests.xml
+          python -m build --wheel --outdir dist
+          python -m venv "$RUNNER_TEMP/atomic-reader-env"
+          "$RUNNER_TEMP/atomic-reader-env/bin/python" -m pip install dist/*.whl
+          mkdir "$RUNNER_TEMP/atomic-reader-cwd"
+          cd "$RUNNER_TEMP/atomic-reader-cwd"
+          export PATH="$RUNNER_TEMP/atomic-reader-env/bin:$PATH"
+          python "$GITHUB_WORKSPACE/examples/atomic_consumer_demo.py" --packet "$GITHUB_WORKSPACE/atomic-native-run" --output "$GITHUB_WORKSPACE/atomic-consumer-result"
+          python -c 'import importlib.util; assert all(importlib.util.find_spec(name) is None for name in ("pytest", "inspect_ai", "a2a", "langgraph", "pydantic_ai"))'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: atomic-native-reader
+          path: |
+            atomic-native-run/
+            atomic-consumer-result/
+            atomic-reader-tests.xml
+            dist/*.whl
+          if-no-files-found: error
