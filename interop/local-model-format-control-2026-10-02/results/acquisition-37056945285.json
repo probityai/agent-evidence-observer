@@ -1,0 +1,59 @@
+{
+  "schema": "probity-retained-model-format-control-v1",
+  "nativeRun": {
+    "id": 37056945285,
+    "url": "https://github.com/probityai/agent-evidence-observer/actions/runs/37056945285",
+    "head": "75797cbb4fafc0669849357dd2275825b469c1f9",
+    "conclusion": "success"
+  },
+  "protocolCommit": "108887b86df66e0d12a4db981a8aadd047f50b16",
+  "protocolSHA256": "e4ad8c215d6e0a5842fd145568ef0434d5c3012a7525991c45cbe85ca487fb4b",
+  "nativeRunnerSHA256": "3f386686ea0666dda06d68dc01c7a53157a19e8c82ba2957b46dda399169c072",
+  "compactArtifact": {
+    "id": 11249285191,
+    "bytes": 2326615,
+    "providerSHA256": "e64eafb149f4a0975831b5ca36df74ca89abef0c8dd1ca2c40cc71e317d123fe",
+    "retainedPath": "format-cpu-native-37056945285.zip",
+    "memberReportSHA256": "c2a7d1954f3fb005ab8f2d0faeb121f005deed7a54cd5d03ceeb4b13c861153d",
+    "expiresAt": "2026-12-31T19:52:36Z",
+    "downloadProviderSHA256Matched": true
+  },
+  "fullPreparationArtifact": {
+    "id": 11249375063,
+    "bytes": 465565805,
+    "providerSHA256": "06569ba6c6198a6310f5379c7c434ca672d586904ab2da1b3fc7b03282b96d64",
+    "expiresAt": "2026-12-31T19:52:36Z",
+    "retention": "Complete private original; public compact ZIP omits weights/source wheels only."
+  },
+  "consumerPins": {
+    "declaration": {
+      "path": "declaration.json",
+      "sha256": "43beb7c986877e4413924e3f89a9d23f6dc94349395940774a85717e96c9e19f"
+    },
+    "manifest": {
+      "path": "manifest.json",
+      "sha256": "e2b56d066bdf771257520011f9cdcc8aaf3dc2be5f53e9efa5a0ef05d0552e3c"
+    },
+    "protocol": {
+      "path": "protocol.json",
+      "sha256": "e4ad8c215d6e0a5842fd145568ef0434d5c3012a7525991c45cbe85ca487fb4b"
+    },
+    "terminal": {
+      "path": "terminal.json",
+      "sha256": "1dc0485c29e3a6d1ba582ccf3653a9f63780022cde96ee0e6e1b3a9adb229e01"
+    }
+  },
+  "grammarLimits": "Frozen compiler permits at most16 decimal integer digits, one optional ASCII space and fixed required-key order. Free values are within these restrictions; no target constants/enums/patterns. The explicit pre-inference syntax-only patch removes raw JSON controls.",
+  "preparationHistory": {
+    "currentResponseBodyBytes": 472221945,
+    "comparisonPriorInitialFailureBytes": 472190754,
+    "comparisonPriorSuccessBytes": 472221945,
+    "comparisonAndFormatCumulativeBytes": 1416634644,
+    "original48RunBytes": 278149773,
+    "allFourPreparationAttemptsBodyBytes": 1694784417,
+    "scope": "512 MiB per declared preparation; cumulative history is separate and exceeds one envelope. No response was retried, repaired or retuned."
+  },
+  "unconstrainedBaseline": "All96 unconstrained output text bytes equal corresponding previously retained comparison outputs. New192 report does not replace old48/96 reports.",
+  "reader": "Separate stdlib replay exactly reproduces original report; same-team reviewer is not independent custody.",
+  "exposure": "Authored/public tasks and targets; raw outputs/scores emitted together; no blind custody or outside adoption claim."
+}
