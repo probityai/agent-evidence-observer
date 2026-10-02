@@ -30,6 +30,8 @@ jobs:
         run: python demo.py contract-run
       - name: Retain native Inspect mock logs and their common mapping
         run: python inspect_demo.py native-contract-run
+      - name: Retain native tool, agent and local workload execution
+        run: python inspect_execution.py native-execution-run
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -37,5 +39,6 @@ jobs:
           path: |
             interop/evaluation-contract-2026-10-01/contract-run/
             interop/evaluation-contract-2026-10-01/native-contract-run/
+            interop/evaluation-contract-2026-10-01/native-execution-run/
             interop/evaluation-contract-2026-10-01/test-results.xml
           if-no-files-found: error
