@@ -137,7 +137,7 @@ Probity maintains this external plugin through
 [Observer issues](https://github.com/probityai/agent-evidence-observer/issues).
 Compatibility changes require updated source selections, native runs and semantic
 refusal controls. The SDK primary source was refreshed at
-`6bbef14ffa3beadfb812cc57bf83e1eb68800152`; upstream changes require Google CLA and
+`20362069e0dc1b65b30c7775e0c0d01d364cb3d8`; upstream changes require Google CLA and
 review. Existing analytics issue 7112 has assigned owners, and notification issue
 5044 is closed with callbacks present. This reference takes over neither issue.
 No upstream pitch or new public comment is required for this owned plugin.
@@ -146,3 +146,9 @@ Outside producer acceptance, continued host use, registry release and independen
 effect custody remain separate goals. The synthetic service and captured history
 are same-operator; signed evidence retains PEER scope. No model-quality, real MCP
 transport, blind comparison, process-restart or power-loss claim is made.
+
+The retained original [native CI artifact](native-fixture-37058694970.zip) and
+[recorded run](recorded-run.json) authenticate the successful 12-case Ubuntu run
+37058694970. The installed reader reproduces the producer, reader and report bytes
+without ADK or MCP. Source provenance distinguishes the reviewed implementation,
+GitHub synthetic execution revision and independently pinned target source.
