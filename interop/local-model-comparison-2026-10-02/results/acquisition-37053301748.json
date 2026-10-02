@@ -1,0 +1,62 @@
+{
+  "schema": "probity-retained-model-comparison-v1",
+  "nativeRun": {
+    "id": 37053301748,
+    "url": "https://github.com/probityai/agent-evidence-observer/actions/runs/37053301748",
+    "head": "b7db63c319d53b0cb27638a229f966d477a2bbd5",
+    "conclusion": "success"
+  },
+  "protocolCommit": "6d6b205cc1c544968573381b72fbbe33c9ec4b3e",
+  "protocolSHA256": "fb11ab63a4e26acac255a176b0af89931bd8424aa246a1b291e9c35991c85a00",
+  "nativeRunnerSHA256": "744eb9a5af0328be0a4d4916b972770aa9babf91f97d4866abff34c37c453897",
+  "compactArtifact": {
+    "id": 11246474999,
+    "bytes": 2108815,
+    "providerSHA256": "e3b0daad07fb6880fbb4d66adbe92c9cc9c39d5e824667bd38e9289636340efa",
+    "retainedPath": "paired-cpu-native-37053301748.zip",
+    "memberReportSHA256": "7926e4e5998459c1be38b69a81b14be56a22924ea2ccec04509e2cb8fff7c62b",
+    "expiresAt": "2026-12-31T19:18:57Z",
+    "downloadProviderSHA256Matched": true
+  },
+  "fullPreparationArtifact": {
+    "id": 11247990023,
+    "bytes": 465338754,
+    "providerSHA256": "b16c1bd2316046a1270301e28ad021ecd64b55be0f68c6c7609decf8134bbbe8",
+    "retainedIn": "private complete archive, not this public ZIP",
+    "expiresAt": "2026-12-31T19:18:57Z"
+  },
+  "consumerPins": {
+    "declaration": {
+      "path": "declaration.json",
+      "sha256": "c6503122060ee77e6c5dab9f2b40f855ffca96c4f2ee496c272688dfb9596c0a"
+    },
+    "manifest": {
+      "path": "manifest.json",
+      "sha256": "46d0e937f45947b40b0412c5584100962e7e3c042bade4e6f4b4025c8da1f852"
+    },
+    "protocol": {
+      "path": "protocol.json",
+      "sha256": "fb11ab63a4e26acac255a176b0af89931bd8424aa246a1b291e9c35991c85a00"
+    },
+    "terminal": {
+      "path": "terminal.json",
+      "sha256": "76680c7b960e3b85744f3b836c1bcfa0910393012054cd88be1006e091235911"
+    }
+  },
+  "initialPreparationFailure": {
+    "protocolCommit": "a5abe02e8378ca3813c99a2882454be9e2bfc9b0",
+    "head": "08cd5c24230fc6006ecda5c1d868af66670b7b14",
+    "run": 37052641046,
+    "artifact": 11246658645,
+    "archiveBytes": 463183769,
+    "providerSHA256": "f91a521397d4e5df550e2398b5f026aa4d4a4ee254a8aed19d3edfff748aba41",
+    "stage": "build metadata",
+    "error": "missing transitive pathspec build dependency",
+    "plannedModelCalls": 96,
+    "startedModelCalls": 0,
+    "unknownStartModelCalls": 96,
+    "amendment": "Exact selected dependency wheel published before first inference; initial preparation/result absence retained separately."
+  },
+  "reader": "Separate standard-library reader invocation exactly reproduces original report. Same-team verification, not an independent operator/custodian.",
+  "exposure": "Tasks and targets are author-written, previously public; native original responses and scores emitted together. Protocol freeze was before first inference. No blind task custody or outside adoption claim."
+}
