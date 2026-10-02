@@ -6,7 +6,7 @@ policy decides whether its verified report meets the host's selected quality and
 resource limits. All eight family/cap rows stay separate. Model comparison rows
 also include their model identity; no score pooling is permitted.
 
-Build `probity-model-task-reader`0.0.2 from the exact reviewed source contract,
+Build `probity-model-task-reader` 0.0.3 from the exact reviewed source contract,
 then normally install its wheel into a clean environment:
 
 ```sh
