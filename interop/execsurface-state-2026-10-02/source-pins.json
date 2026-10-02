@@ -1,0 +1,26 @@
+{
+  "binarySha256": "11d1f70d3e6bd6526eff4889b90cba4a0ad95ce09d489643e7f3b703e455f646",
+  "execsurfaceMainCommit": "37a8d89ec931422a37171e742a198fb4966a5152",
+  "execsurfaceReleaseSource": "9e73b925d55557e33de1b0813995609aaefdc037",
+  "files": {
+    "LICENSE": "8b506a9d145be0a6fbef3f0519996faf84c770f8ab8d32d120c8682f2ad6181f",
+    "execsurface/LICENSE": "b070fa0358f5dc2593d9a9d742408904245c9808020b50d1b0bf2551d3660581",
+    "execsurface/crates/execsurface-model/src/lib.rs": "26b9f431249a3cce574f27a1048699334d776d15ec1c0d8fe4e9f4271f92bb85",
+    "execsurface/crates/execsurface-observe/src/linux_ptrace.rs": "afda9661804ae99dffd7116adc91cbc1672256da29ec0b29556f38a5702b6d03",
+    "spec/predicates/observed-effect.md": "01945977073b56553e1422f6159c52bd7527d982b156a29f2d9aa6d53e507066",
+    "vectors-observed-effect/canonical.py": "ced55cfb183bebd53e2f7223b7279e230ceb84a042bd113b1dcc33948ac84c74",
+    "vectors-observed-effect/check_vectors.py": "c8e3a599998688a3be1a7dc609cb0f8114f9d1818dd8cc0b36c5c9094dc7238f",
+    "vectors-observed-effect/digest.py": "2cb7a56f17bb88988ee9fb2a0c5fff5dcda935580c242a5a9ffe32d5fe6c4c32"
+  },
+  "ownedFiles": {
+    "companion.py": "af3154900bf6be10e734e66b51306c213b0c522746de2641fea963d7c51c0067",
+    "download_binary.py": "930c795954cfeb9254d415d7154ae4967421108ed4813d15986c2cd6f6322119",
+    "publication-policy.json": "5db6392a15d17396555986513f948f064ede8a67eb37d7bcd404b7c3408191f9",
+    "requirements.lock": "0d7918115196e40121b2e350e8f01243be59d52b6e590cbdc44525ba84dd5f9b",
+    "workload.py": "e14c53fa925a788cad3e363ada32faae67beff7d98109788bd4b5e51d9bdaf91"
+  },
+  "release": "v0.1.0-alpha.5",
+  "releaseArchiveSha256": "6a27ee3245acec67fc153cca3f6715f4395eadcf8c6358b415ecc6a9347efdb7",
+  "releaseUrl": "https://github.com/AETHERXGLOBAL/execsurface/releases/download/v0.1.0-alpha.5/execsurface-v0.1.0-alpha.5-x86_64-unknown-linux-gnu.tar.gz",
+  "vectorsCommit": "bbdef583c9241138e5c2b5d872bc77f7f539e9ac"
+}

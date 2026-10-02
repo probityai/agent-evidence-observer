@@ -1,0 +1,7 @@
+native-run/
+*.tar.gz
+execsurface
+selected-pins.json
+*-report.json
+install-report.json
+test-results.xml
