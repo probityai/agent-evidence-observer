@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools==84.0.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "probity-adk-reference"
+version = "0.0.1"
+description = "Native Google ADK plugin and bounded protected HTTP ticket reference"
+requires-python = ">=3.13"
+dependencies = ["agent-evidence-observer==0.0.1"]
+
+[project.optional-dependencies]
+producer = ["google-adk==2.11.0", "mcp==2.2.0"]
+
+[project.scripts]
+probity-adk-run = "probity_adk.producer:main"
+probity-adk-read = "probity_adk.reader:main"
+probity-adk-gate = "probity_adk.gate:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["probity_adk"]
+known-third-party = ["probity_observer"]
