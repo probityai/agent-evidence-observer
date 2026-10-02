@@ -147,3 +147,5 @@ The vocabulary and corpus define the records and their checks; this repository i
 ## License
 
 Apache License 2.0; see `LICENSE`.
+
+Run the bounded native examples across all five tiers with `python examples/five_tier_demo.py ./five-tier-run`. The [native launch guide](docs/FIVE-TIER-NATIVE-RUN.md) gives installation commands, retained launch/attempt scopes and failure controls.

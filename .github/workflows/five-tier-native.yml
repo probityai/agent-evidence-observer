@@ -1,0 +1,35 @@
+name: Five-tier native launch
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  five-tier-native:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install selected native profiles
+        run: |
+          python -m pip install -e '.[test,inspect,aae]'
+          python -m pip install -e 'interop/a2a-native-2026-10-02[test]'
+      - name: Check child failure and report controls
+        run: python -m pytest -q tests/test_five_tier_launcher.py --junitxml=five-tier-launch-tests.xml
+      - name: Run all declared native profiles
+        run: python examples/five_tier_demo.py ./five-tier-native-run
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: five-tier-native-run
+          path: |
+            five-tier-native-run/
+            five-tier-launch-tests.xml
+          if-no-files-found: error
