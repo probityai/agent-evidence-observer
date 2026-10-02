@@ -147,3 +147,18 @@ def test_malformed_host_authority_refuses_before_clock_update(packet, tmp_path, 
         with pytest.raises(PacketError, match="^" + reason + "$"):
             gate(conn, case, current, "first")
         assert conn.execute("SELECT name FROM sqlite_master WHERE name='recovery_clock'").fetchone() is None
+
+
+def test_retained_original_native_fixture_replays(tmp_path):
+    import zipfile
+    from pathlib import Path
+    profile = Path(__file__).resolve().parents[1]
+    provenance = decode((profile / "provenance.json").read_bytes())
+    archive = profile / "native-fixture.zip"
+    assert sha(archive.read_bytes()) == provenance["archiveSha256"]
+    with zipfile.ZipFile(archive) as retained:
+        assert len(retained.namelist()) == provenance["memberCount"]
+        assert all((tmp_path / name).resolve().is_relative_to(tmp_path.resolve()) for name in retained.namelist())
+        retained.extractall(tmp_path)
+    report = verify_saved(tmp_path, provenance["consumerPins"])
+    assert report == decode((profile / "recorded-report.json").read_bytes())

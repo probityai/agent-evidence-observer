@@ -1,0 +1,18 @@
+{
+  "profile": "probity-langgraph-recovery-authority-v0",
+  "sourceRevision": "a76e975d7dd0dd6ccee1b47eb2712cc80e12aca4",
+  "archive": "native-fixture.zip",
+  "archiveSha256": "6bdbb1b6bf29bf606f22a72246bd0d367385aee3230a598f6cc491aff1dd7dc5",
+  "archiveBytes": 278193,
+  "memberCount": 106,
+  "consumerPins": {
+    "artifactManifestSha256": "c871c051a518336865c2fc55b1b21200143dc5f89e460a0317efafa2406b720b",
+    "evaluationTime": "2026-10-02T19:11:35.544872+00:00",
+    "planSha256": "f4787681356b65008dd0546747b6af9bab6d9134ec79de4d3a4ad3fc2cb47c17",
+    "policySha256": "cdaf06196dd00e1f0c3f350b80d8f510f5bab2a679d966f5a2dd871abfaae531"
+  },
+  "controls": 42,
+  "reselectedMutations": 23,
+  "readerWithoutFramework": true,
+  "scope": "author-operated native worker restarts; host-selected deterministic clock; target remains alive; no independent custody or outside adoption"
+}
