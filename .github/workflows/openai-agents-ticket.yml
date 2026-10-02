@@ -1,0 +1,86 @@
+name: OpenAI Agents native trace and protected ticket
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'interop/openai-agents-ticket-2026-10-02/**'
+      - 'src/probity_observer/**'
+      - 'pyproject.toml'
+      - '.github/workflows/openai-agents-ticket.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'interop/openai-agents-ticket-2026-10-02/**'
+      - 'src/probity_observer/**'
+      - 'pyproject.toml'
+      - '.github/workflows/openai-agents-ticket.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  native-consumer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: interop/openai-agents-ticket-2026-10-02
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: probityai/agent-evidence-observer
+          ref: 71ac0b2126473316655184235000647a6dd0f5cf
+          path: selected-observer
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.13'
+      - name: Install hash-selected producer and build source-proven wheels
+        run: |
+          set -euo pipefail
+          python -m pip install --require-hashes -r requirements.lock
+          python -m pip wheel --no-deps --no-build-isolation "$GITHUB_WORKSPACE/selected-observer" . --wheel-dir "$RUNNER_TEMP/openai-wheels"
+          python verify_wheels.py "$RUNNER_TEMP/openai-wheels" --selection source-selection.json > installed-source-proof.json
+          python -m pip install --no-deps "$RUNNER_TEMP/openai-wheels/agent_evidence_observer-0.0.1-py3-none-any.whl" "$RUNNER_TEMP/openai-wheels/probity_openai_agents_reference-0.0.1-py3-none-any.whl"
+      - name: Execute SDK lifecycle and semantic refusal controls
+        run: |
+          set -euo pipefail
+          python -m pytest tests -q --junitxml=test-results.xml
+          ruff check --select E,F,I,C901 --config 'lint.mccabe.max-complexity=5' src tests verify_wheels.py
+      - name: Execute fresh native SDK and protected HTTP population
+        run: |
+          set -euo pipefail
+          packet="$GITHUB_WORKSPACE/interop/openai-agents-ticket-2026-10-02/fresh-run/packet"
+          test ! -e "$packet"
+          mkdir -p fresh-run
+          cd "$RUNNER_TEMP"
+          probity-openai-run "$packet" --source-revision "$GITHUB_SHA" > "$GITHUB_WORKSPACE/interop/openai-agents-ticket-2026-10-02/fresh-run/producer-stdout.json"
+      - name: Install a separate reader without the Agents SDK or OpenAI client
+        run: |
+          set -euo pipefail
+          python -m venv "$RUNNER_TEMP/openai-reader"
+          "$RUNNER_TEMP/openai-reader/bin/python" -m pip install --require-hashes -r requirements-reader.lock
+          "$RUNNER_TEMP/openai-reader/bin/python" -m pip install --no-deps "$RUNNER_TEMP/openai-wheels/agent_evidence_observer-0.0.1-py3-none-any.whl" "$RUNNER_TEMP/openai-wheels/probity_openai_agents_reference-0.0.1-py3-none-any.whl"
+          "$RUNNER_TEMP/openai-reader/bin/python" -c "import importlib.util; assert importlib.util.find_spec('agents') is None and importlib.util.find_spec('openai') is None"
+      - name: Replay with separately supplied demonstration pins
+        run: |
+          set -euo pipefail
+          cp fresh-run/packet/consumer-pins.json "$RUNNER_TEMP/openai-selected-pins.json"
+          "$RUNNER_TEMP/openai-reader/bin/probity-openai-read" fresh-run/packet --pins-file "$RUNNER_TEMP/openai-selected-pins.json" > fresh-run/reader-stdout.json
+          python -c "import json; from pathlib import Path; r=Path('fresh-run'); a=json.loads((r/'producer-stdout.json').read_bytes()); b=json.loads((r/'reader-stdout.json').read_bytes()); c=json.loads((r/'packet/report.json').read_bytes()); assert a==b==c and b['status']=='verified' and b['plannedAttempts']==6"
+      - name: Retain original source, plan, SDK exports and reader receipts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: openai-agents-native-ticket
+          path: |
+            interop/openai-agents-ticket-2026-10-02/fresh-run/
+            interop/openai-agents-ticket-2026-10-02/installed-source-proof.json
+            interop/openai-agents-ticket-2026-10-02/test-results.xml
+          if-no-files-found: error
+          retention-days: 90
