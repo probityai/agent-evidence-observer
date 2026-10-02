@@ -15,7 +15,10 @@ boundary without waiting or pretending these are independent clock observations.
 A SQLite `BEGIN IMMEDIATE` serializes comparison/update of the action's durable
 clock high-water mark. Every well-typed, action-bound observation raises that
 mark even when revocation or expiry denies recovery; a later replay of an older
-permit therefore refuses. Missing recovery anchors fail closed. Revocation, expiry
+permit therefore refuses. A denied-at-high-water marker also prevents an
+equal-clock old permit from resurrecting revoked recovery authority. A strictly
+later explicit host permit can restore recovery; equal-clock repeated valid
+permits remain allowed. Missing recovery anchors fail closed. Revocation, expiry
 and rollback refuse before recovery dispatch or release of a cached native graph
 result. An earlier signed revision-one commit remains present and is reported
 separately from the recovery refusal. A valid after-effect recovery sends the

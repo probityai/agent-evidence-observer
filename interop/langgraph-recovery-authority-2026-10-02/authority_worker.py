@@ -53,16 +53,39 @@ def gate(conn, case, current, phase):
 
 def locked_gate(conn, case, current, phase):
     """Missing recovery anchor fails closed; initial selection creates it once."""
-    conn.execute("CREATE TABLE IF NOT EXISTS recovery_clock (binding TEXT PRIMARY KEY, clock INTEGER NOT NULL)")
+    conn.execute("CREATE TABLE IF NOT EXISTS recovery_clock (binding TEXT PRIMARY KEY, clock INTEGER NOT NULL, denied INTEGER NOT NULL)")
     binding = sha(encode({"request": case["request"], "grant": case["grant"]}))
-    row = conn.execute("SELECT clock FROM recovery_clock WHERE binding=?", (binding,)).fetchone()
-    prior = row[0] if row is not None else 0
+    row = conn.execute("SELECT clock, denied FROM recovery_clock WHERE binding=?", (binding,)).fetchone()
+    prior = checked_clock_row(row)
     status = validate(current, binding, prior)
     if phase == "second" and row is None:
         status = "refused-missing-clock-anchor"
+    status = deny_stale_permit(current, row, status)
     if row is not None or (phase == "first" and status == "authorized"):
-        conn.execute("INSERT OR REPLACE INTO recovery_clock VALUES (?, ?)", (binding, max(prior, current["clock"])))
+        conn.execute("INSERT OR REPLACE INTO recovery_clock VALUES (?, ?, ?)", (binding, max(prior, current["clock"]), denied_mark(current, row, status)))
     return {"current": current, "priorClock": prior, "status": status}
+
+
+def checked_clock_row(row):
+    """Corrupt recovery-clock metadata fails closed before authority evaluation."""
+    if row is None:
+        return 0
+    require(type(row[0]) is int and row[0] >= 0 and type(row[1]) is int and row[1] in (0, 1), "recovery-clock-schema")
+    return row[0]
+
+
+def deny_stale_permit(current, row, status):
+    """A denied observation cannot be resurrected by an equal-clock old permit."""
+    if row is not None and row[1] and current["clock"] == row[0] and status == "authorized":
+        return "refused-stale-authority"
+    return status
+
+
+def denied_mark(current, row, status):
+    """Keep denial at the high-water clock until a strictly later host selection."""
+    if row is not None and current["clock"] < row[0]:
+        return row[1]
+    return int(status != "authorized")
 
 
 def worker(case, endpoint, database, phase, output, current_file):

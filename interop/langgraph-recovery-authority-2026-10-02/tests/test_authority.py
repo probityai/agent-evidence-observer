@@ -180,3 +180,26 @@ def test_host_explicit_later_permit_after_revocation(packet, tmp_path):
         gate(conn, case, current, "first")
         assert gate(conn, case, {**current, "clock": 150, "revoked": True}, "second")["status"] == "refused-revoked"
         assert gate(conn, case, {**current, "clock": 151}, "second")["status"] == "authorized"
+
+
+def test_same_clock_revocation_prevents_stale_permit(packet, tmp_path):
+    case, current = selected(packet)
+    with sqlite3.connect(tmp_path / "same-clock.sqlite") as conn:
+        gate(conn, case, current, "first")
+        assert gate(conn, case, current, "second")["status"] == "authorized"
+        assert gate(conn, case, {**current, "revoked": True}, "second")["status"] == "refused-revoked"
+        assert gate(conn, case, current, "second")["status"] == "refused-stale-authority"
+        assert gate(conn, case, {**current, "clock": 99}, "second")["status"] == "refused-clock-rollback"
+        assert gate(conn, case, current, "second")["status"] == "refused-stale-authority"
+        assert gate(conn, case, {**current, "clock": 101}, "second")["status"] == "authorized"
+
+
+@pytest.mark.parametrize("clock,denied", [("bad", 0), (-1, 0), (100, 7)])
+def test_corrupt_clock_anchor_refuses(packet, tmp_path, clock, denied):
+    case, current = selected(packet)
+    with sqlite3.connect(tmp_path / "corrupt.sqlite") as conn:
+        gate(conn, case, current, "first")
+        conn.execute("UPDATE recovery_clock SET clock=?, denied=?", (clock, denied))
+        conn.commit()
+        with pytest.raises(PacketError, match="^recovery-clock-schema$"):
+            gate(conn, case, current, "second")
