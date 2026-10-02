@@ -1,0 +1,27 @@
+name: Native HTTP ticket service
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ticket-service:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -e '.[test]'
+      - run: pytest -q tests/test_ticket_service.py
+      - run: python examples/ticket_service_demo.py ./ticket-service-run
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ticket-service-run
+          path: ticket-service-run/
