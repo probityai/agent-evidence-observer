@@ -156,6 +156,16 @@ class TestJointReader:
     """Selected reader checks keep native execution and evidence scope separate."""
 
     class TestPassingCases:
+        def test_relative_native_output_freezes_absolute_launch_roots(self, fresh: tuple[Path, dict[str, Any], dict[str, Any]]) -> None:
+            root = fresh[0]
+            plan = load(root, "plan-before-run.json")
+            assert plan["captureRoot"] == str(root.resolve())
+            assert Path(plan["hostPrivateRoot"]).is_absolute()
+            for name in CASES:
+                value = load(root, "attempts/" + name + ".json")
+                assert all(Path(target["command"][2]).is_absolute() for target in value["targets"])
+                assert all(Path(worker["process"]["command"][2]).is_absolute() and Path(worker["process"]["command"][6]).is_absolute() for worker in value["workers"])
+
         def test_actual_cli_emits_canonical_report(self, fresh: tuple[Path, dict[str, Any], dict[str, Any]]) -> None:
             script = Path(__file__).resolve().parents[1] / "joint_reader.py"
             process = subprocess.run([sys.executable, str(script), str(fresh[0]), "--pins-file", str(fresh[0] / "consumer-pins.json")], capture_output=True, timeout=15, check=False, env=child_environment())

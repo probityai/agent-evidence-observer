@@ -275,6 +275,7 @@ def run(root: Path, revision: str) -> dict[str, Any]:
     not declare independent custody, remote caller identity or power-loss safety.
     """
     from joint_reader import verify_saved
+    root = root.resolve()
     require(importlib.metadata.version("langgraph") == "1.0.10" and importlib.metadata.version("langgraph-checkpoint-sqlite") == "3.1.1", "framework-version")
     root.mkdir(parents=True, exist_ok=False)
     private = root.parent / (root.name + "-host-private")
