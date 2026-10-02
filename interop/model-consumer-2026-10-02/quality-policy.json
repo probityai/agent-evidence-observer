@@ -1,0 +1,72 @@
+{
+  "schema": "probity-model-publication-policy-v1",
+  "profile": "probity-local-cpu-task-matrix-v1",
+  "planned": 48,
+  "pinsSha256": "8370275315894f4b9ae20db80fad708698c6574b1179bd0d2aba32443a82fca3",
+  "readerSha256": "1ced4b0875d56ee33e1bc8749c44669aa44ce87036ad0bbbdfc798cdffa5cee2",
+  "rows": [
+    {
+      "configuration": "short24",
+      "family": "structured-extraction",
+      "planned": 6,
+      "minCorrect": 1,
+      "minFormatValid": 0
+    },
+    {
+      "configuration": "short24",
+      "family": "arithmetic",
+      "planned": 6,
+      "minCorrect": 1,
+      "minFormatValid": 0
+    },
+    {
+      "configuration": "short24",
+      "family": "policy-decision",
+      "planned": 6,
+      "minCorrect": 1,
+      "minFormatValid": 0
+    },
+    {
+      "configuration": "short24",
+      "family": "grounded-abstention",
+      "planned": 6,
+      "minCorrect": 1,
+      "minFormatValid": 0
+    },
+    {
+      "configuration": "long96",
+      "family": "structured-extraction",
+      "planned": 6,
+      "minCorrect": 1,
+      "minFormatValid": 0
+    },
+    {
+      "configuration": "long96",
+      "family": "arithmetic",
+      "planned": 6,
+      "minCorrect": 1,
+      "minFormatValid": 0
+    },
+    {
+      "configuration": "long96",
+      "family": "policy-decision",
+      "planned": 6,
+      "minCorrect": 1,
+      "minFormatValid": 0
+    },
+    {
+      "configuration": "long96",
+      "family": "grounded-abstention",
+      "planned": 6,
+      "minCorrect": 1,
+      "minFormatValid": 0
+    }
+  ],
+  "limits": {
+    "elapsedNs": 60000000000,
+    "promptTokens": 24576,
+    "completionTokens": 2880,
+    "returnedCallProcessCpuNs": 120000000000,
+    "processLifetimePeakRssKiB": 524288
+  }
+}
