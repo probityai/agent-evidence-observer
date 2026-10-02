@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "probity-control-arena-reader"
-version = "0.0.1"
+version = "0.0.2"
 description = "Framework-free selected ControlArena echo/submit native-log publication reader"
 requires-python = ">=3.11"
 dependencies = []

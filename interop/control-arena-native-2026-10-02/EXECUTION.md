@@ -13,17 +13,21 @@ echo has no external target effect. Upstream acceptance remains an owner decisio
 The consumer selects an exact reviewed Observer source commit, host source,
 Inspect version, literal population, permitted observation window and wheel
 bytes before importing candidate host code. `run_selected_host.py` checks clean
-Git identity, reviewed wheel SHA256 and installed module SHA256, version and
+Git identity and full host SHA, then observes `git rev-parse --short HEAD`
+from that verified clean checkout. It freezes that exact abbreviation before
+launch; shallow CI and full clones may choose different lengths. The policy
+binds the selected abbreviation to the full 40-character source SHA and requires
+exact candidate equality. It also checks reviewed wheel SHA256 and installed module SHA256, version and
 absence of Inspect/ControlArena from the isolated reader environment. It writes
 `selection-before-execution.json` before launching the native host. Inherited
 provider credential variables are removed without displaying their values.
 
-The reader distribution is `probity-control-arena-reader==0.0.1`, with no runtime
+The reader distribution is `probity-control-arena-reader==0.0.2`, with no runtime
 dependencies. Build backend versions are fixed in `pyproject.toml`. The reviewed
 wheel SHA256 is
-`223431565ea536f5f5e601f10462933310fb30abf6f39d88b779b3d25ed82eaa`
-(8807 bytes). Its module SHA256 is
-`1ae62c85b18f7b50a28a615d5ddcf9d4ea2b4a7455728656ea40c614b57e1c02`.
+`096ab32f22716c11b95cb7c4be9daadf29ffea01513cf5aa9390b053654178a3`
+(8981 bytes). Its module SHA256 is
+`106446beaf68fe9775c3bbe1d4fa8fe8fb32090a2235ec1e4041408322a6204c`.
 Build with `SOURCE_DATE_EPOCH=946684800`; the runner refuses a wheel that differs.
 An intentional reader/source upgrade requires review and new maintained pins.
 
@@ -45,7 +49,7 @@ uv pip install --python /tmp/selected-reader/bin/python --no-deps /tmp/reader-wh
 python interop/control-arena-native-2026-10-02/run_selected_host.py \
   --reader-root "$PWD" --reader-source-commit "$(git rev-parse HEAD)" \
   --reader-python /tmp/selected-reader/bin/python \
-  --wheel /tmp/reader-wheels/probity_control_arena_reader-0.0.1-py3-none-any.whl \
+  --wheel /tmp/reader-wheels/probity_control_arena_reader-0.0.2-py3-none-any.whl \
   --host-root /tmp/selected-native-host --host-python /tmp/selected-native-host/.venv/bin/python \
   --host-origin https://github.com/astrogilda/control-arena \
   --backend asyncio --output-dir /tmp/selected-native-result
@@ -57,7 +61,8 @@ trusted. Repeat with `--backend trio` and a new output directory. The runner
 retains every executed command's full output, exit status and output digest.
 
 For existing captures, `select_policy.py` opens no candidate log. Supply an
-explicit digest from a trusted capture stage, exact full host commit, origin,
+explicit digest from a trusted capture stage, exact full host commit, independently
+selected `--source-abbrev` (7–40 lowercase hexadecimal prefix), origin,
 Inspect version and outside time interval. Its four expected identities are
 compiled in this profile. Invoke the installed consumer with:
 
@@ -93,7 +98,7 @@ evaluation completion at whole-second precision, so its final recorded second
 is included. This precision allowance does not loosen the separately selected
 outside observation window or model/tool/sample/span causality.
 
-The 56 installed-reader controls operate on each backend's actual host export.
+The 68 installed-reader controls operate on each backend's actual host export.
 Mutation controls reselect digests to exercise semantics, not just byte mismatch:
 changed/omitted/duplicate samples and events; errors and limits; unsupported
 plans/versions/sources; incomplete spans; broken output/message/tool/store joins;
@@ -102,6 +107,9 @@ inconsistent span ends; and sample/event/span containment. Hypothesis checks
 native omissions. No raw log fixture is committed.
 Bootstrap mutants also prove a changed installed module cannot execute before
 byte mismatch refusal, and a changed wheel cannot start the reader process.
+Source controls include independently selected 7/8/full-length prefixes, invalid
+full SHAs or abbreviations, omitted capture selection, and a candidate reporting
+another otherwise valid prefix. The latter holds even after digest reselection.
 
 The workflow is a maintained consumer demonstration, with separate asyncio/trio
 jobs and native export controls. CI execution, upstream acceptance, producer

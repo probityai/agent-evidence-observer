@@ -111,6 +111,9 @@ class Policy:
     expected_source : Object
         Exact native ``eval.revision`` record expected by the consumer. This
         comparison does not authenticate a candidate's claimed source itself.
+    selected_source_commit : str
+        Full source SHA selected outside the candidate; the reported native
+        abbreviation must be an exact prefix of this full selection.
     expected_inspect : str
         Selected Inspect version; no compatibility claim for other versions.
     samples : tuple
@@ -126,6 +129,7 @@ class Policy:
 
     log_sha256: str
     expected_source: Object
+    selected_source_commit: str
     expected_inspect: str
     samples: tuple[tuple[str, int, str], ...]
     not_before: datetime
@@ -185,13 +189,23 @@ class Policy:
         )
         source = obj(data.get("expectedSource"), "expectedSource")
         commit = string(source.get("commit"), "Selected source commit")
+        full_commit = string(data.get("selectedSourceCommit"), "selectedSourceCommit")
+        require(
+            len(full_commit) == 40
+            and all(c in "0123456789abcdef" for c in full_commit),
+            "Selected full source commit must be 40 lowercase hexadecimal characters",
+        )
         require(
             source.get("type") == "git"
             and source.get("dirty") is False
-            and len(commit) == 8
+            and 7 <= len(commit) <= 40
             and all(c in "0123456789abcdef" for c in commit)
             and isinstance(source.get("origin"), str),
             "Selected source must be a clean pinned Git revision",
+        )
+        require(
+            full_commit.startswith(commit),
+            "Selected source abbreviation must bind the full source commit",
         )
         inspect_version = string(data.get("expectedInspect"), "expectedInspect")
         require(inspect_version == "0.3.257", "Unsupported selected Inspect version")
@@ -201,6 +215,7 @@ class Policy:
         return cls(
             digest,
             source,
+            full_commit,
             inspect_version,
             tuple(selected),
             lower,

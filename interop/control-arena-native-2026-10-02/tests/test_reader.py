@@ -131,6 +131,18 @@ def modified_native(raw: bytes, mutation: str) -> bytes:
 
 class TestControlArenaReader:
     class TestPassingCases:
+        @pytest.mark.parametrize("length", [7, 8, 40])
+        def test_outside_selected_source_prefix_lengths(self, length: int) -> None:
+            selected = json.loads(Path(os.environ["CONTROL_ARENA_POLICY"]).read_bytes())
+            selected["expectedSource"]["commit"] = selected["selectedSourceCommit"][
+                :length
+            ]
+            policy = Policy.from_bytes(json.dumps(selected).encode())
+            assert (
+                policy.expected_source["commit"]
+                == selected["selectedSourceCommit"][:length]
+            )
+
         def test_actual_native_population(
             self, native_bytes: bytes, selected_policy: Policy
         ) -> None:
@@ -154,6 +166,70 @@ class TestControlArenaReader:
             assert "inspect_ai" not in sys.modules
 
     class TestFailingCases:
+        @pytest.mark.parametrize(
+            ("field", "value", "expected"),
+            [
+                (
+                    "abbreviation",
+                    "7c0eba",
+                    "Selected source must be a clean pinned Git revision",
+                ),
+                (
+                    "abbreviation",
+                    "7" * 41,
+                    "Selected source must be a clean pinned Git revision",
+                ),
+                (
+                    "abbreviation",
+                    "7c0ebaz",
+                    "Selected source must be a clean pinned Git revision",
+                ),
+                (
+                    "abbreviation",
+                    "0000000",
+                    "Selected source abbreviation must bind the full source commit",
+                ),
+                (
+                    "full",
+                    "7" * 39,
+                    "Selected full source commit must be 40 lowercase "
+                    "hexadecimal characters",
+                ),
+                (
+                    "full",
+                    "A" * 40,
+                    "Selected full source commit must be 40 lowercase "
+                    "hexadecimal characters",
+                ),
+            ],
+        )
+        def test_invalid_outside_source_selection(
+            self, field: str, value: str, expected: str
+        ) -> None:
+            selected = json.loads(Path(os.environ["CONTROL_ARENA_POLICY"]).read_bytes())
+            if field == "full":
+                selected["selectedSourceCommit"] = value
+            else:
+                selected["expectedSource"]["commit"] = value
+            with pytest.raises(ReaderRefusal, match=f"^{re.escape(expected)}$"):
+                Policy.from_bytes(json.dumps(selected).encode())
+
+        def test_candidate_cannot_choose_another_valid_prefix(
+            self, native_bytes: bytes, selected_policy: Policy
+        ) -> None:
+            candidate = json.loads(native_bytes)
+            selected_length = len(str(selected_policy.expected_source["commit"]))
+            other_length = 8 if selected_length == 7 else 7
+            candidate["eval"]["revision"]["commit"] = (
+                selected_policy.selected_source_commit[:other_length]
+            )
+            mutant = json.dumps(candidate).encode()
+            policy = replace(
+                selected_policy, log_sha256=hashlib.sha256(mutant).hexdigest()
+            )
+            with pytest.raises(ReaderRefusal, match="^Source revision mismatch$"):
+                read_log(mutant, policy)
+
         @pytest.mark.parametrize(
             ("mutation", "expected"),
             [

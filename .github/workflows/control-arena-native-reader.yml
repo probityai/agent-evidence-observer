@@ -54,7 +54,7 @@ jobs:
           python interop/control-arena-native-2026-10-02/run_selected_host.py \
             --reader-root "$GITHUB_WORKSPACE" --reader-source-commit "$GITHUB_SHA" \
             --reader-python "$RUNNER_TEMP/reader-env/bin/python" \
-            --wheel "$RUNNER_TEMP/reader-wheels/probity_control_arena_reader-0.0.1-py3-none-any.whl" \
+            --wheel "$RUNNER_TEMP/reader-wheels/probity_control_arena_reader-0.0.2-py3-none-any.whl" \
             --host-root "$GITHUB_WORKSPACE/selected-native-host" \
             --host-python "$GITHUB_WORKSPACE/selected-native-host/.venv/bin/python" \
             --host-origin https://github.com/astrogilda/control-arena \
@@ -64,7 +64,7 @@ jobs:
         env:
           CONTROL_ARENA_LOG: '${{ runner.temp }}/native-selected-${{ matrix.backend }}/native/control-arena.json'
           CONTROL_ARENA_POLICY: '${{ runner.temp }}/native-selected-${{ matrix.backend }}/policy.json'
-          CONTROL_ARENA_WHEEL: '${{ runner.temp }}/reader-wheels/probity_control_arena_reader-0.0.1-py3-none-any.whl'
+          CONTROL_ARENA_WHEEL: '${{ runner.temp }}/reader-wheels/probity_control_arena_reader-0.0.2-py3-none-any.whl'
         run: |
           "$RUNNER_TEMP/reader-env/bin/python" -I -m pytest -q tests --import-mode=importlib --junitxml="$RUNNER_TEMP/reader-${{ matrix.backend }}.xml"
           python -m ruff check .

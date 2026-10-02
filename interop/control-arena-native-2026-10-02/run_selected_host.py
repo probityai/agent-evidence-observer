@@ -12,8 +12,9 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 HOST_COMMIT = "7c0ebaa21c9d59d146c0eafcf7d6938734e8e430"
-WHEEL_SHA256 = "223431565ea536f5f5e601f10462933310fb30abf6f39d88b779b3d25ed82eaa"
-MODULE_SHA256 = "1ae62c85b18f7b50a28a615d5ddcf9d4ea2b4a7455728656ea40c614b57e1c02"
+HOST_TREE = "6c2e81ac9d251232ef278de01e4ed1ba198c0a49"
+WHEEL_SHA256 = "096ab32f22716c11b95cb7c4be9daadf29ffea01513cf5aa9390b053654178a3"
+MODULE_SHA256 = "106446beaf68fe9775c3bbe1d4fa8fe8fb32090a2235ec1e4041408322a6204c"
 INSPECT_VERSION = "0.3.257"
 PROVIDER_VARIABLES = {
     "HF_TOKEN",
@@ -101,6 +102,8 @@ def verify_sources(reader_root: Path, source: str, host: Path, origin: str) -> N
         raise ValueError("Reader source has tracked modifications")
     if git(host, ["rev-parse", "HEAD"]) != HOST_COMMIT:
         raise ValueError("Host source differs from the maintained exact pin")
+    if git(host, ["rev-parse", "HEAD^{tree}"]) != HOST_TREE:
+        raise ValueError("Host source tree differs from the maintained exact pin")
     if git(host, ["status", "--porcelain"]):
         raise ValueError("Host source must be clean")
     if git(host, ["remote", "get-url", "origin"]) != origin:
@@ -125,7 +128,7 @@ def verify_installed_reader(
     command([str(python), "-I", "-c", probe], output.parent, output, env)
     installed = json.loads(output.read_bytes())
     expected = {
-        "version": "0.0.1",
+        "version": "0.0.2",
         "moduleSha256": MODULE_SHA256,
         "inspectPresent": False,
         "controlArenaPresent": False,
@@ -177,6 +180,9 @@ def main() -> None:
     verify_sources(
         args.reader_root, args.reader_source_commit, args.host_root, args.host_origin
     )
+    source_abbrev = git(args.host_root, ["rev-parse", "--short", "HEAD"])
+    if not (7 <= len(source_abbrev) <= 40 and HOST_COMMIT.startswith(source_abbrev)):
+        raise ValueError("Native source abbreviation must bind the verified full SHA")
     args.output_dir.mkdir(parents=True, exist_ok=False)
     env = clean_environment()
     env["INSPECT_ASYNC_BACKEND"] = args.backend
@@ -196,9 +202,12 @@ def main() -> None:
         args.output_dir / "selection-before-execution.json",
         {
             "readerSourceCommit": args.reader_source_commit,
+            "readerSourceTree": git(args.reader_root, ["rev-parse", "HEAD^{tree}"]),
             "readerWheelSha256": WHEEL_SHA256,
             "readerModuleSha256": MODULE_SHA256,
             "hostSourceCommit": HOST_COMMIT,
+            "hostSourceTree": HOST_TREE,
+            "hostNativeAbbreviation": source_abbrev,
             "hostSourceOrigin": args.host_origin,
             "expectedInspect": INSPECT_VERSION,
             "expectedSamples": population,
@@ -232,9 +241,10 @@ def main() -> None:
             "expectedSource": {
                 "type": "git",
                 "origin": args.host_origin,
-                "commit": HOST_COMMIT[:8],
+                "commit": source_abbrev,
                 "dirty": False,
             },
+            "selectedSourceCommit": HOST_COMMIT,
             "expectedInspect": INSPECT_VERSION,
             "expectedSamples": population,
             "notBefore": start.isoformat(),

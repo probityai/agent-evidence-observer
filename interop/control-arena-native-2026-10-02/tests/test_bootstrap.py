@@ -31,6 +31,40 @@ def selected_wheel() -> Path:
 
 class TestInstalledReaderBootstrap:
     class TestFailingCases:
+        @pytest.mark.parametrize("abbreviation", [None, "0000000"])
+        def test_existing_capture_requires_outside_abbreviation(
+            self, tmp_path: Path, abbreviation: str | None
+        ) -> None:
+            selector = Path(__file__).resolve().parents[1] / "select_policy.py"
+            output = tmp_path / "selected-policy.json"
+            arguments = [
+                sys.executable,
+                "-I",
+                str(selector),
+                "--log-sha256",
+                "0" * 64,
+                "--source-commit",
+                "7c0ebaa21c9d59d146c0eafcf7d6938734e8e430",
+                "--source-origin",
+                "https://github.com/astrogilda/control-arena",
+                "--inspect-version",
+                "0.3.257",
+                "--not-before",
+                "2026-10-02T00:00:00Z",
+                "--not-after",
+                "2026-10-03T00:00:00Z",
+                "--output",
+                str(output),
+            ]
+            if abbreviation is not None:
+                arguments.extend(["--source-abbrev", abbreviation])
+            result = subprocess.run(
+                arguments, capture_output=True, text=True, check=False
+            )
+            assert result.returncode == 2
+            assert "--source-abbrev" in result.stderr
+            assert not output.exists()
+
         def test_changed_wheel_refuses_before_starting_a_process(
             self, tmp_path: Path, bootstrap: ModuleType
         ) -> None:
@@ -80,12 +114,12 @@ class TestInstalledReaderBootstrap:
                 "from pathlib import Path\n"
                 f"Path({str(marker)!r}).write_text('executed')\n"
             )
-            metadata = packages / "probity_control_arena_reader-0.0.1.dist-info"
+            metadata = packages / "probity_control_arena_reader-0.0.2.dist-info"
             metadata.mkdir()
             (metadata / "METADATA").write_text(
                 "Metadata-Version: 2.1\n"
                 "Name: probity-control-arena-reader\n"
-                "Version: 0.0.1\n"
+                "Version: 0.0.2\n"
             )
             with pytest.raises(
                 ValueError,

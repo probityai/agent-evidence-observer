@@ -21,6 +21,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--log-sha256", required=True)
     parser.add_argument("--source-commit", required=True)
+    parser.add_argument("--source-abbrev", required=True)
     parser.add_argument("--source-origin", required=True)
     parser.add_argument("--inspect-version", required=True)
     parser.add_argument("--not-before", required=True)
@@ -31,15 +32,23 @@ def main() -> None:
         c not in "0123456789abcdef" for c in args.source_commit
     ):
         parser.error("--source-commit must be an exact lowercase 40-character Git SHA")
+    if not (
+        7 <= len(args.source_abbrev) <= 40
+        and args.source_commit.startswith(args.source_abbrev)
+    ):
+        parser.error(
+            "--source-abbrev must be an outside-selected 7-40 character prefix"
+        )
     policy = {
         "profile": PROFILE,
         "logSha256": args.log_sha256,
         "expectedSource": {
             "type": "git",
             "origin": args.source_origin,
-            "commit": args.source_commit[:8],
+            "commit": args.source_abbrev,
             "dirty": False,
         },
+        "selectedSourceCommit": args.source_commit,
         "expectedInspect": args.inspect_version,
         "notBefore": args.not_before,
         "notAfter": args.not_after,
