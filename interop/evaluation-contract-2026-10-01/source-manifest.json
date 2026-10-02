@@ -22,5 +22,34 @@
       "role": "read-only public source comparison; not imported"
     }
   ],
-  "relationship": "Standalone original optional reference; no changes to evaluation_history or inspect_history"
+  "relationship": "Standalone validator plus optional bridge; existing evaluation_history and inspect_history APIs unchanged",
+  "native_mapping": {
+    "profile": "probity-inspect-five-tier-v1",
+    "inspect_version": "0.3.273",
+    "model": "mockllm/model",
+    "imports": [
+      {
+        "url": "https://github.com/probityai/agent-evidence-observer/blob/6306ecbe18a06c537ffce72948e91f618d9c261e/src/probity_observer/evaluation_history.py",
+        "source_revision": "6306ecbe18a06c537ffce72948e91f618d9c261e",
+        "sha256": "175467e7eac8381cc0a79c8f35efb80b406c99dbdc0b05bb5cec65afb41532c7",
+        "size_bytes": 23576,
+        "role": "Owned strict native verifier or mock-harness launcher imported by optional bridge"
+      },
+      {
+        "url": "https://github.com/probityai/agent-evidence-observer/blob/6306ecbe18a06c537ffce72948e91f618d9c261e/src/probity_observer/inspect_history.py",
+        "source_revision": "6306ecbe18a06c537ffce72948e91f618d9c261e",
+        "sha256": "1d0fc978360c60f8e57cfdb8f3f7b6d07b56bfefc92b4dcdc928006222ca041c",
+        "size_bytes": 26903,
+        "role": "Owned strict native verifier or mock-harness launcher imported by optional bridge"
+      },
+      {
+        "url": "https://github.com/probityai/agent-evidence-observer/blob/6306ecbe18a06c537ffce72948e91f618d9c261e/examples/evaluation_history_demo.py",
+        "source_revision": "6306ecbe18a06c537ffce72948e91f618d9c261e",
+        "sha256": "14adba985683f2377ac54abfc5056b2d36907f6d7377c60b8ae106e362e3c2a4",
+        "size_bytes": 14383,
+        "role": "Owned strict native verifier or mock-harness launcher imported by optional bridge"
+      }
+    ],
+    "runtime_pin_authority": "Installed runtime file digests, package metadata and exact source bytes retained in each native run; no inferred upstream Git revision"
+  }
 }

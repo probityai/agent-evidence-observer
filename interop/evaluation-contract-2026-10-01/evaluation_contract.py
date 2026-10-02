@@ -19,7 +19,15 @@ PROFILE = "probity-five-tier-result-reference-v0"
 TIERS = frozenset({"reasoning", "tools", "agents", "workloads", "a2a"})
 OUTCOMES = frozenset({"pass", "fail", "unknown", "not-exercised", "out-of-scope"})
 STATUSES = frozenset(
-    {"complete", "error", "timeout", "interrupted", "incomplete", "not-started"}
+    {
+        "complete",
+        "error",
+        "timeout",
+        "interrupted",
+        "incomplete",
+        "not-started",
+        "start-unknown",
+    }
 )
 AXES = frozenset(
     {
@@ -209,10 +217,11 @@ def _source(value: Any, artifacts: dict[str, bytes]) -> None:
 def _identity(value: Any) -> None:
     """Require semantic identities in separate fields, without deriving aliases."""
     object_keys(value, IDENTITIES, "identity_shape")
-    for key in IDENTITIES - {"effect_id"}:
+    for key in IDENTITIES - {"effect_id", "consumer_decision_id"}:
         identifier(value[key])
-    if value["effect_id"] is not None:
-        identifier(value["effect_id"])
+    for key in ("effect_id", "consumer_decision_id"):
+        if value[key] is not None:
+            identifier(value[key])
 
 
 def _attempt(spec: Any, earlier: dict[str, Any]) -> None:
@@ -389,11 +398,20 @@ def _record(
             record["claims"]["task_outcome"]["status"] not in {"pass", "fail"},
             "unsuccessful_attempt_scored",
         )
-    if record["harness_status"] == "not-started":
+    if record["harness_status"] in {"not-started", "start-unknown"}:
         require(
             all(v is None for v in record["resources"].values()), "unstarted_resources"
         )
         require(record["capture"]["observed_effect_count"] is None, "unstarted_effect")
+    if record["harness_status"] == "start-unknown":
+        require(
+            "start_evidence_missing" in record["capture"]["gaps"],
+            "unknown_start_without_gap",
+        )
+        require(
+            record["claims"]["effect"]["status"] not in {"pass", "fail"},
+            "unknown_start_effect_inference",
+        )
     _native(record, artifacts)
     return aid
 
@@ -473,7 +491,7 @@ def validate(
     started = [
         r["identity"]["attempt_id"]
         for r in history["records"]
-        if r["harness_status"] != "not-started"
+        if r["harness_status"] not in {"not-started", "start-unknown"}
     ]
     require(starts == started, "start_ledger_mismatch")
     seen: set[str] = set()
@@ -508,6 +526,7 @@ def validate(
         ),
         "failed": sum(counts[s] for s in ("error", "timeout", "interrupted")),
         "missing": counts["not-started"],
+        "unknown_start": counts["start-unknown"],
         "incomplete": counts["incomplete"],
         "harness_counts": dict(counts),
         "plan_sha256": expected_plan_sha256,

@@ -17,8 +17,10 @@ This is a harness contract, not LLM performance or independent custody.
 
 The optional [five-tier result contract](interop/evaluation-contract-2026-10-01/README.md)
 checks frozen attempts, honest retries and retained outcome mappings across reasoning,
-tools, agents, workloads and A2A. Its demonstration is synthetic accounting;
-native benchmark runs and independent operation remain separate gates.
+tools, agents, workloads and A2A. Its five-tier demonstration is synthetic accounting.
+An optional native bridge now reconstructs the same envelope from pinned Inspect
+mock logs, retaining task failures, harness errors, incomplete records and unknown
+starts. Native model benchmarks and independent operation remain separate gates.
 
 The [AAE enforcement adapter](docs/AAE-ENFORCEMENT.md) recomputes pinned enforce-core fixtures and links a consumer-pinned local write decision to an observer record. The [protected AAE dispatch path](docs/AAE-PROTECTED-DISPATCH.md) now commits that decision before the local effect and verifies it against the retained grant and native history.
 
