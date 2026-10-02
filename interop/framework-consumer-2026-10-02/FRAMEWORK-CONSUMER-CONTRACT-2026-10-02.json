@@ -1,0 +1,250 @@
+{
+  "historical_native_delivery_commit": "f8ad00f16c43d3ad9e812887f7184c130c0fe1cd",
+  "host_layout": {
+    "packets": "evidence/{langgraph,pydantic}/packet/",
+    "pins": "policy/framework/{langgraph,pydantic}-pins.json",
+    "support_files": ".ci/framework-consumer/",
+    "workflow": ".github/workflows/framework-record-gate.yml"
+  },
+  "native_composite_action": "Observer23 action.yml remains limited to its original two profiles; this candidate uses dedicated reader commands.",
+  "observer_commit": "34550d7d20c8149ae88d7ba3fcc5e51e1e70e1eb",
+  "observer_repository": "probityai/agent-evidence-observer",
+  "profiles": {
+    "langgraph": {
+      "cases": [
+        "permit",
+        "deny",
+        "altered-argument",
+        "interrupt-before",
+        "resume-after-effect",
+        "pending-intent"
+      ],
+      "distribution": "probity-langgraph-ticket-reader",
+      "entrypoint": "probity-langgraph-read",
+      "install_scope": "Copied original lg_common.py/lg_reader.py plus thin CLI; no lg_run.py or LangGraph dependency in wheel.",
+      "native_framework_version": "1.0.10",
+      "native_profile": "probity-langgraph-aae-ticket-v0",
+      "planned_attempts": 6,
+      "remaining": [
+        "durable checkpointer and process restart",
+        "outside host selection/recurring publication gate"
+      ],
+      "selected_pin_fields": [
+        "planSha256",
+        "artifactManifestSha256",
+        "evaluationTime"
+      ],
+      "upgrade_population": [
+        "valid six-case original packet",
+        "wrong selected plan/artifact pins",
+        "changed arguments with newly selected manifest",
+        "missing/swapped checkpoint lineage",
+        "future native timestamp beyond selected evaluation time",
+        "cached completed effect at revision one",
+        "pending intent stays incomplete"
+      ],
+      "version": "0.0.1"
+    },
+    "pydantic": {
+      "cases": [
+        "permit",
+        "deny",
+        "changed-arguments",
+        "retry",
+        "producer-error"
+      ],
+      "distribution": "probity-pydantic-ticket-reader",
+      "entrypoint": "probity-pydantic-read",
+      "install_scope": "Copied original probity_pydantic __init__/contract/reader only; no producer.py or Pydantic AI dependency in wheel. Use a new environment; original reference package shares this namespace.",
+      "native_framework_version": "1.68.0",
+      "native_profile": "probity-pydantic-ai-ticket-v0",
+      "planned_attempts": 5,
+      "remaining": [
+        "retry exhaustion and failure after committed effect",
+        "outside host selection/recurring publication gate"
+      ],
+      "selected_pin_fields": [
+        "planSha256",
+        "sourceManifestSha256",
+        "artifactManifestSha256",
+        "evaluationTime"
+      ],
+      "upgrade_population": [
+        "valid five-case original packet",
+        "wrong selected plan/source/artifact pins",
+        "changed typed arguments with newly selected manifest",
+        "omitted or hidden retry",
+        "swapped signed readback",
+        "false successful producer-error terminal",
+        "duplicate native JSON names"
+      ],
+      "version": "0.0.1"
+    }
+  },
+  "publication_gate": "Native reader must exit zero; exact profile/status/denominator must match. Preserve all per-case execution/effect classifications, including declared error and pending intent. This gate admits a bounded record; authorization for a new effect is a separate decision.",
+  "schema_version": "probity.framework-consumer-selection.v1",
+  "scope": {
+    "independent_custody": false,
+    "new_model_execution": false,
+    "new_native_framework_execution": false,
+    "normal_wheel_build_and_install": "validated separately in delivery receipt",
+    "outside_adoption": false
+  },
+  "selection_boundary": "Host reviews this source selection and independently selects packet hashes, historical evaluation time and relying-party policy before publication.",
+  "source_files": {
+    "LICENSE": {
+      "git_blob_sha1": "d645695673349e3947e8e5ae42332d0ac3164cd7",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    "interop/langgraph-ticket-2026-10-02/lg_common.py": {
+      "git_blob_sha1": "79fa99a6cd2b10ef96c3101fdfdb0b16b7003fbb",
+      "sha256": "68e5f0ca53fc39043829e1feeaa9ccc09ae5adbb305153797a7ba530d775a83d"
+    },
+    "interop/langgraph-ticket-2026-10-02/lg_reader.py": {
+      "git_blob_sha1": "27a367a96270dbaab6353e94c2113e2dcb1f9649",
+      "sha256": "f029eb67f4f970ff7a1f1a59b700a2252e98f2c23ee6e92e2e1cc4e738a965c6"
+    },
+    "interop/langgraph-ticket-2026-10-02/lg_run.py": {
+      "git_blob_sha1": "b99e7f5265f8ea76043e802a81cd1e54b91be66e",
+      "sha256": "16c0dc181056b4725e493e0d7d23a2fb9be5cc882aa4ad00c9c17d1bdd29a3da"
+    },
+    "interop/langgraph-ticket-2026-10-02/requirements.lock": {
+      "git_blob_sha1": "124bb2f097c075711d522d1a0046bc48b03148b8",
+      "sha256": "8c51635900445ff74a4753aa3895f8a3c865ad513b33e83214eece6adb7f7fe3"
+    },
+    "interop/langgraph-ticket-2026-10-02/source-lock.json": {
+      "git_blob_sha1": "9d38d80dc4269067cb25eafe59421676fc79c3f8",
+      "sha256": "87bcaa52e3e715c4ed4f64f481a91ffd6729825cf73e169fea165b0bc259af32"
+    },
+    "interop/pydantic-ai-native-2026-10-02/requirements-reader.lock": {
+      "git_blob_sha1": "edc46971219ce478e7774135e62a831c2e0ff407",
+      "sha256": "0abca9241eae25539b0f0d6768b9a1c4f3de61d1b8d89f7e3b4235c4fe3d14c2"
+    },
+    "interop/pydantic-ai-native-2026-10-02/requirements.lock": {
+      "git_blob_sha1": "3444b3f422530f347731ced67bffd53e4f12f85f",
+      "sha256": "ecdfcb9ebd6ffd9c0800a1b2d10b6601d564c287887ba7cac43d8ccdafd41962"
+    },
+    "interop/pydantic-ai-native-2026-10-02/source-lock.json": {
+      "git_blob_sha1": "a830503d514952dc99cf70e36943d5ca0337452e",
+      "sha256": "2c815f05efd0b440d66bba8672f018e8903e1beb60f8c60f75478fbfbcee6c6f"
+    },
+    "interop/pydantic-ai-native-2026-10-02/src/probity_pydantic/__init__.py": {
+      "git_blob_sha1": "5f68962886f272d67f4de160577d78a421b5adf7",
+      "sha256": "52b7258401efd1100fc4d20dd63e5a61708f859c46b592fcf1224cd2236bcb3b"
+    },
+    "interop/pydantic-ai-native-2026-10-02/src/probity_pydantic/contract.py": {
+      "git_blob_sha1": "0b373fb6e6fd285436f4d9cb4beb6a97c401e2c5",
+      "sha256": "37334076477064f2afccfeb82fdabc3534117ea57e6777759fc6e7ea5d17e882"
+    },
+    "interop/pydantic-ai-native-2026-10-02/src/probity_pydantic/reader.py": {
+      "git_blob_sha1": "720fd1dcfcc2721fcd25a4f3904efc0fd4f543ed",
+      "sha256": "0e21799f0bd4416d5d298bd4189642e987bb924a53888517f69e6756210cc557"
+    },
+    "pyproject.toml": {
+      "git_blob_sha1": "145f8eaf9926130bdbfe45e33ead1aa519d27679",
+      "sha256": "89656a610305d263a67d22dde4c0c983b4f9c31b49c0e4b8ac1b91f85890dfb9"
+    },
+    "src/probity_observer/__init__.py": {
+      "git_blob_sha1": "8cc5bd8971d99c69415f3214ad5d12901ca74e9a",
+      "sha256": "fd35bea460843bd946ee6193b1adf5a557fbe0993dea3ca4c58b3c35df1ea4ae"
+    },
+    "src/probity_observer/aae_binding.py": {
+      "git_blob_sha1": "f87f0f196dc44d319d4a7a096e82a3576c8a91a2",
+      "sha256": "72ac29fe90b8b20549a41a1dd6a9d25ec8a945bdbbbf4b1ba4f5891e09b6b093"
+    },
+    "src/probity_observer/aae_dispatch.py": {
+      "git_blob_sha1": "6c32395ec77f4206b93a1691c110350de033490b",
+      "sha256": "70e6e669d24fbfd5275b25217523ea55d3da1495bb16e0834ff7a8de2a1cf6bb"
+    },
+    "src/probity_observer/aae_enforce.py": {
+      "git_blob_sha1": "3aff211562c90eb59375f82469cfe14b44e3595d",
+      "sha256": "5b79dacd2fbd873ae073af5186e606b5baa1c6c9d8e627a0387ae9fc7bb96a94"
+    },
+    "src/probity_observer/aae_ticket.py": {
+      "git_blob_sha1": "01443cd9b45eb69526870ae9260ae19ef4aed3a7",
+      "sha256": "ac12299c5d3bd5de030937d55358031a6ba72f152571ef20c521437fabe54743"
+    },
+    "src/probity_observer/admission.py": {
+      "git_blob_sha1": "ef0162dd12516c13781cab09c08f4d965b74a01a",
+      "sha256": "5b9f68dbfc59b1c088b7de9c41e81fabdf2e3a72426e8766845d0cea28b2af0f"
+    },
+    "src/probity_observer/attribution.py": {
+      "git_blob_sha1": "986aa9fe179ffd3e722b22aed71875f61003918b",
+      "sha256": "9aa531cfbd99df6185c35220db157c78d1c7b97c7c99bd2e24caa3f498dd0dee"
+    },
+    "src/probity_observer/authorization.py": {
+      "git_blob_sha1": "f34b5fc0ca20823803feec9a3e56a8d5d0c36520",
+      "sha256": "35e28320cc6aa344938d9e678efa6de9b803b7b22e2431e8e918a8b57c08e4a9"
+    },
+    "src/probity_observer/broker.py": {
+      "git_blob_sha1": "14a988e2711717ec6d13f143f24e71a5a412b231",
+      "sha256": "9e36cc446dd63112bfda8555df9319345f825d74c5794ac0b037c92d235c0bd8"
+    },
+    "src/probity_observer/cli.py": {
+      "git_blob_sha1": "ee5b867d580db77fd8402e35c4bbf66e59cbf131",
+      "sha256": "615b58fd5ea3401ca3e1ff9ebab63508a22dee6578a28890793054da72fb78d8"
+    },
+    "src/probity_observer/crypto.py": {
+      "git_blob_sha1": "41f59a7dbefc8fc9a4573dc4d1bcd7abd5908d04",
+      "sha256": "a334d7d2776d362788ce5e8687a916a62ba1614e97c0ccb8994d2acb22bc315f"
+    },
+    "src/probity_observer/declaration.py": {
+      "git_blob_sha1": "a4dc12aa2f32c56c6dfa4331723391fa9c49e124",
+      "sha256": "71c3112fd8bbaffd4adc03af46d16a8f36c41187a36fa86231d8a8d2caf37a66"
+    },
+    "src/probity_observer/evaluation_history.py": {
+      "git_blob_sha1": "a221121b979ab229e87916ccb74e9a1bf399d2ae",
+      "sha256": "175467e7eac8381cc0a79c8f35efb80b406c99dbdc0b05bb5cec65afb41532c7"
+    },
+    "src/probity_observer/history.py": {
+      "git_blob_sha1": "34b23f900dcc548f308b4203cf4879952ef83b0b",
+      "sha256": "e2618b8dc34f1251d9c1fa82232313a9524f8b3a38654352bf7a4d2b9ca1b267"
+    },
+    "src/probity_observer/inspect_history.py": {
+      "git_blob_sha1": "c8dada16a77a23b1073aa774597bdacbc8eb4054",
+      "sha256": "1d0fc978360c60f8e57cfdb8f3f7b6d07b56bfefc92b4dcdc928006222ca041c"
+    },
+    "src/probity_observer/isolation.py": {
+      "git_blob_sha1": "e41db79db6f561a679e3b3150444f796f25a79f0",
+      "sha256": "737256706038ef6c05db2860dba22af0f023e44ba1cd213ee44516c0f9fcb3c0"
+    },
+    "src/probity_observer/ledger.py": {
+      "git_blob_sha1": "715a347f8eed098c46099889af15756ba78b03db",
+      "sha256": "028a41eefce7abc88f31237a0407dae6a9728394c7b10634424e53967f8b9d53"
+    },
+    "src/probity_observer/native_reader.py": {
+      "git_blob_sha1": "129cfbdca0e9b165fe6ae5d36dde23393f9d65a7",
+      "sha256": "880501767490ea8c439251df18c269c331522bb406b21bd59265a622bcd494db"
+    },
+    "src/probity_observer/probe_agent.py": {
+      "git_blob_sha1": "315fbabe36079c8e4406fcefdafdb39496d43177",
+      "sha256": "3699eeb662610fea2d8403294fad3239cbecf3dfcaeb542ceb2c40abdb0897f6"
+    },
+    "src/probity_observer/protected_dispatch.py": {
+      "git_blob_sha1": "5466f0ec1e0dea192197a3955c50e5e5c622e390",
+      "sha256": "91c748e4e21bcbc347fdaab129785671765214758f043482f8f31af043e12b34"
+    },
+    "src/probity_observer/protected_isolation.py": {
+      "git_blob_sha1": "43e8405382e880654c8ea7c504d11bb9326d009f",
+      "sha256": "6d99ddca3f03ada6c05ff21f4796ec3b8eea7097c1119b38e53239b16e44809d"
+    },
+    "src/probity_observer/protected_probe.py": {
+      "git_blob_sha1": "a6d8b7635867ea36650eaa5a35214fe0c8826fd8",
+      "sha256": "9e89109a168837662c434f0988e6ab8d90d6dd6e472b516c27ad8b8b16f8138f"
+    },
+    "src/probity_observer/replay.py": {
+      "git_blob_sha1": "556692fd9630dfec0a0b2adee8fadbb5d583cd28",
+      "sha256": "e156c0a2daa2eb56feae8e09339401b4fc8a641375d569ea80a4c50fd7f47261"
+    },
+    "src/probity_observer/ticket_service.py": {
+      "git_blob_sha1": "2548be3093b545fbf3e4f27c4e1c1dde8b3b4ad6",
+      "sha256": "c6df218d6a81c21ab99ff2549b07f0691ff00e4e44b3f7520562d5c90fcdbda7"
+    },
+    "src/probity_observer/verify.py": {
+      "git_blob_sha1": "9e16e5937e37ae251c0efc8058ea481b502a2fa1",
+      "sha256": "a787abe4189556cd3da87569eccaf6cfe6fa265662b9505f733a6742867bdcf2"
+    }
+  },
+  "status": "private-preparation-candidate-not-released",
+  "upgrade_rule": "Do not track main or accept a version label alone. Review changes to every selected source/lock/metadata file, rebuild standard wheels, retain installation receipts, replay original valid and refusal populations, and commit host source and packet policy together. A version change alone never proves byte identity."
+}

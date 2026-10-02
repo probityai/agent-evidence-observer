@@ -1,0 +1,19 @@
+{
+  "observerSourceCommit": "34550d7d20c8149ae88d7ba3fcc5e51e1e70e1eb",
+  "python": "3.13.15",
+  "cryptography": "46.0.7",
+  "rfc8785": "0.1.4",
+  "archives": {
+    "langgraph": {
+      "run": 37003859466,
+      "artifact": 11224761369,
+      "sha256": "e2e28cfcd4af7fc4dbff2fa91640fd2fc23b95e2d32369d75551a264b118b8fd"
+    },
+    "pydantic": {
+      "run": 37003617436,
+      "artifact": 11225051391,
+      "sha256": "e79cf593e91902f1ce4b483850a6f3dba186637e5f223e0931cf8333384782d2"
+    }
+  },
+  "scope": "Installed reader reconstruction of original native packets; no new native producer execution or outside CI adoption."
+}

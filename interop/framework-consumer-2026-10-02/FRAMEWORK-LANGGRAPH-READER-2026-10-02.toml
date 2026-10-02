@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools==84.0.0", "wheel==0.48.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "probity-langgraph-ticket-reader"
+version = "0.0.1"
+description = "Offline reader for the finite LangGraph protected-ticket profile"
+requires-python = ">=3.12"
+dependencies = ["agent-evidence-observer[aae]==0.0.1"]
+license = "MIT"
+license-files = ["LICENSE"]
+
+[project.scripts]
+probity-langgraph-read = "probity_langgraph_reader_cli:main"
+
+[tool.setuptools]
+py-modules = ["lg_common", "lg_reader", "probity_langgraph_reader_cli"]
