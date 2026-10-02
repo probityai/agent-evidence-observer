@@ -23,7 +23,7 @@ jobs:
       - name: Install standalone test dependencies
         run: python -m pip install -e '.[test]'
       - name: Install pinned native mock harness and Observer adapter
-        run: python -m pip install -e '../..[inspect]'
+        run: python -m pip install -e '../..[inspect,aae]'
       - name: Check declared populations and mutation controls
         run: python -m pytest -q --junitxml=test-results.xml
       - name: Retain five-tier synthetic contract exercise
@@ -32,6 +32,12 @@ jobs:
         run: python inspect_demo.py native-contract-run
       - name: Retain native tool, agent and local workload execution
         run: python inspect_execution.py native-execution-run
+      - name: Join native Inspect calls to selected AAE authority and ticket effects
+        run: python inspect_ticket.py native-ticket-run --source-revision "$GITHUB_SHA"
+      - name: Reconstruct the joined packet without framework or HTTP calls
+        run: |
+          cp native-ticket-run/consumer-pins.json "$RUNNER_TEMP/inspect-ticket-selected-pins.json"
+          python inspect_ticket.py native-ticket-run --verify --pins-file "$RUNNER_TEMP/inspect-ticket-selected-pins.json"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -40,5 +46,6 @@ jobs:
             interop/evaluation-contract-2026-10-01/contract-run/
             interop/evaluation-contract-2026-10-01/native-contract-run/
             interop/evaluation-contract-2026-10-01/native-execution-run/
+            interop/evaluation-contract-2026-10-01/native-ticket-run/
             interop/evaluation-contract-2026-10-01/test-results.xml
           if-no-files-found: error

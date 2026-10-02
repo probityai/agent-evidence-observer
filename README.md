@@ -149,3 +149,5 @@ The vocabulary and corpus define the records and their checks; this repository i
 Apache License 2.0; see `LICENSE`.
 
 Run the bounded native examples across all five tiers with `python examples/five_tier_demo.py ./five-tier-run`. The [native launch guide](docs/FIVE-TIER-NATIVE-RUN.md) gives installation commands, retained launch/attempt scopes and failure controls.
+
+The [native Inspect authority/effect join](docs/INSPECT-AUTHORITY-EFFECT.md) connects real ReAct tool calls to selected unsigned AAE decisions, signed local grants and actual HTTP ticket effects. Its offline reader keeps task scores, denial, pending effects and native errors separate across the full declared population.
