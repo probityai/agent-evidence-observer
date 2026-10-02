@@ -70,7 +70,7 @@ def retain_sources(root: Path) -> dict[str, str]:
     import probity_observer
     own = Path(__file__).parent
     base = Path(probity_observer.__file__).parent
-    files = {"adapter/" + p.name: p.read_bytes() for p in sorted(own.glob("*.py"))}
+    files = {"adapter/" + p.name: p.read_bytes() for p in [own / name for name in ("lg_common.py", "lg_reader.py", "lg_run.py")]}
     files.update({"observer/" + name: (base / name).read_bytes() for name in SOURCES})
     for name, raw in files.items():
         path = root / "sources" / name

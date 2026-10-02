@@ -31,13 +31,13 @@ jobs:
           python-version: '3.13'
       - name: Install hash-pinned profile dependencies
         run: |
-          python -m pip install --require-hashes --only-binary=:all: -r requirements.lock --report install-report.json
+          python -m pip install --require-hashes --only-binary=:all: -r requirements-restart.lock --report install-report.json
       - name: Install this exact Observer checkout without changing dependency selection
         run: python -m pip install --no-deps -e ../..
       - name: Check adapter code and complexity
         run: |
-          python -m ruff check lg_common.py lg_run.py lg_reader.py tests
-          python -m ruff check --select C901 --config 'lint.mccabe.max-complexity=5' lg_common.py lg_run.py lg_reader.py tests
+          python -m ruff check lg_common.py lg_run.py lg_reader.py durable_run.py durable_worker.py durable_reader.py tests
+          python -m ruff check --select C901 --config 'lint.mccabe.max-complexity=5' lg_common.py lg_run.py lg_reader.py durable_run.py durable_worker.py durable_reader.py tests
       - name: Test original native executions and semantic refusal controls
         run: python -m pytest -q tests --junitxml=test-results.xml
       - name: Execute all six real LangGraph graphs in a fresh finite packet
@@ -46,6 +46,12 @@ jobs:
         run: |
           cp fresh-run/consumer-pins.json "$RUNNER_TEMP/langgraph-selected-pins.json"
           python lg_reader.py fresh-run --pins-file "$RUNNER_TEMP/langgraph-selected-pins.json" > fresh-reader.json
+      - name: Execute durable checkpoint recovery in distinct hard-exiting workers
+        run: timeout --signal=TERM --kill-after=5s 180s python durable_run.py durable-run --source-revision "$GITHUB_SHA" > durable-report.json
+      - name: Reconstruct durable recovery offline from separately copied local pins
+        run: |
+          cp durable-run/consumer-pins.json "$RUNNER_TEMP/langgraph-durable-selected-pins.json"
+          python durable_reader.py durable-run --pins-file "$RUNNER_TEMP/langgraph-durable-selected-pins.json" > durable-reader.json
       - name: Retain native checkpoints, HTTP bytes, sources, resource and install evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -55,6 +61,9 @@ jobs:
             interop/langgraph-ticket-2026-10-02/fresh-run/
             interop/langgraph-ticket-2026-10-02/fresh-report.json
             interop/langgraph-ticket-2026-10-02/fresh-reader.json
+            interop/langgraph-ticket-2026-10-02/durable-run/
+            interop/langgraph-ticket-2026-10-02/durable-report.json
+            interop/langgraph-ticket-2026-10-02/durable-reader.json
             interop/langgraph-ticket-2026-10-02/install-report.json
             interop/langgraph-ticket-2026-10-02/test-results.xml
           if-no-files-found: error
