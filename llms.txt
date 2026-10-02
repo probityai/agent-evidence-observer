@@ -1,0 +1,26 @@
+# agent-evidence-observer
+
+> A local prototype broker that writes files for an agent, signs the declared authority and the
+> starting file tree, records each request in a hash chain with witnessed checkpoints, and verifies
+> the result offline against pinned keys. Every record is PEER scope: same host, same operator.
+
+No release is published; pin a commit. Install from a clone with `uv pip install .` and run
+`agent-evidence-observer demo ./sample-run` then `agent-evidence-observer verify ./sample-run`.
+
+## Entry points
+
+- [README](https://github.com/probityai/agent-evidence-observer/blob/main/README.md): what it is, a pinned quick start, and the status.
+- [Running the demo](https://github.com/probityai/agent-evidence-observer/blob/main/docs/RUNNING.md): full install with tests and the meaning of each output field.
+- [Design, trust boundary and roadmap](https://github.com/probityai/agent-evidence-observer/blob/main/docs/DESIGN.md): what each mechanism checks and does not establish.
+- [Component tour](https://github.com/probityai/agent-evidence-observer/blob/main/docs/OVERVIEW.md): one paragraph per component, each linked to its page.
+
+## Components
+
+- [Consumer admission](https://github.com/probityai/agent-evidence-observer/blob/main/docs/CONSUMER-ADMISSION.md): consumer-selected checks and replay refusal.
+- [Boundary gate](https://github.com/probityai/agent-evidence-observer/blob/main/docs/BOUNDARY-GATE.md): the fixed Linux bubblewrap probe.
+- [Witness ledger](https://github.com/probityai/agent-evidence-observer/blob/main/docs/WITNESS-LEDGER.md): signed receipts across intervals.
+- [Native consumer CI](https://github.com/probityai/agent-evidence-observer/blob/main/docs/NATIVE-CONSUMER-CI.md): the installed reader and CI action.
+
+## Optional
+
+- [License](https://github.com/probityai/agent-evidence-observer/blob/main/LICENSE): Apache-2.0.
