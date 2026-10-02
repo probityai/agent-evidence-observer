@@ -105,6 +105,8 @@ class TicketStore:
     The service key and SQLite directory belong to the host. A bearer grant is
     not proof of the HTTP caller's identity. A trusted host clock and local
     SQLite filesystem are required. The optional crash hook is host-only.
+    An optional decision digest extends the committed configuration; the native
+    decision profile must replay its own inputs before calling this base gate.
     """
 
     def __init__(
@@ -112,6 +114,7 @@ class TicketStore:
         key: SigningKey, *, clock: Callable[[], datetime] = utc_clock,
         crash_hook: Callable[[str], None] | None = None,
         retained_head: dict[str, Any] | None = None,
+        decision_digest: str | None = None,
     ) -> None:
         self.path, self.request, self.policy, self.key = path, request, policy, key
         self.clock, self.crash_hook = clock, crash_hook
@@ -125,6 +128,10 @@ class TicketStore:
         if key.public_hex == policy.issuer_key:
             raise VerificationError("service and issuer keys must differ")
         self.configuration = {"request": asdict(request), "policy": asdict(policy), "serviceKey": key.public_hex}
+        if decision_digest is not None:
+            if not _hex(decision_digest):
+                raise VerificationError("ticket decision commitment differs")
+            self.configuration["decisionDigest"] = decision_digest
         self.configuration_digest = digest(DOMAIN + "-configuration", self.configuration)
 
     @contextmanager
@@ -438,20 +445,28 @@ def verify_ticket_result(
     receipt: Mapping[str, Any], readback: Mapping[str, Any],
     request: ActionRequest, policy: GrantPolicy, service_key: str,
     grant: Mapping[str, Any], *, now: datetime,
+    decision_digest: str | None = None,
 ) -> dict[str, Any]:
     """Join signed completion with separately retrieved native bytes and policy.
 
     This reader requires current grant validity and an unrevoked read-back,
     authenticates both service receipts, and recomputes content from native
     response bytes. It does not assign custody, authenticate the bearer caller,
-    or infer general containment from a local HTTP gate.
+    or infer general containment from a local HTTP gate. A selected optional
+    decision digest is a configuration binding; native decision recomputation
+    belongs to the profile reader. Omitting it refuses records that carry it.
     """
     authorized = verify_grant(grant, request, policy, now=now)
     if not isinstance(readback, Mapping) or set(readback) != READBACK_FIELDS or type(readback["revision"]) is not int:
         raise VerificationError("ticket native read-back fields or counter differ")
     carried = _checked(dict(receipt), service_key)
     current = _checked(readback["receipt"], service_key)
-    configuration = digest(DOMAIN + "-configuration", {"request": asdict(request), "policy": asdict(policy), "serviceKey": service_key})
+    configuration_fields = {"request": asdict(request), "policy": asdict(policy), "serviceKey": service_key}
+    if decision_digest is not None:
+        if not _hex(decision_digest):
+            raise VerificationError("ticket consumer decision commitment differs")
+        configuration_fields["decisionDigest"] = decision_digest
+    configuration = digest(DOMAIN + "-configuration", configuration_fields)
     for record in (carried, current):
         _state_schema(record, receipt=True)
         if record["request"] != asdict(request) or record["configuration"] != configuration or record["authorityKey"] != policy.issuer_key or record["grantDigest"] != authorized.grant_digest:
