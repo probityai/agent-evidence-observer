@@ -1,2 +1,5 @@
-rust/target/
-.venv/
+/rust/target/
+/fresh-run/
+/host-selection/
+/source-checkouts/
+/wheels/

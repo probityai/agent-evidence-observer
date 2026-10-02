@@ -1,0 +1,4 @@
+Selected limits of the retained authority-recovery provenance:
+"independentEffectCustody": "not-established"
+"outsideRecurringUse": "not-established"
+This literal coverage record does not establish independent custody or adoption.
