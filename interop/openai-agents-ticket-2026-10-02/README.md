@@ -130,3 +130,16 @@ restricts upstream PRs to collaborators. Tracing listing eligibility additionall
 requires a released installable integration and independently verifiable continued
 SDK use by an unaffiliated project, with an issue before any listing change. This
 owned implementation is executable; directory inclusion remains a separate goal.
+
+The first retained Ubuntu run is
+[37053806564](https://github.com/probityai/agent-evidence-observer/actions/runs/37053806564),
+from implementation head `faa22f16b459f10f53705a2d377754135db63e2b`.
+Its exact original 367-entry artifact is retained as
+[native-fixture-37053806564.zip](native-fixture-37053806564.zip), SHA-256
+`6f90d31bc08599b97641d6e6215a937b4b3ba5962953ce718e24c9ec904f53d2`.
+[recorded-run.json](recorded-run.json) separates the reviewed head, actual PR
+merge execution source, independently selected target baseline, source-byte
+matches, complete task/effect results and author-copied demonstration pins.
+The SDK-free replay reproduces original producer, reader and report bytes exactly.
+This native run and its comparisons were emitted together; it is not a blind
+comparison or an independent custody record.
