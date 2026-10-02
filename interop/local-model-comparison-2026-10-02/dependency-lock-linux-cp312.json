@@ -7,7 +7,7 @@
     "distribution": "CPython"
   },
   "resolver": "pip 26.2.1 metadata-only dry run; artifacts selected before payload transfer",
-  "dependencyBytes": 45426676,
+  "dependencyBytes": 45457867,
   "dependencies": [
     {
       "name": "cmake",
@@ -80,6 +80,14 @@
       "url": "https://files.pythonhosted.org/packages/18/67/36e9267722cc04a6b9f15c7f3441c2363321a3ea07da7ae0c0707beb2a9c/typing_extensions-4.15.0-py3-none-any.whl",
       "bytes": 44614,
       "sha256": "f0fa19c6845758ab08074a0cfa8b7aecb71c999ca73d62883bc25cc018c4e548"
+    },
+    {
+      "name": "pathspec",
+      "version": "0.12.1",
+      "path": "downloads/pathspec-0.12.1-py3-none-any.whl",
+      "url": "https://files.pythonhosted.org/packages/cc/20/ff623b09d963f88bfde16306a54e12ee5ea43e9b597108672ff3a408aad6/pathspec-0.12.1-py3-none-any.whl",
+      "bytes": 31191,
+      "sha256": "a0d503e138a4c123b27490a4f7beda6a01c6f288df0e4a8b79c7eb0dc7b4cc08"
     }
   ],
   "scope": "minimal selected runtime and source-build dependencies; Inspect is not installed or used"

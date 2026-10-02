@@ -412,8 +412,15 @@
       "metadata": 1048576,
       "dependencies": 66060288
     },
-    "dependencySelectionSHA256": "40df9e8580a085444d1e2e4408068dc2f3686a304ac1a1e1e92e1951a7a72881",
-    "scope": "fresh hash-selected response-body transfers; no cached-payload exemption; metadata primary-source selection before freeze excluded; HTTP/TLS, runner setup and artifact upload excluded"
+    "dependencySelectionSHA256": "7f2b24a65df36b66fbf23425bb03365e4af560c9c7838c6608886e70f5409a66",
+    "scope": "fresh hash-selected response-body transfers; no cached-payload exemption; metadata primary-source selection before freeze excluded; HTTP/TLS, runner setup and artifact upload excluded",
+    "amendment": {
+      "reason": "First selected preparation built no model runtime: scikit_build_core0.11.6 imports missingpathspec. Add exactpathspec0.12.1wheel beforeanyinference; originaltask/model/config/order/resourcebudgets unchanged.",
+      "priorProtocolCommit": "a5abe02e8378ca3813c99a2882454be9e2bfc9b0",
+      "priorProtocolSHA256": "5421f00e5e0c46aeed5d851a41012559f30edb79ec218856b3a71103ff3aee10",
+      "failedPreparationRun": 37052641046,
+      "startedModelCalls": 0
+    }
   },
   "payloads": [
     {
