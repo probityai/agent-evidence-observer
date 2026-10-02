@@ -1,0 +1,540 @@
+{
+  "a2a": {
+    "interaction_families": [
+      "arithmetic-request-result",
+      "error-incomplete-refusal"
+    ],
+    "native_reader": "interop/a2a-native-2026-10-02/a2a_verify.py",
+    "planned_attempts": 6,
+    "population": "separate-original-six-attempt-profile",
+    "script": "interop/a2a-native-2026-10-02/a2a_demo.py"
+  },
+  "attempts": [
+    {
+      "calls": [],
+      "family": "arithmetic",
+      "id": "reason-01",
+      "input": "What is 1 + 3? Return only the decimal integer.",
+      "launch": true,
+      "response": "4",
+      "solver": "generate",
+      "target": "4",
+      "tier": "reasoning"
+    },
+    {
+      "calls": [],
+      "family": "arithmetic",
+      "id": "reason-02",
+      "input": "What is 2 + 3? Return only the decimal integer.",
+      "launch": true,
+      "response": "5",
+      "solver": "generate",
+      "target": "5",
+      "tier": "reasoning"
+    },
+    {
+      "calls": [],
+      "family": "arithmetic",
+      "id": "reason-03",
+      "input": "What is 3 + 3? Return only the decimal integer.",
+      "launch": true,
+      "response": "6",
+      "solver": "generate",
+      "target": "6",
+      "tier": "reasoning"
+    },
+    {
+      "calls": [],
+      "family": "arithmetic",
+      "id": "reason-04",
+      "input": "What is 4 + 3? Return only the decimal integer.",
+      "launch": true,
+      "response": "7",
+      "solver": "generate",
+      "target": "7",
+      "tier": "reasoning"
+    },
+    {
+      "calls": [],
+      "family": "arithmetic",
+      "id": "reason-05",
+      "input": "What is 5 + 3? Return only the decimal integer.",
+      "launch": true,
+      "response": "8",
+      "solver": "generate",
+      "target": "8",
+      "tier": "reasoning"
+    },
+    {
+      "calls": [],
+      "family": "arithmetic",
+      "id": "reason-06",
+      "input": "What is 6 + 3? Return only the decimal integer.",
+      "launch": true,
+      "response": "9",
+      "solver": "generate",
+      "target": "9",
+      "tier": "reasoning"
+    },
+    {
+      "calls": [],
+      "family": "arithmetic",
+      "id": "reason-07",
+      "input": "What is 7 + 3? Return only the decimal integer.",
+      "launch": true,
+      "response": "10",
+      "solver": "generate",
+      "target": "10",
+      "tier": "reasoning"
+    },
+    {
+      "calls": [],
+      "family": "arithmetic",
+      "id": "reason-08",
+      "input": "What is 8 + 3? Return only the decimal integer.",
+      "launch": true,
+      "response": "11",
+      "solver": "generate",
+      "target": "11",
+      "tier": "reasoning"
+    },
+    {
+      "calls": [],
+      "family": "arithmetic",
+      "id": "reason-09",
+      "input": "What is 9 + 3? Return only the decimal integer.",
+      "launch": true,
+      "response": "12",
+      "solver": "generate",
+      "target": "12",
+      "tier": "reasoning"
+    },
+    {
+      "calls": [],
+      "family": "arithmetic",
+      "id": "reason-10",
+      "input": "What is 10 + 3? Return only the decimal integer.",
+      "launch": true,
+      "response": "13",
+      "solver": "generate",
+      "target": "13",
+      "tier": "reasoning"
+    },
+    {
+      "calls": [
+        {
+          "arguments": {
+            "value": 0
+          },
+          "name": "double"
+        }
+      ],
+      "family": "arithmetic",
+      "id": "tool-arithmetic-1",
+      "input": "Perform tool-arithmetic-1; report the exact final answer.",
+      "launch": true,
+      "response": "0",
+      "solver": "generate",
+      "target": "0",
+      "tier": "tools"
+    },
+    {
+      "calls": [
+        {
+          "arguments": {
+            "value": 2
+          },
+          "name": "double"
+        }
+      ],
+      "family": "arithmetic",
+      "id": "tool-arithmetic-2",
+      "input": "Perform tool-arithmetic-2; report the exact final answer.",
+      "launch": true,
+      "response": "4",
+      "solver": "generate",
+      "target": "4",
+      "tier": "tools"
+    },
+    {
+      "calls": [
+        {
+          "arguments": {
+            "value": -3
+          },
+          "name": "double"
+        }
+      ],
+      "family": "arithmetic",
+      "id": "tool-arithmetic-3",
+      "input": "Perform tool-arithmetic-3; report the exact final answer.",
+      "launch": true,
+      "response": "-6",
+      "solver": "generate",
+      "target": "-6",
+      "tier": "tools"
+    },
+    {
+      "calls": [
+        {
+          "arguments": {
+            "value": 100
+          },
+          "name": "double"
+        }
+      ],
+      "family": "arithmetic",
+      "id": "tool-arithmetic-4",
+      "input": "Perform tool-arithmetic-4; report the exact final answer.",
+      "launch": true,
+      "response": "200",
+      "solver": "generate",
+      "target": "200",
+      "tier": "tools"
+    },
+    {
+      "calls": [
+        {
+          "arguments": {},
+          "name": "read_file"
+        }
+      ],
+      "family": "scoped-file",
+      "id": "tool-file-1",
+      "input": "Perform tool-file-1; report the exact final answer.",
+      "launch": true,
+      "response": "OPEN",
+      "solver": "generate",
+      "target": "OPEN",
+      "tier": "tools"
+    },
+    {
+      "calls": [
+        {
+          "arguments": {
+            "content": "DONE"
+          },
+          "name": "write_file"
+        },
+        {
+          "arguments": {},
+          "name": "read_file"
+        }
+      ],
+      "family": "scoped-file",
+      "id": "tool-file-2",
+      "input": "Perform tool-file-2; report the exact final answer.",
+      "launch": true,
+      "response": "DONE",
+      "solver": "generate",
+      "target": "DONE",
+      "tier": "tools"
+    },
+    {
+      "calls": [
+        {
+          "arguments": {
+            "content": "DONE"
+          },
+          "name": "write_file"
+        },
+        {
+          "arguments": {
+            "content": "DONE"
+          },
+          "name": "write_file"
+        }
+      ],
+      "family": "scoped-file",
+      "id": "tool-file-3",
+      "input": "Perform tool-file-3; report the exact final answer.",
+      "launch": true,
+      "response": "DONE",
+      "solver": "generate",
+      "target": "DONE",
+      "tier": "tools"
+    },
+    {
+      "calls": [
+        {
+          "arguments": {
+            "content": "REFUSED"
+          },
+          "name": "write_file"
+        },
+        {
+          "arguments": {},
+          "name": "read_file"
+        }
+      ],
+      "family": "scoped-file",
+      "id": "tool-file-4",
+      "input": "Perform tool-file-4; report the exact final answer.",
+      "launch": true,
+      "response": "OPEN",
+      "solver": "generate",
+      "target": "OPEN",
+      "tier": "tools"
+    },
+    {
+      "calls": [
+        {
+          "arguments": {},
+          "name": "read_balance"
+        }
+      ],
+      "family": "sqlite-transaction",
+      "id": "tool-sqlite-1",
+      "input": "Perform tool-sqlite-1; report the exact final answer.",
+      "launch": true,
+      "response": "10,0",
+      "solver": "generate",
+      "target": "10,0",
+      "tier": "tools"
+    },
+    {
+      "calls": [
+        {
+          "arguments": {
+            "amount": 3
+          },
+          "name": "transfer"
+        },
+        {
+          "arguments": {},
+          "name": "read_balance"
+        }
+      ],
+      "family": "sqlite-transaction",
+      "id": "tool-sqlite-2",
+      "input": "Perform tool-sqlite-2; report the exact final answer.",
+      "launch": true,
+      "response": "7,3",
+      "solver": "generate",
+      "target": "7,3",
+      "tier": "tools"
+    },
+    {
+      "calls": [
+        {
+          "arguments": {
+            "amount": 10
+          },
+          "name": "transfer"
+        },
+        {
+          "arguments": {},
+          "name": "read_balance"
+        }
+      ],
+      "family": "sqlite-transaction",
+      "id": "tool-sqlite-3",
+      "input": "Perform tool-sqlite-3; report the exact final answer.",
+      "launch": true,
+      "response": "0,10",
+      "solver": "generate",
+      "target": "0,10",
+      "tier": "tools"
+    },
+    {
+      "calls": [
+        {
+          "arguments": {
+            "amount": 11
+          },
+          "name": "transfer"
+        },
+        {
+          "arguments": {},
+          "name": "read_balance"
+        }
+      ],
+      "family": "sqlite-transaction",
+      "id": "tool-sqlite-4",
+      "input": "Perform tool-sqlite-4; report the exact final answer.",
+      "launch": true,
+      "response": "10,0",
+      "solver": "generate",
+      "target": "10,0",
+      "tier": "tools"
+    },
+    {
+      "calls": [
+        {
+          "arguments": {
+            "value": 4
+          },
+          "name": "double"
+        }
+      ],
+      "family": "arithmetic",
+      "id": "agent-generate",
+      "input": "Perform agent-generate; report the exact final answer.",
+      "launch": true,
+      "response": "8",
+      "solver": "generate",
+      "target": "8",
+      "tier": "agents"
+    },
+    {
+      "calls": [
+        {
+          "arguments": {
+            "value": 5
+          },
+          "name": "double"
+        }
+      ],
+      "family": "arithmetic",
+      "id": "agent-react-8",
+      "input": "Perform agent-react-8; report the exact final answer.",
+      "launch": true,
+      "response": "10",
+      "solver": "react-8",
+      "target": "10",
+      "tier": "agents"
+    },
+    {
+      "calls": [
+        {
+          "arguments": {},
+          "name": "read_file"
+        },
+        {
+          "arguments": {
+            "content": "DONE"
+          },
+          "name": "write_file"
+        },
+        {
+          "arguments": {},
+          "name": "read_file"
+        }
+      ],
+      "family": "file-state",
+      "id": "agent-react-12",
+      "input": "Perform agent-react-12; report the exact final answer.",
+      "launch": true,
+      "response": "DONE",
+      "solver": "react-12",
+      "target": "DONE",
+      "tier": "agents"
+    },
+    {
+      "calls": [
+        {
+          "arguments": {},
+          "name": "read_file"
+        },
+        {
+          "arguments": {
+            "content": "DONE"
+          },
+          "name": "write_file"
+        },
+        {
+          "arguments": {},
+          "name": "read_file"
+        }
+      ],
+      "family": "file-state",
+      "id": "workload-file",
+      "input": "Perform workload-file; report the exact final answer.",
+      "launch": true,
+      "response": "DONE",
+      "solver": "react-12",
+      "target": "DONE",
+      "tier": "workloads"
+    },
+    {
+      "calls": [
+        {
+          "arguments": {},
+          "name": "read_balance"
+        },
+        {
+          "arguments": {
+            "amount": 4
+          },
+          "name": "transfer"
+        },
+        {
+          "arguments": {},
+          "name": "read_balance"
+        }
+      ],
+      "family": "sqlite-transaction",
+      "id": "workload-sqlite",
+      "input": "Perform workload-sqlite; report the exact final answer.",
+      "launch": true,
+      "response": "6,4",
+      "solver": "react-12",
+      "target": "6,4",
+      "tier": "workloads"
+    }
+  ],
+  "budget": {
+    "max_calls_per_attempt": 3,
+    "max_messages_per_attempt": 12,
+    "max_output_bytes": 33554432,
+    "max_seconds": 180,
+    "provider_calls": 0,
+    "provider_dollars": 0,
+    "retries": 0
+  },
+  "classification": "probity-operated-native-mock-and-deterministic-integration",
+  "controls": [
+    {
+      "calls": [],
+      "family": "rubric",
+      "id": "control-task-failure",
+      "input": "Perform control-task-failure; report the exact final answer.",
+      "launch": true,
+      "response": "wrong",
+      "solver": "generate",
+      "target": "4",
+      "tier": "controls"
+    },
+    {
+      "calls": [
+        {
+          "arguments": {
+            "value": 2
+          },
+          "name": "double"
+        }
+      ],
+      "family": "exhausted-mock",
+      "id": "control-harness-error",
+      "input": "Perform control-harness-error; report the exact final answer.",
+      "launch": true,
+      "response": null,
+      "solver": "generate",
+      "target": "4",
+      "tier": "controls"
+    },
+    {
+      "calls": [],
+      "family": "launcher",
+      "id": "control-not-started",
+      "input": "Perform control-not-started; report the exact final answer.",
+      "launch": false,
+      "response": "4",
+      "solver": "generate",
+      "target": "4",
+      "tier": "controls"
+    }
+  ],
+  "framework": {
+    "a2a-sdk": "1.2.1",
+    "inspect-ai": "0.3.273"
+  },
+  "historical_cpu_baseline": {
+    "attempts": 12,
+    "pooling": "prohibited",
+    "profile": "probity-inspect-local-model-v1",
+    "strict_passes": 0
+  },
+  "profile": "probity-five-tier-breadth-v0.1",
+  "real_model_quality": "not-measured"
+}
