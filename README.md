@@ -27,6 +27,8 @@ An optional native bridge now reconstructs the same envelope from pinned Inspect
 mock logs, retaining task failures, harness errors, incomplete records and unknown
 starts. Native model benchmarks and independent operation remain separate gates.
 
+The additive native execution profile now runs actual Inspect tools, a ReAct agent and a local read/write workload under controlled mock outputs. It retains native errors, declared unstarted work, scoped runtime measurements and separate file read-back, with an offline consumer command that reconstructs the packet from selected original inputs.
+
 The optional [native A2A SDK exchange](interop/a2a-native-2026-10-02/README.md) runs pinned SDK 1.2.1 client and server processes over loopback HTTP, retains six declared attempts and recomputes their common result mapping. It preserves a rubric failure, native protocol/task errors, an incomplete response and an absent start. The packet remains a same-operator protocol reference.
 
 The [native AAE ticket join](docs/AAE-HTTP-TICKET.md) commits a separately pinned unsigned kernel decision before HTTP ticket dispatch and requires that same decision when admitting completion/read-back. Its public demo retains twelve native HTTP and consumer controls, including a denied decision and hard-killed server recovery.

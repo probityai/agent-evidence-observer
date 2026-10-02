@@ -47,3 +47,33 @@ The mapping is pinned as `probity-inspect-five-tier-v1`. `verify` recomputes the
 A native adapter may emit this envelope only after selecting a versioned mapping and retaining its original output. The envelope cannot discover undeclared executions, verify source authorship, authenticate a start ledger, establish prior commitment, judge task correctness, verify native signatures or prove independent custody. `retained-native` labels origin intent; accepting that string is not native-adapter certification. Five-tier native runs and host acceptance remain separate completion gates.
 
 The dedicated CI workflow retains measured test output, the synthetic demo and native mock packets as artifacts. Historical outputs should remain immutable; run another demo in a fresh directory. Run commands above from this directory. The repository Apache-2.0 license applies; retained Inspect files carry their native license in the run output.
+
+## Native tools, agents and local workload
+
+`inspect_execution.py` adds the separate `probity-inspect-execution-v1` profile. It leaves the reasoning adapter unchanged. With the same pinned Inspect dependency, run:
+
+```sh
+python inspect_execution.py native-execution-001
+```
+
+The official native `use_tools`/`generate` path executes a bounded arithmetic tool. The native `react(submit=False)` agent executes that tool through its actual tool loop. A local workload uses the native agent to read an `OPEN` ticket file and write `DONE`; its file read-back is retained separately from the model transcript. The mock provider selects finite tool calls and responses. This tests actual framework execution and retention, not model planning ability or benchmark quality.
+
+The pre-run declaration contains six entries: a tool pass, a tool task failure, an agent pass, an agent that exhausts its mock outputs and records a native harness error, a completed local workload, and an explicitly unscheduled workload. The normal demo retains five starts, four completions, three task passes, one task failure, one harness error and one planned unstarted entry. The unstarted classification comes from the same operator's `launch:false` declaration; it is not independently observed. Missing logs or native samples for a scheduled entry instead remain `start-unknown`. A retained start without completion maps to `incomplete`. Actual run errors and mutation controls are distinguished in the receipt.
+
+The mapper joins each retained assistant tool call, native tool event and tool reply by exact call ID, function and arguments, then recomputes the owned tool's arithmetic or read/write values. The workload's retained file bytes must be `DONE`. The supported final strings are finite, so the selected native C/I score is also checked against the declared final response. This is an implementation consistency check, not an independent judge. Native retries, altered solver/configuration/source identities, duplicate samples, changed tool values and wrong read-back bytes are refused.
+
+Normalized `elapsed_ns` is `floor(sample.total_time * 1e9)`, representing the native sample duration in seconds. It does not create nanosecond precision: Inspect's original duration and rounding remain in the original bytes and measurement manifest. Successful owned tool bodies measure `perf_counter_ns` elapsed time and `thread_time_ns` CPU time. The supplementary CPU total excludes framework work, other threads and failed tool bodies; it is not process or workload CPU. Native tool-event counts are operation counts, not effect or completeness counts. Mock token zeros and unmeasured memory stay null in the common resources.
+
+Authority, trust, coverage, consumer decisions and judge reliability stay not exercised. The local workload effect axis remains unknown with retained read-back evidence; it is not an authenticated effect attestation. Capture remains incomplete, and effect and consumer IDs remain null. Start order is derived from the declaration, not authenticated native chronology. Pre-run local files, a selected source manifest and matching digests do not prove independent custody, prior witness commitment, global containment or host adoption.
+
+`verify` receives the selected original declaration, raw native logs, external native bindings, original source bytes and local read-back bytes. It reconstructs the entire common plan, history and artifact mapping before checking external common pins. Changing normalized outcomes, resources, axes or supplemental measurements and rehashing the packet does not bypass this reconstruction. Select native and common digests outside an untrusted packet; the demo's convenience `consumer-pins.json` is not a trust authority.
+
+CI retains the actual native logs, packet, source pins, installed runtime manifest, distribution metadata and Inspect license. `OUTPUT/receipt.json` gives the scoped run result and `OUTPUT/packet/report.json` gives separate common population counts. Use a fresh output directory for each run.
+
+For an offline consumer run, select the original declaration, source-manifest, native-binding, common-plan and common-history digests outside the received packet, place them in a JSON file with the same five keys shown in the demo's convenience pin file, then run:
+
+```sh
+python inspect_execution.py native-execution-001 --verify --pins-file selected-pins.json
+```
+
+This command invokes no framework or provider. It checks those externally selected pins, refuses artifact path escapes and reconstructs every supported native join. A copied in-packet pin file is useful for a local round trip but establishes no external trust. Altered source bytes, changed bindings, added artifacts and rehashed normalized records remain refusals.
