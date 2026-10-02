@@ -1,0 +1,22 @@
+{
+  "profile": "probity-a2a-native-history-boundary-v1",
+  "implementationHead": "cba0a82a170ceaf762635b7d31c3e7b6530f2edf",
+  "fixtureSha256": "58addb8dfea4fe0508e0fecbda3db1c231535c290ec05ed33858863bbfd1d778",
+  "consumerPinsSha256": "278cd12868ae94a275a0deb8ed46c574a61dc689c161521a6dfcc39f168f983e",
+  "recordedReportSha256": "46afbc0357f1706a80a60eb11d91b92aac90ade3ae0899ae90b47f8933498bda",
+  "nativeSourceFilesMatchImplementation": {
+    "boundary_native.py": true,
+    "boundary_reader.py": true,
+    "host_gate.py": true,
+    "a2a_history_pb2.py": true,
+    "boundary_run.py": true,
+    "boundary_common.py": true
+  },
+  "localSameOperator": true,
+  "plannedAttempts": 20,
+  "acceptedAndPersisted": 10,
+  "rejectedAndAbsentInternalError": 10,
+  "producerAcceptance": false,
+  "normativeTckAdoption": false,
+  "recurringAdoption": false
+}
