@@ -77,19 +77,23 @@ class TestSavedReader:
             selected = decode((original_packet / "consumer-pins.json").read_bytes())
             report = verify_saved(original_packet, selected)
             assert report["status"] == "verified"
-            assert report["plannedAttempts"] == 5
+            assert report["plannedAttempts"] == 7
             assert [record["nativeRevision"] for record in report["records"]] == [
                 1,
                 0,
                 0,
                 1,
                 0,
+                0,
+                1,
             ]
             assert [record["executionStatus"] for record in report["records"]] == [
                 "complete",
                 "complete",
                 "complete",
                 "complete",
+                "error",
+                "error",
                 "error",
             ]
             assert report["records"][3]["retries"] == 1
@@ -526,3 +530,224 @@ class TestSavedReader:
             packet["postRequestHex"] = encode(candidate).hex()
             replace_artifact(output, selected, name, packet)
             refuse(output, selected, "native argument to HTTP binding differs", caplog)
+
+
+class TestFailureControls:
+    """Native exhaustion and committed-effect failure boundaries."""
+
+    class TestPassingCases:
+        def test_exhaustion_retains_attempts_without_inventing_second_prompt(
+            self,
+            original_packet: Path,
+        ) -> None:
+            messages = json.loads(
+                (
+                    original_packet / "artifacts/retry-exhausted-messages.json"
+                ).read_bytes()
+            )
+            assert [message["parts"][0]["part_kind"] for message in messages] == [
+                "user-prompt",
+                "tool-call",
+                "retry-prompt",
+                "tool-call",
+            ]
+            execution = decode(
+                (
+                    original_packet / "artifacts/retry-exhausted-execution.json"
+                ).read_bytes()
+            )
+            assert len(execution["trace"]) == 2
+            assert (
+                execution["terminal"]["exception"]["type"] == "UnexpectedModelBehavior"
+            )
+            assert execution["terminal"]["output"] is None
+
+        def test_failure_retains_committed_effect_without_native_return(
+            self,
+            original_packet: Path,
+        ) -> None:
+            selected = decode((original_packet / "consumer-pins.json").read_bytes())
+            record = verify_saved(original_packet, selected)["records"][-1]
+            assert record["executionStatus"] == "error"
+            assert record["nativeRevision"] == 1
+            assert record["effectOutcome"] == "verified-local-ticket-update"
+            messages = json.loads(
+                (
+                    original_packet / "artifacts/committed-effect-error-messages.json"
+                ).read_bytes()
+            )
+            assert [message["parts"][0]["part_kind"] for message in messages] == [
+                "user-prompt",
+                "tool-call",
+            ]
+
+    class TestFailingCases:
+        @pytest.mark.parametrize("case", ["retry-exhausted", "committed-effect-error"])
+        def test_history_cannot_be_omitted(
+            self,
+            original_packet: Path,
+            tmp_path: Path,
+            caplog: pytest.LogCaptureFixture,
+            case: str,
+        ) -> None:
+            output, selected = copy_packet(original_packet, tmp_path)
+            name = case + "-messages.json"
+            messages = json.loads((output / "artifacts" / name).read_bytes())
+            messages.pop()
+            replace_artifact(output, selected, name, messages)
+            refuse(output, selected, "native transcript population differs", caplog)
+
+        @pytest.mark.parametrize(
+            "case,other,reason",
+            [
+                ("retry-exhausted", "retry", "native transcript population differs"),
+                (
+                    "committed-effect-error",
+                    "producer-error",
+                    "native tool call differs",
+                ),
+            ],
+        )
+        def test_histories_cannot_be_swapped(
+            self,
+            original_packet: Path,
+            tmp_path: Path,
+            caplog: pytest.LogCaptureFixture,
+            case: str,
+            other: str,
+            reason: str,
+        ) -> None:
+            output, selected = copy_packet(original_packet, tmp_path)
+            messages = json.loads(
+                (output / "artifacts" / (other + "-messages.json")).read_bytes()
+            )
+            replace_artifact(output, selected, case + "-messages.json", messages)
+            refuse(output, selected, reason, caplog)
+
+        @pytest.mark.parametrize(
+            "case,reason",
+            [
+                ("retry-exhausted", "retry exhaustion terminal differs"),
+                ("committed-effect-error", "committed error terminal differs"),
+            ],
+        )
+        def test_error_cannot_be_reported_as_completion(
+            self,
+            original_packet: Path,
+            tmp_path: Path,
+            caplog: pytest.LogCaptureFixture,
+            case: str,
+            reason: str,
+        ) -> None:
+            output, selected = copy_packet(original_packet, tmp_path)
+            name = case + "-execution.json"
+            execution = decode((output / "artifacts" / name).read_bytes())
+            execution["terminal"] = {
+                "status": "complete",
+                "output": "complete",
+                "exception": None,
+            }
+            replace_artifact(output, selected, name, execution)
+            refuse(output, selected, reason, caplog)
+
+        def test_exhausted_retry_trace_cannot_disappear(
+            self,
+            original_packet: Path,
+            tmp_path: Path,
+            caplog: pytest.LogCaptureFixture,
+        ) -> None:
+            output, selected = copy_packet(original_packet, tmp_path)
+            name = "retry-exhausted-execution.json"
+            execution = decode((output / "artifacts" / name).read_bytes())
+            execution["trace"].pop()
+            replace_artifact(output, selected, name, execution)
+            refuse(output, selected, "native dispatch population differs", caplog)
+
+        def test_exhaustion_reason_cannot_change(
+            self,
+            original_packet: Path,
+            tmp_path: Path,
+            caplog: pytest.LogCaptureFixture,
+        ) -> None:
+            output, selected = copy_packet(original_packet, tmp_path)
+            name = "retry-exhausted-execution.json"
+            execution = decode((output / "artifacts" / name).read_bytes())
+            execution["trace"][-1]["reason"] = "undeclared failure"
+            replace_artifact(output, selected, name, execution)
+            refuse(output, selected, "retry dispatch trace differs", caplog)
+
+        @pytest.mark.parametrize(
+            "field,value,reason",
+            [
+                ("outcome", "error", "frozen dispatch outcome differs"),
+                ("result", "{}", "committed error trace differs"),
+                ("reason", "undeclared failure", "committed error trace differs"),
+            ],
+        )
+        def test_committed_effect_trace_is_fully_bound(
+            self,
+            original_packet: Path,
+            tmp_path: Path,
+            caplog: pytest.LogCaptureFixture,
+            field: str,
+            value: str,
+            reason: str,
+        ) -> None:
+            output, selected = copy_packet(original_packet, tmp_path)
+            name = "committed-effect-error-execution.json"
+            execution = decode((output / "artifacts" / name).read_bytes())
+            execution["trace"][0][field] = value
+            replace_artifact(output, selected, name, execution)
+            refuse(output, selected, reason, caplog)
+
+        def test_committed_effect_cannot_revert_to_initial_row(
+            self,
+            original_packet: Path,
+            tmp_path: Path,
+            caplog: pytest.LogCaptureFixture,
+        ) -> None:
+            output, selected = copy_packet(original_packet, tmp_path)
+            name = "committed-effect-error-execution.json"
+            execution = decode((output / "artifacts" / name).read_bytes())
+            plan = decode((output / "plan-before-run.json").read_bytes())
+            execution["finalReadbackHex"] = encode(plan["cases"][-1]["initial"]).hex()
+            replace_artifact(output, selected, name, execution)
+            refuse(output, selected, "final native readback differs", caplog)
+
+        def test_committed_effect_readback_cannot_swap_with_another_effect(
+            self,
+            original_packet: Path,
+            tmp_path: Path,
+            caplog: pytest.LogCaptureFixture,
+        ) -> None:
+            output, selected = copy_packet(original_packet, tmp_path)
+            name = "committed-effect-error-0-http.json"
+            packet = decode((output / "artifacts" / name).read_bytes())
+            other = decode((output / "artifacts/permit-0-http.json").read_bytes())
+            packet["getResponseHex"] = other["getResponseHex"]
+            replace_artifact(output, selected, name, packet)
+            refuse(output, selected, "ticket key differs from consumer pin", caplog)
+
+        def test_failed_effect_http_artifact_cannot_be_omitted(
+            self,
+            original_packet: Path,
+            tmp_path: Path,
+            caplog: pytest.LogCaptureFixture,
+        ) -> None:
+            output, selected = copy_packet(original_packet, tmp_path)
+            (output / "artifacts/committed-effect-error-0-http.json").unlink()
+            refuse(output, selected, "artifact population differs", caplog)
+
+        @pytest.mark.parametrize("case", ["retry-exhausted", "committed-effect-error"])
+        def test_malformed_history_cannot_be_admitted(
+            self,
+            original_packet: Path,
+            tmp_path: Path,
+            caplog: pytest.LogCaptureFixture,
+            case: str,
+        ) -> None:
+            output, selected = copy_packet(original_packet, tmp_path)
+            replace_artifact(
+                output, selected, case + "-messages.json", [{"kind": "request"}]
+            )
+            refuse(output, selected, "malformed bounded packet", caplog)

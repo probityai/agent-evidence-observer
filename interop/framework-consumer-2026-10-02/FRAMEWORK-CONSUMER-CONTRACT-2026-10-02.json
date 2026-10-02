@@ -60,8 +60,8 @@
       "native_profile": "probity-pydantic-ai-ticket-v0",
       "planned_attempts": 5,
       "remaining": [
-        "retry exhaustion and failure after committed effect",
-        "outside host selection/recurring publication gate"
+        "outside host selection/recurring publication gate",
+        "provider-backed tasks and independent effect custody"
       ],
       "selected_pin_fields": [
         "planSha256",
@@ -69,6 +69,10 @@
         "artifactManifestSha256",
         "evaluationTime"
       ],
+      "supported_profiles": {
+        "probity-pydantic-ai-ticket-v0": 5,
+        "probity-pydantic-ai-ticket-v1": 7
+      },
       "upgrade_population": [
         "valid five-case original packet",
         "wrong selected plan/source/artifact pins",
@@ -76,7 +80,9 @@
         "omitted or hidden retry",
         "swapped signed readback",
         "false successful producer-error terminal",
-        "duplicate native JSON names"
+        "duplicate native JSON names",
+        "seven-case v1 exhausted retry and committed-effect error population",
+        "terminal error with authenticated committed effect retained at revision one"
       ],
       "version": "0.0.1"
     }
@@ -133,12 +139,12 @@
       "sha256": "52b7258401efd1100fc4d20dd63e5a61708f859c46b592fcf1224cd2236bcb3b"
     },
     "interop/pydantic-ai-native-2026-10-02/src/probity_pydantic/contract.py": {
-      "git_blob_sha1": "0b373fb6e6fd285436f4d9cb4beb6a97c401e2c5",
-      "sha256": "37334076477064f2afccfeb82fdabc3534117ea57e6777759fc6e7ea5d17e882"
+      "git_blob_sha1": "df361a460289320aade9357512975ad63d189326",
+      "sha256": "24d33f798c86a6bb8869a18ae78c3055bbe42e8ba623f0e2a1381fd04e912599"
     },
     "interop/pydantic-ai-native-2026-10-02/src/probity_pydantic/reader.py": {
-      "git_blob_sha1": "720fd1dcfcc2721fcd25a4f3904efc0fd4f543ed",
-      "sha256": "0e21799f0bd4416d5d298bd4189642e987bb924a53888517f69e6756210cc557"
+      "git_blob_sha1": "1bff86e24f7ac1c903a04350eac1741a3f5ed734",
+      "sha256": "038d730370c070c492a88bdc6985c600ea83f31550d489ea28f8dd79e4c7542a"
     },
     "pyproject.toml": {
       "git_blob_sha1": "145f8eaf9926130bdbfe45e33ead1aa519d27679",
