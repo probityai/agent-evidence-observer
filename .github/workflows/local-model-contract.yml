@@ -26,3 +26,6 @@ jobs:
       - name: Check frozen native schema format-control selections and independent scores
         working-directory: interop/local-model-format-control-2026-10-02
         run: python -m pytest tests -q
+      - name: Check new authored boundary tasks and CPU envelope reconstruction
+        working-directory: interop/local-model-boundary-tasks-2026-10-02
+        run: python -m pytest tests -q
