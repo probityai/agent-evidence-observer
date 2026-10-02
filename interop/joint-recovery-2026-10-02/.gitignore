@@ -1,0 +1,16 @@
+pytest-of-root/
+.hypothesis/
+.pytest_cache/
+fresh-run/
+fresh-run-host-private/
+host-receipts/
+wheels/
+*.egg-info/
+build/
+install-report.json
+reader-install-report.json
+fresh-report.json
+host-decision.json
+wheels-sha256.txt
+test-results.xml
+host_gate.py
