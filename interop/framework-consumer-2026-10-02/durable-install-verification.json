@@ -1,0 +1,81 @@
+{
+  "schema": "probity.durable-reader-upgrade-verification.v1",
+  "implementationCommit": "55c3921cf299407176f2121083c7f39aff12165f",
+  "historicalBaselineCommit": "5b5b6328bf70fef0fa17e86e62c6163c5943b13f",
+  "historicalVersion": "0.0.1",
+  "upgradedVersion": "0.0.2",
+  "python": "3.13.15",
+  "dependencyLockSha256": "b98eaf668b9b8a37f1201444eed85f2dd713e957e9204112934a4b23105805e5",
+  "sourceContractSha256": "e405dff86fdf23af874c41df6027a78eaad25eb81c3379b317ef3145233b93c9",
+  "selectedSourceFiles": 35,
+  "packagedPythonFiles": 30,
+  "baseline": {
+    "installedVersion": "0.0.1",
+    "durableCommandAbsent": true,
+    "historicalCommandExit": 1,
+    "durablePacketResult": {
+      "status": "refused",
+      "reason": "plan-profile"
+    }
+  },
+  "historicalControls": 32,
+  "upgradedCombinedControls": 62,
+  "newControls": 30,
+  "selectedArchiveSha256": "53226e9a77526c67c759e582b9f40b4512fff78ca64fad99bc99d2e5a4d97ed8",
+  "historicalBuild": {
+    "build_packages": {
+      "setuptools": "84.0.0",
+      "wheel": "0.48.0"
+    },
+    "python": "3.13.15",
+    "schema_version": "probity.framework-reader-build.v1",
+    "scope": "locally built source-selected reader candidates; no native replay or host adoption inferred",
+    "source_contract_sha256": "736709d2d1b935c738110995a7b505e1a3cf2c3e99c8c52ac2fa0098ef546b3e",
+    "wheels": {
+      "agent_evidence_observer-0.0.1-py3-none-any.whl": {
+        "bytes": 120341,
+        "sha256": "b61362c3c8749712dfa3652ae25e67bd43e826040a33abef3da5b5dfa9aa7754"
+      },
+      "probity_langgraph_ticket_reader-0.0.1-py3-none-any.whl": {
+        "bytes": 14698,
+        "sha256": "86e101b81a8fe4f871b05b63620554cad142fea11e21529e291311d8f85ffc00"
+      },
+      "probity_pydantic_ticket_reader-0.0.1-py3-none-any.whl": {
+        "bytes": 14792,
+        "sha256": "196f9cc64991724e306cfddbedbe2c32c26a3fd4bf47e6b96d5a2132f16276e6"
+      }
+    }
+  },
+  "durableBuild": {
+    "build_packages": {
+      "setuptools": "84.0.0",
+      "wheel": "0.48.0"
+    },
+    "python": "3.13.15",
+    "schema_version": "probity.framework-reader-build.v1",
+    "scope": "source-selected framework-free historical/durable reader wheels; replay and adoption require separate records",
+    "source_contract_sha256": "e405dff86fdf23af874c41df6027a78eaad25eb81c3379b317ef3145233b93c9",
+    "wheels": {
+      "agent_evidence_observer-0.0.1-py3-none-any.whl": {
+        "bytes": 120341,
+        "sha256": "984a8b97296c646141b41f158ad73af84dffac291ee20b40c976be696af60646"
+      },
+      "probity_langgraph_ticket_reader-0.0.2-py3-none-any.whl": {
+        "bytes": 20506,
+        "sha256": "9aecfa5b00f786746542642f81f72503b8ef18f82b5d40843f910675bad0d312"
+      }
+    }
+  },
+  "hostSelection": {
+    "schema": "probity-framework-host-gate-v2",
+    "reader": "langgraph-durable",
+    "profile": "probity-langgraph-durable-restart-v0",
+    "plannedAttempts": 6,
+    "pins": "outside packet; selected digest then copied/frozen before child launch"
+  },
+  "historicalBehavior": "Original v1 enums, historical CLI/lg_common/lg_reader and original packet/source contracts unchanged; v1 refuses the durable reader.",
+  "remoteCI": "pending actual PR execution",
+  "outsideAdoption": "not-established",
+  "independentCustody": "not-established",
+  "nativeExecution": "Retained original Ubuntu packet replay; no new native graph/model executions."
+}

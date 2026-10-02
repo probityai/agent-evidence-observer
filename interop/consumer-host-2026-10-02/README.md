@@ -53,7 +53,7 @@ by this example. The host chooses its actual recurring publication trigger.
 ## Installation and upgrades
 
 Use Python 3.13.15 and the committed hash-selected reader/build dependency lock.
-The builder checks selected source hashes and produces standard wheels. Normal
+For historical0.0.1 readers, use the immutable `5b5b6328bf70fef0fa17e86e62c6163c5943b13f` source checkout with the original builder, as shown in the reader instructions. For current durable support, use the separate0.0.2 builder and its new frozen contract. Each builder checks selected source hashes and produces standard wheels. Normal
 installation uses `pip install --no-index --no-deps reader-wheels/*.whl`, followed
 by `pip check`. Do not install the original Pydantic producer package into this
 reader environment: it shares a Python namespace with the dedicated reader.
@@ -109,3 +109,9 @@ historical reader enums, a different profile or an altered denominator before an
 child launch. Historical packets and policies continue to use v1 and the original
 commands. The admitted report retains committed-effect recovery, pending intent
 and missing-state refusal outcomes without changing their scope ceilings.
+
+The [durable host template](DURABLE-HOST-WORKFLOW.yml) pins the reviewed additive
+reader/gate source at `55c3921cf299407176f2121083c7f39aff12165f`. Copy the gate
+from that revision into the host and commit it with its v2 policy and selected
+native pins. Both templates keep publication dependent on successful admission;
+they are owned embedding examples, without an outside installation or commitment.

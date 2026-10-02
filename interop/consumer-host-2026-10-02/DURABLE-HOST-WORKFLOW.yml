@@ -1,0 +1,56 @@
+name: Publish selected durable framework records
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: ['evidence/langgraph-durable/**', 'policy/framework/**', '.ci/framework_gate.py', '.github/workflows/framework-gate.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: probityai/agent-evidence-observer
+          ref: 55c3921cf299407176f2121083c7f39aff12165f
+          path: reader-source
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.13.15'
+      - name: Normally install selected framework readers
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m pip install --require-hashes --only-binary=:all: -r reader-source/interop/framework-consumer-2026-10-02/FRAMEWORK-CONSUMER-REQUIREMENTS-2026-10-02.lock --report "$RUNNER_TEMP/install.json"
+          bash reader-source/interop/framework-consumer-2026-10-02/FRAMEWORK-DURABLE-CONSUMER-BUILD-2026-10-02.sh reader-source "$RUNNER_TEMP/wheels"
+          python -m pip install --no-index --no-deps "$RUNNER_TEMP/wheels/"*.whl
+          python -m pip check
+      - name: Gate the selected record
+        shell: bash
+        env:
+          # Replace with separately reviewed policy raw-byte SHA-256.
+          HOST_POLICY_SHA256: REVIEWED_RAW_HOST_POLICY_SHA256
+        run: |
+          set -euo pipefail
+          python .ci/framework_gate.py --packet evidence/langgraph-durable/packet --pins policy/framework/langgraph-durable-pins.json --policy policy/framework/langgraph-durable-gate.json --policy-sha256 "$HOST_POLICY_SHA256" --reader-bin "$(dirname "$(command -v python)")" --output "$RUNNER_TEMP/record-receipt"
+      - name: Retain reader and installation receipts on every outcome
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: selected-framework-record
+          path: |
+            ${{ runner.temp }}/record-receipt/
+            ${{ runner.temp }}/wheels/build-record.json
+            ${{ runner.temp }}/install.json
+          if-no-files-found: error
+          retention-days: 90
+  publish:
+    needs: verify
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo 'Replace with the host publication command; this job runs only after admission.'
