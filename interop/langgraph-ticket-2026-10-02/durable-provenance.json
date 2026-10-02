@@ -1,0 +1,62 @@
+{
+  "profile": "probity-langgraph-durable-restart-v0",
+  "observerSourceRevision": "6f6044b144f36ccfd64762b68a82d75f9d05e11b",
+  "python": "3.13.15",
+  "frameworkVersion": "1.0.10",
+  "checkpointSqliteVersion": "3.1.1",
+  "dependencyLock": "requirements-restart.lock",
+  "dependencyLockSha256": "c073a75ad6f049713beab4c8d2a943b87cd707e6ffc044fea11526cdcff59b44",
+  "dependencyCount": 52,
+  "hashInstall": "clean uv pip --require-hashes --only-binary=:all:",
+  "nativeAttempts": 6,
+  "workers": 12,
+  "profileTests": 99,
+  "originalProfileTests": 61,
+  "durableTests": 38,
+  "reselectedSemanticMutations": 23,
+  "fixture": {
+    "path": "durable-fixture.zip",
+    "sha256": "18c47994affce21192578dc63887c7c93e38932d2ffd24d8b7e64744b96a309e",
+    "bytes": 252320,
+    "files": 71
+  },
+  "selectedPins": {
+    "artifactManifestSha256": "3f144a27ee0908faa3b93217e16a422f629323366c2c4dcedac3020497a89600",
+    "evaluationTime": "2026-10-02T18:05:27.552221+00:00",
+    "planSha256": "784213d05253b64fa0c2df971659066faea87092d88117b6c263f9f53bb6e51b"
+  },
+  "frameworkFreeInstalledPackages": [
+    {
+      "name": "agent-evidence-observer",
+      "version": "0.0.1",
+      "editable_project_location": "/workspace/observer-langgraph"
+    },
+    {
+      "name": "cffi",
+      "version": "2.1.1"
+    },
+    {
+      "name": "cryptography",
+      "version": "46.0.7"
+    },
+    {
+      "name": "pycparser",
+      "version": "3.0"
+    },
+    {
+      "name": "rfc8785",
+      "version": "0.1.4"
+    }
+  ],
+  "readerMatchesProducerReport": true,
+  "remoteCI": "pending PR execution",
+  "acceptance": "not-established",
+  "recurringAdoption": "not-established",
+  "scope": "same-operator local graph-worker hard exits and durable checkpointer reopening; parent target remains alive; not power-loss, target-process restart, custody separation or general exactly-once",
+  "next": [
+    "fresh Ubuntu PR workflow",
+    "upgrade dedicated installed reader for additive durable profile",
+    "revoke/expire grant between hard exit and recovery",
+    "target-process restart and separately operated target protocol"
+  ]
+}

@@ -66,3 +66,14 @@ approve its plan/artifact pins, reference time, key and issuer policy. A fully
 fabricated history by the trusted operator remains outside this profile's scope.
 `durable-recorded-report.json` records local execution, not remote CI or adoption.
 An outside operator/host gate still requires actual acceptance and operation.
+
+The complete original clean Python 3.13.15 packet is retained in
+[`durable-fixture.zip`](durable-fixture.zip); [`durable-provenance.json`](durable-provenance.json)
+binds its digest, exact implementation commit, selected consumer pins and measured
+control counts. The report also replayed successfully in a separate environment
+containing Observer and its cryptography/AAE dependencies without LangGraph.
+Extract this selected archive to a new directory and pass the separately selected
+pins to `durable_reader.py` for offline reproduction. The saved evaluation time
+reconstructs that historical validity window; admitting a result now requires
+separately selected current authority and policy. The archive is evidence of this
+finite local run; fresh workflow outputs remain separate.
