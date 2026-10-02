@@ -16,12 +16,16 @@ def main():
     parser.add_argument("--reader-sha256", required=True)
     args = parser.parse_args()
     try:
-        spec = importlib.util.find_spec("model_task_reader")
-        if spec is None or not spec.origin:
-            raise ValueError("installed reader module is missing")
-        source = Path(spec.origin).read_bytes()
-        if hashlib.sha256(source).hexdigest() != args.reader_sha256:
+        candidates = []
+        for name in ("model_task_reader", "model_comparison_reader"):
+            spec = importlib.util.find_spec(name)
+            if spec is not None and spec.origin:
+                raw = Path(spec.origin).read_bytes()
+                if hashlib.sha256(raw).hexdigest() == args.reader_sha256:
+                    candidates.append((spec, raw))
+        if len(candidates) != 1:
             raise ValueError("installed reader source differs from host selection")
+        spec, source = candidates[0]
         model_task_reader = types.ModuleType("selected_offline_reader")
         model_task_reader.__file__ = spec.origin
         exec(compile(source, spec.origin, "exec"), model_task_reader.__dict__)

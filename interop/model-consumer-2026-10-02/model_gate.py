@@ -239,6 +239,8 @@ def launch(command, output, timeout):
 
 
 def gate(packet, pins_file, policy_file, policy_sha256, output, timeout):
+    if output.resolve().is_relative_to(packet.resolve()):
+        raise ValueError("receipt directory must be outside producer packet")
     output.mkdir(parents=True, exist_ok=False)
     receipt = {
         "evidenceDecision": "not-verified",
@@ -324,7 +326,7 @@ def main():
             args.output,
             args.timeout_seconds,
         )
-    except OSError as error:
+    except (OSError, ValueError) as error:
         print(json.dumps({"publicationDecision": "hold", "reason": str(error)}))
         raise SystemExit(1) from error
     print(json.dumps(receipt, indent=2))

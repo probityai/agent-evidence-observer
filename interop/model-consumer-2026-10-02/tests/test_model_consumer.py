@@ -174,10 +174,27 @@ def test_producer_adjacent_selections_refuse(selected, tmp_path, inside):
     else:
         pins = tmp_path / "linked-pins.json"
         pins.symlink_to(packet / "consumer-pins.json")
-    result = gate.gate(
-        packet, pins, policy_file, sha(policy_file.read_bytes()), output, 60
-    )
-    assert not result["launched"]
+    before = {
+        str(p.relative_to(packet)): sha(p.read_bytes())
+        for p in packet.rglob("*")
+        if p.is_file()
+    }
+    if inside == "receipts":
+        with pytest.raises(ValueError, match="outside producer packet"):
+            gate.gate(
+                packet, pins, policy_file, sha(policy_file.read_bytes()), output, 60
+            )
+        assert not output.exists()
+    else:
+        result = gate.gate(
+            packet, pins, policy_file, sha(policy_file.read_bytes()), output, 60
+        )
+        assert not result["launched"]
+    assert before == {
+        str(p.relative_to(packet)): sha(p.read_bytes())
+        for p in packet.rglob("*")
+        if p.is_file()
+    }
 
 
 @pytest.mark.parametrize("timeout", [False, 0, -1, float("nan"), float("inf"), 601])
