@@ -30,7 +30,8 @@ jobs:
         with:
           python-version: '3.13'
       - name: Install hash-pinned profile dependencies
-        run: python -m pip install --require-hashes --only-binary=:all: -r requirements.lock --report install-report.json
+        run: |
+          python -m pip install --require-hashes --only-binary=:all: -r requirements.lock --report install-report.json
       - name: Install this exact Observer checkout without changing dependency selection
         run: python -m pip install --no-deps -e ../..
       - name: Check adapter code and complexity
