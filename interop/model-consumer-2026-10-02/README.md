@@ -96,3 +96,37 @@ mutation refusal. The candidate gate also refuses receipt output under the nativ
 packet before creating any directory or modifying retained producer bytes.
 The normal upgrade is same-team owned verification; it supplies no outside host
 acceptance, recurring adoption, deployment or dispatch authority.
+
+## Normal schema-control reader upgrade
+
+Version 0.0.3 adds the separately frozen `probity-local-cpu-format-control-v1`
+reader. The original 48 and comparison 96 modules and report bytes remain exact.
+Normal installed 0.0.2 refuses the new source and policy; 0.0.3 supports its
+192 attempts and 32 distinct model/cap/decoder/family rows. Neither model runtime
+nor framework libraries are installed in the reader environment.
+
+The new profile requires policy schema `probity-model-publication-policy-v2`,
+explicit decoder/model identities and `minSchemaValid` for every selected row.
+Other profiles retain policy v1. Counts include unsupported outcomes; any
+unsupported, error, incomplete or unknown-start result holds publication.
+JSON validity, exact schema/type validity and semantic correctness remain separate.
+The gate requires correct <= schemaValid <= formatValid <= planned; resource
+limits retain their declared returned-call CPU and process lifetime RSS scope.
+
+The authentic retained run has all 96 schema outputs valid but weak semantic
+results. The example quality policy selects 6/6 valid schemas for every schema
+row and at least 3/6 correct in each 360M schema family/cap. It holds exactly two
+policy-decision rows (1/6 each), despite valid evidence and schemas. Unconstrained
+and 135M zero semantic minima are explicit; all rows and outcomes remain retained.
+These are same-team example host policies selected after inference and frozen
+before consumer replay, not preregistered model-success criteria or accepted
+outside policy. The source experiment's syntax-only constraints and declared
+budgets are separate preregistered selections.
+
+`run_format_upgrade_example.py` retains actual installed versions, framework
+absence, baseline refusal, exact prior report bytes, selected semantic holds and
+native mutation refusal. `format-run.zip` contains all 463 compact-original run
+members byte-exact; provenance binds the authenticated provider artifact. Pins
+copied from that artifact are explicit same-team examples, held outside the
+producer packet before reader launch. No new inference is performed in this
+consumer replay; capability and installation do not establish external adoption.

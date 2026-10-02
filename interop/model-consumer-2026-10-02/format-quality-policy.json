@@ -1,0 +1,336 @@
+{
+  "schema": "probity-model-publication-policy-v2",
+  "profile": "probity-local-cpu-format-control-v1",
+  "planned": 192,
+  "pinsSha256": "e0f83afaa3fc08694139db100a7663db5e303bbfbec0cf88765e10cbf0af630e",
+  "readerSha256": "3f386686ea0666dda06d68dc01c7a53157a19e8c82ba2957b46dda399169c072",
+  "rows": [
+    {
+      "model": "smol135-q4",
+      "decoder": "unconstrained",
+      "configuration": "short24",
+      "family": "structured-extraction",
+      "planned": 6,
+      "minCorrect": 0,
+      "minFormatValid": 0,
+      "minSchemaValid": 0
+    },
+    {
+      "model": "smol135-q4",
+      "decoder": "unconstrained",
+      "configuration": "short24",
+      "family": "arithmetic",
+      "planned": 6,
+      "minCorrect": 0,
+      "minFormatValid": 0,
+      "minSchemaValid": 0
+    },
+    {
+      "model": "smol135-q4",
+      "decoder": "unconstrained",
+      "configuration": "short24",
+      "family": "policy-decision",
+      "planned": 6,
+      "minCorrect": 0,
+      "minFormatValid": 0,
+      "minSchemaValid": 0
+    },
+    {
+      "model": "smol135-q4",
+      "decoder": "unconstrained",
+      "configuration": "short24",
+      "family": "grounded-abstention",
+      "planned": 6,
+      "minCorrect": 0,
+      "minFormatValid": 0,
+      "minSchemaValid": 0
+    },
+    {
+      "model": "smol135-q4",
+      "decoder": "schema",
+      "configuration": "short24",
+      "family": "structured-extraction",
+      "planned": 6,
+      "minCorrect": 0,
+      "minFormatValid": 6,
+      "minSchemaValid": 6
+    },
+    {
+      "model": "smol135-q4",
+      "decoder": "schema",
+      "configuration": "short24",
+      "family": "arithmetic",
+      "planned": 6,
+      "minCorrect": 0,
+      "minFormatValid": 6,
+      "minSchemaValid": 6
+    },
+    {
+      "model": "smol135-q4",
+      "decoder": "schema",
+      "configuration": "short24",
+      "family": "policy-decision",
+      "planned": 6,
+      "minCorrect": 0,
+      "minFormatValid": 6,
+      "minSchemaValid": 6
+    },
+    {
+      "model": "smol135-q4",
+      "decoder": "schema",
+      "configuration": "short24",
+      "family": "grounded-abstention",
+      "planned": 6,
+      "minCorrect": 0,
+      "minFormatValid": 6,
+      "minSchemaValid": 6
+    },
+    {
+      "model": "smol135-q4",
+      "decoder": "unconstrained",
+      "configuration": "long96",
+      "family": "structured-extraction",
+      "planned": 6,
+      "minCorrect": 0,
+      "minFormatValid": 0,
+      "minSchemaValid": 0
+    },
+    {
+      "model": "smol135-q4",
+      "decoder": "unconstrained",
+      "configuration": "long96",
+      "family": "arithmetic",
+      "planned": 6,
+      "minCorrect": 0,
+      "minFormatValid": 0,
+      "minSchemaValid": 0
+    },
+    {
+      "model": "smol135-q4",
+      "decoder": "unconstrained",
+      "configuration": "long96",
+      "family": "policy-decision",
+      "planned": 6,
+      "minCorrect": 0,
+      "minFormatValid": 0,
+      "minSchemaValid": 0
+    },
+    {
+      "model": "smol135-q4",
+      "decoder": "unconstrained",
+      "configuration": "long96",
+      "family": "grounded-abstention",
+      "planned": 6,
+      "minCorrect": 0,
+      "minFormatValid": 0,
+      "minSchemaValid": 0
+    },
+    {
+      "model": "smol135-q4",
+      "decoder": "schema",
+      "configuration": "long96",
+      "family": "structured-extraction",
+      "planned": 6,
+      "minCorrect": 0,
+      "minFormatValid": 6,
+      "minSchemaValid": 6
+    },
+    {
+      "model": "smol135-q4",
+      "decoder": "schema",
+      "configuration": "long96",
+      "family": "arithmetic",
+      "planned": 6,
+      "minCorrect": 0,
+      "minFormatValid": 6,
+      "minSchemaValid": 6
+    },
+    {
+      "model": "smol135-q4",
+      "decoder": "schema",
+      "configuration": "long96",
+      "family": "policy-decision",
+      "planned": 6,
+      "minCorrect": 0,
+      "minFormatValid": 6,
+      "minSchemaValid": 6
+    },
+    {
+      "model": "smol135-q4",
+      "decoder": "schema",
+      "configuration": "long96",
+      "family": "grounded-abstention",
+      "planned": 6,
+      "minCorrect": 0,
+      "minFormatValid": 6,
+      "minSchemaValid": 6
+    },
+    {
+      "model": "smol360-q4",
+      "decoder": "unconstrained",
+      "configuration": "short24",
+      "family": "structured-extraction",
+      "planned": 6,
+      "minCorrect": 0,
+      "minFormatValid": 0,
+      "minSchemaValid": 0
+    },
+    {
+      "model": "smol360-q4",
+      "decoder": "unconstrained",
+      "configuration": "short24",
+      "family": "arithmetic",
+      "planned": 6,
+      "minCorrect": 0,
+      "minFormatValid": 0,
+      "minSchemaValid": 0
+    },
+    {
+      "model": "smol360-q4",
+      "decoder": "unconstrained",
+      "configuration": "short24",
+      "family": "policy-decision",
+      "planned": 6,
+      "minCorrect": 0,
+      "minFormatValid": 0,
+      "minSchemaValid": 0
+    },
+    {
+      "model": "smol360-q4",
+      "decoder": "unconstrained",
+      "configuration": "short24",
+      "family": "grounded-abstention",
+      "planned": 6,
+      "minCorrect": 0,
+      "minFormatValid": 0,
+      "minSchemaValid": 0
+    },
+    {
+      "model": "smol360-q4",
+      "decoder": "schema",
+      "configuration": "short24",
+      "family": "structured-extraction",
+      "planned": 6,
+      "minCorrect": 3,
+      "minFormatValid": 6,
+      "minSchemaValid": 6
+    },
+    {
+      "model": "smol360-q4",
+      "decoder": "schema",
+      "configuration": "short24",
+      "family": "arithmetic",
+      "planned": 6,
+      "minCorrect": 3,
+      "minFormatValid": 6,
+      "minSchemaValid": 6
+    },
+    {
+      "model": "smol360-q4",
+      "decoder": "schema",
+      "configuration": "short24",
+      "family": "policy-decision",
+      "planned": 6,
+      "minCorrect": 3,
+      "minFormatValid": 6,
+      "minSchemaValid": 6
+    },
+    {
+      "model": "smol360-q4",
+      "decoder": "schema",
+      "configuration": "short24",
+      "family": "grounded-abstention",
+      "planned": 6,
+      "minCorrect": 3,
+      "minFormatValid": 6,
+      "minSchemaValid": 6
+    },
+    {
+      "model": "smol360-q4",
+      "decoder": "unconstrained",
+      "configuration": "long96",
+      "family": "structured-extraction",
+      "planned": 6,
+      "minCorrect": 0,
+      "minFormatValid": 0,
+      "minSchemaValid": 0
+    },
+    {
+      "model": "smol360-q4",
+      "decoder": "unconstrained",
+      "configuration": "long96",
+      "family": "arithmetic",
+      "planned": 6,
+      "minCorrect": 0,
+      "minFormatValid": 0,
+      "minSchemaValid": 0
+    },
+    {
+      "model": "smol360-q4",
+      "decoder": "unconstrained",
+      "configuration": "long96",
+      "family": "policy-decision",
+      "planned": 6,
+      "minCorrect": 0,
+      "minFormatValid": 0,
+      "minSchemaValid": 0
+    },
+    {
+      "model": "smol360-q4",
+      "decoder": "unconstrained",
+      "configuration": "long96",
+      "family": "grounded-abstention",
+      "planned": 6,
+      "minCorrect": 0,
+      "minFormatValid": 0,
+      "minSchemaValid": 0
+    },
+    {
+      "model": "smol360-q4",
+      "decoder": "schema",
+      "configuration": "long96",
+      "family": "structured-extraction",
+      "planned": 6,
+      "minCorrect": 3,
+      "minFormatValid": 6,
+      "minSchemaValid": 6
+    },
+    {
+      "model": "smol360-q4",
+      "decoder": "schema",
+      "configuration": "long96",
+      "family": "arithmetic",
+      "planned": 6,
+      "minCorrect": 3,
+      "minFormatValid": 6,
+      "minSchemaValid": 6
+    },
+    {
+      "model": "smol360-q4",
+      "decoder": "schema",
+      "configuration": "long96",
+      "family": "policy-decision",
+      "planned": 6,
+      "minCorrect": 3,
+      "minFormatValid": 6,
+      "minSchemaValid": 6
+    },
+    {
+      "model": "smol360-q4",
+      "decoder": "schema",
+      "configuration": "long96",
+      "family": "grounded-abstention",
+      "planned": 6,
+      "minCorrect": 3,
+      "minFormatValid": 6,
+      "minSchemaValid": 6
+    }
+  ],
+  "limits": {
+    "elapsedNs": 600000000000,
+    "promptTokens": 49152,
+    "completionTokens": 5760,
+    "returnedCallProcessCpuNs": 1200000000000,
+    "processLifetimePeakRssKiB": 1048576
+  }
+}
