@@ -1,8 +1,8 @@
-name: Publish selected framework records
+name: Publish selected durable framework records
 on:
   workflow_dispatch:
   pull_request:
-    paths: ['evidence/langgraph/**', 'policy/framework/**', '.ci/framework_gate.py', '.github/workflows/framework-gate.yml']
+    paths: ['evidence/langgraph-durable/**', 'policy/framework/**', '.ci/framework_gate.py', '.github/workflows/framework-gate.yml']
 permissions:
   contents: read
 jobs:
@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: probityai/agent-evidence-observer
-          ref: 5b5b6328bf70fef0fa17e86e62c6163c5943b13f
+          ref: 55c3921cf299407176f2121083c7f39aff12165f
           path: reader-source
           persist-credentials: false
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
@@ -27,7 +27,7 @@ jobs:
         run: |
           set -euo pipefail
           python -m pip install --require-hashes --only-binary=:all: -r reader-source/interop/framework-consumer-2026-10-02/FRAMEWORK-CONSUMER-REQUIREMENTS-2026-10-02.lock --report "$RUNNER_TEMP/install.json"
-          bash reader-source/interop/framework-consumer-2026-10-02/FRAMEWORK-CONSUMER-BUILD-2026-10-02.sh reader-source "$RUNNER_TEMP/wheels"
+          bash reader-source/interop/framework-consumer-2026-10-02/FRAMEWORK-DURABLE-CONSUMER-BUILD-2026-10-02.sh reader-source "$RUNNER_TEMP/wheels"
           python -m pip install --no-index --no-deps "$RUNNER_TEMP/wheels/"*.whl
           python -m pip check
       - name: Gate the selected record
@@ -37,7 +37,7 @@ jobs:
           HOST_POLICY_SHA256: REVIEWED_RAW_HOST_POLICY_SHA256
         run: |
           set -euo pipefail
-          python .ci/framework_gate.py --packet evidence/langgraph/packet --pins policy/framework/langgraph-pins.json --policy policy/framework/langgraph-gate.json --policy-sha256 "$HOST_POLICY_SHA256" --reader-bin "$(dirname "$(command -v python)")" --output "$RUNNER_TEMP/record-receipt"
+          python .ci/framework_gate.py --packet evidence/langgraph-durable/packet --pins policy/framework/langgraph-durable-pins.json --policy policy/framework/langgraph-durable-gate.json --policy-sha256 "$HOST_POLICY_SHA256" --reader-bin "$(dirname "$(command -v python)")" --output "$RUNNER_TEMP/record-receipt"
       - name: Retain reader and installation receipts on every outcome
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

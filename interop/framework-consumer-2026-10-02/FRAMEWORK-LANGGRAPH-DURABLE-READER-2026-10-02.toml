@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools==84.0.0", "wheel==0.48.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "probity-langgraph-ticket-reader"
+version = "0.0.2"
+description = "Offline historical and durable-restart protected-ticket readers"
+requires-python = ">=3.12"
+dependencies = ["agent-evidence-observer[aae]==0.0.1"]
+license = "MIT"
+license-files = ["LICENSE"]
+
+[project.scripts]
+probity-langgraph-read = "probity_langgraph_reader_cli:main"
+probity-langgraph-durable-read = "probity_langgraph_durable_reader_cli:main"
+
+[tool.setuptools]
+py-modules = ["lg_common", "lg_reader", "durable_reader", "probity_langgraph_reader_cli", "probity_langgraph_durable_reader_cli"]
