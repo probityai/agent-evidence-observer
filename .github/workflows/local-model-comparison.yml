@@ -1,0 +1,57 @@
+name: Preregistered paired CPU model comparison
+on:
+  push:
+    branches: [run/local-model-comparison-v1]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  actual-cpu:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check selected model and dependency transfers (512 MiB total envelope)
+        run: python interop/local-model-comparison-2026-10-02/prepare_comparison.py model-comparison-artifacts
+      - name: Install retained dependencies and build the selected CPU runtime
+        run: |
+          set -euo pipefail
+          python interop/local-model-comparison-2026-10-02/prepare_comparison.py model-comparison-artifacts --verify-downloads
+          python -m pip install --no-index --no-deps --force-reinstall --require-hashes --find-links model-comparison-artifacts/downloads -r model-comparison-artifacts/requirements.txt
+          python -m pip check
+          CC=/usr/bin/gcc CXX=/usr/bin/g++ CMAKE_BUILD_PARALLEL_LEVEL=2 CMAKE_ARGS='-DGGML_NATIVE=OFF -DGGML_OPENMP=OFF -DGGML_CUDA=OFF -DGGML_BLAS=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF' timeout --signal=TERM --kill-after=5s 330s python -m pip install --no-index --find-links model-comparison-artifacts/downloads --no-build-isolation --no-deps model-comparison-artifacts/downloads/llama_cpp_python-0.3.16.tar.gz > model-comparison-artifacts/build-gcc.log 2>&1
+          python interop/local-model-comparison-2026-10-02/prepare_comparison.py model-comparison-artifacts --finalize
+      - name: Execute all 96 frozen paired attempts within the original ten-minute envelope
+        run: |
+          timeout --signal=TERM --kill-after=5s 595s python interop/local-model-comparison-2026-10-02/task_matrix.py model-comparison-artifacts/run --protocol-commit 6d6b205cc1c544968573381b72fbbe33c9ec4b3e --weights model-comparison-artifacts --provenance model-comparison-artifacts/provenance.json > model-comparison-artifacts/run-stdout.json 2> model-comparison-artifacts/run-stderr.txt
+      - name: Print the produced artifact selections for later independent readers
+        run: cat model-comparison-artifacts/run/consumer-pins.json
+      - name: Recompute from selected retained bytes in a separate reader invocation
+        run: python interop/local-model-comparison-2026-10-02/task_matrix.py model-comparison-artifacts/run --verify --pins-file model-comparison-artifacts/run/consumer-pins.json > model-comparison-artifacts/reader.json
+      - name: Print the retained population, quality and resource receipt
+        run: |
+          python - <<'PYTHON'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("model-comparison-artifacts/run/report.json").read_bytes())
+          print(json.dumps({k: v for k, v in report.items() if k != "attempts"}, indent=2))
+          PYTHON
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: paired-model-cpu-preparation-${{ github.sha }}
+          path: model-comparison-artifacts
+          if-no-files-found: error
+          retention-days: 90
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: paired-model-cpu-native-packet-${{ github.sha }}
+          path: model-comparison-artifacts/run
+          if-no-files-found: warn
+          retention-days: 90

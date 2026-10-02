@@ -20,3 +20,6 @@ jobs:
       - name: Check the operational task matrix reader and frozen rubric
         working-directory: interop/local-model-tasks-2026-10-02
         run: python -m pytest tests -q
+      - name: Check paired model comparison selections, order and resource refusals
+        working-directory: interop/local-model-comparison-2026-10-02
+        run: python -m pytest tests -q
