@@ -1,0 +1,41 @@
+name: Native A2A SDK exchange
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-a2a:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install pinned SDK profile
+        run: python -m pip install -e 'interop/a2a-native-2026-10-02[test]'
+      - name: Check native execution and changed-envelope controls
+        run: python -m pytest -q interop/a2a-native-2026-10-02/tests --junitxml=a2a-results.xml
+      - name: Retain actual SDK client and server exchange
+        run: python interop/a2a-native-2026-10-02/a2a_demo.py a2a-native-run
+      - name: Recompute retained packet in a separate reader invocation
+        run: |
+          python - <<'PY'
+          import json, subprocess, sys
+          from pathlib import Path
+          result = json.loads(Path('a2a-native-run/report.json').read_text())
+          subprocess.run([sys.executable, 'interop/a2a-native-2026-10-02/a2a_verify.py', 'a2a-native-run', '--native-pins', 'a2a-native-run/selected-native-pins.json', '--plan-sha256', result['plan_sha256'], '--history-sha256', result['history_sha256']], check=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: native-a2a-sdk-reference
+          path: |
+            a2a-native-run/
+            a2a-results.xml
+          if-no-files-found: error
