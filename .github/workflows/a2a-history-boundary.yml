@@ -39,7 +39,7 @@ jobs:
         run: |
           docker run --detach --name probity-a2a-history --memory 512m --cpus 1 --pids-limit 128 --publish 127.0.0.1::3306 --env MYSQL_ALLOW_EMPTY_PASSWORD=yes --env MYSQL_DATABASE=probity_fixture --env MYSQL_USER=fixture --env MYSQL_PASSWORD=fixture-only-public public.ecr.aws/docker/library/mysql@sha256:7dcddc01f13bab2f15cde676d44d01f61fc9f99fe7785e86196dfc07d358ae2b --innodb-buffer-pool-size=64M --performance-schema=OFF --max-connections=20 > container-id.txt
           for attempt in $(seq 1 30); do
-            if docker exec probity-a2a-history mysqladmin ping -uroot --silent; then exit 0; fi
+            if docker exec probity-a2a-history mysql --protocol=TCP --host=127.0.0.1 --user=fixture --password=fixture-only-public --database=probity_fixture --batch --skip-column-names -e 'SELECT VERSION(), @@port, 1'; then exit 0; fi
             sleep 2
           done
           exit 1
