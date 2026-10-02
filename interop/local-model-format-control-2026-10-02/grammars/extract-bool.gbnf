@@ -1,0 +1,7 @@
+boolean ::= ("true" | "false") space
+char ::= [^"\\\x00-\x1F] | "\\" (["\\/bfnrt] | "u" [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F])
+enabled-kv ::= "\"enabled\"" space ":" space boolean
+name-kv ::= "\"name\"" space ":" space string
+root ::= "{" space name-kv "," space enabled-kv "}" space
+space ::= " "?
+string ::= "\"" char* "\"" space

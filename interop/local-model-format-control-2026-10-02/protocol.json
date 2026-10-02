@@ -1,0 +1,1127 @@
+{
+  "schema": "probity-local-cpu-format-control-protocol-v1",
+  "profile": "probity-local-cpu-format-control-v1",
+  "interpretation": "paired authored operational tasks; unconstrained versus syntax/type-only schema decoding under selected Q4_K_M models; no target values in grammar, benchmark, deployment, semantic-safety or independent custody claim",
+  "runtime": {
+    "llama_cpp_python": "0.3.16",
+    "n_ctx": 512,
+    "n_threads": 2,
+    "n_threads_batch": 2,
+    "n_gpu_layers": 0
+  },
+  "generation": {
+    "seed": 42,
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "top_k": 0,
+    "repeat_penalty": 1.0,
+    "stop": [
+      "<|im_end|>"
+    ]
+  },
+  "configurations": [
+    {
+      "id": "short24",
+      "max_tokens": 24
+    },
+    {
+      "id": "long96",
+      "max_tokens": 96
+    }
+  ],
+  "system": "Return only the requested JSON object. Do not explain. Use only the supplied record and policy.",
+  "rubric": {
+    "id": "strict-json-typed-exact-v1",
+    "format": "single JSON object; no prose or code fences; reject duplicate members and nonfinite values",
+    "quality": "object member order and JSON whitespace ignored; recursively exact keys, array order, types and values; bool is not integer",
+    "partialCredit": false
+  },
+  "cases": [
+    {
+      "id": "extract-owner",
+      "family": "structured-extraction",
+      "input": "Record: owner=Maya; amount=7; currency=USD. Return JSON with exactly owner, amount, currency.",
+      "target": {
+        "owner": "Maya",
+        "amount": 7,
+        "currency": "USD"
+      }
+    },
+    {
+      "id": "extract-quantity",
+      "family": "structured-extraction",
+      "input": "Record: item=apple; quantity=3. Return JSON with exactly item and quantity.",
+      "target": {
+        "item": "apple",
+        "quantity": 3
+      }
+    },
+    {
+      "id": "extract-status",
+      "family": "structured-extraction",
+      "input": "Record: ticket=K2; status=open. Return JSON with exactly ticket and status.",
+      "target": {
+        "ticket": "K2",
+        "status": "open"
+      }
+    },
+    {
+      "id": "extract-bool",
+      "family": "structured-extraction",
+      "input": "Record: name=demo; enabled=false. Return JSON with exactly name and enabled.",
+      "target": {
+        "name": "demo",
+        "enabled": false
+      }
+    },
+    {
+      "id": "extract-null",
+      "family": "structured-extraction",
+      "input": "Record: id=R7; reviewer=unknown. Return JSON with exactly id and reviewer; unknown must be null.",
+      "target": {
+        "id": "R7",
+        "reviewer": null
+      }
+    },
+    {
+      "id": "extract-list",
+      "family": "structured-extraction",
+      "input": "Record: selected colors are red and blue, in that order. Return JSON with exactly colors, a list.",
+      "target": {
+        "colors": [
+          "red",
+          "blue"
+        ]
+      }
+    },
+    {
+      "id": "arithmetic-sum",
+      "family": "arithmetic",
+      "input": "Calculate 7+5. Return JSON with exactly answer, an integer.",
+      "target": {
+        "answer": 12
+      }
+    },
+    {
+      "id": "arithmetic-difference",
+      "family": "arithmetic",
+      "input": "Calculate 19-8. Return JSON with exactly answer, an integer.",
+      "target": {
+        "answer": 11
+      }
+    },
+    {
+      "id": "arithmetic-product",
+      "family": "arithmetic",
+      "input": "Calculate 6*4. Return JSON with exactly answer, an integer.",
+      "target": {
+        "answer": 24
+      }
+    },
+    {
+      "id": "arithmetic-division",
+      "family": "arithmetic",
+      "input": "Calculate 21/3. Return JSON with exactly answer, an integer.",
+      "target": {
+        "answer": 7
+      }
+    },
+    {
+      "id": "arithmetic-remaining",
+      "family": "arithmetic",
+      "input": "Calculate 10-2-3. Return JSON with exactly answer, an integer.",
+      "target": {
+        "answer": 5
+      }
+    },
+    {
+      "id": "arithmetic-combined",
+      "family": "arithmetic",
+      "input": "Calculate (3+4)*2. Return JSON with exactly answer, an integer.",
+      "target": {
+        "answer": 14
+      }
+    },
+    {
+      "id": "policy-publish",
+      "family": "policy-decision",
+      "input": "Policy: publish iff checks_passed=true and consent=true. Record: checks_passed=true; consent=true. Return JSON with exactly decision.",
+      "target": {
+        "decision": "publish"
+      }
+    },
+    {
+      "id": "policy-hold-check",
+      "family": "policy-decision",
+      "input": "Policy: publish iff checks_passed=true and consent=true. Record: checks_passed=false; consent=true. Return JSON with exactly decision.",
+      "target": {
+        "decision": "hold"
+      }
+    },
+    {
+      "id": "policy-hold-consent",
+      "family": "policy-decision",
+      "input": "Policy: publish iff checks_passed=true and consent=true. Record: checks_passed=true; consent=false. Return JSON with exactly decision.",
+      "target": {
+        "decision": "hold"
+      }
+    },
+    {
+      "id": "policy-admit",
+      "family": "policy-decision",
+      "input": "Policy: admit iff signature_valid=true and expired=false. Record: signature_valid=true; expired=false. Return JSON with exactly decision.",
+      "target": {
+        "decision": "admit"
+      }
+    },
+    {
+      "id": "policy-reject-signature",
+      "family": "policy-decision",
+      "input": "Policy: admit iff signature_valid=true and expired=false. Record: signature_valid=false; expired=false. Return JSON with exactly decision.",
+      "target": {
+        "decision": "reject"
+      }
+    },
+    {
+      "id": "policy-reject-expiry",
+      "family": "policy-decision",
+      "input": "Policy: admit iff signature_valid=true and expired=false. Record: signature_valid=true; expired=true. Return JSON with exactly decision.",
+      "target": {
+        "decision": "reject"
+      }
+    },
+    {
+      "id": "abstain-unknown-age",
+      "family": "grounded-abstention",
+      "input": "Record: name=Ana. What is her age? Use only the record. Return JSON with exactly answer; unavailable answers must be null.",
+      "target": {
+        "answer": null
+      }
+    },
+    {
+      "id": "abstain-unknown-city",
+      "family": "grounded-abstention",
+      "input": "Record: name=Sam; role=editor. What city does Sam live in? Use only the record. Return JSON with exactly answer; unavailable answers must be null.",
+      "target": {
+        "answer": null
+      }
+    },
+    {
+      "id": "abstain-unknown-total",
+      "family": "grounded-abstention",
+      "input": "Record: apples=3; oranges=unknown. What is the total number of fruits? Use only the record. Return JSON with exactly answer; unavailable answers must be null.",
+      "target": {
+        "answer": null
+      }
+    },
+    {
+      "id": "abstain-known-age",
+      "family": "grounded-abstention",
+      "input": "Record: name=Ana; age=25. What is her age? Use only the record. Return JSON with exactly answer; unavailable answers must be null.",
+      "target": {
+        "answer": 25
+      }
+    },
+    {
+      "id": "abstain-known-city",
+      "family": "grounded-abstention",
+      "input": "Record: name=Sam; city=Oslo. What city does Sam live in? Use only the record. Return JSON with exactly answer; unavailable answers must be null.",
+      "target": {
+        "answer": "Oslo"
+      }
+    },
+    {
+      "id": "abstain-known-total",
+      "family": "grounded-abstention",
+      "input": "Record: apples=3; oranges=2. What is the total number of fruits? Use only the record. Return JSON with exactly answer; unavailable answers must be null.",
+      "target": {
+        "answer": 5
+      }
+    }
+  ],
+  "order": {
+    "seed": "probity-format-control-2026-10-02",
+    "method": "SHA256(seed+colon+case.id) ranked24case blocks; rotate all8model/cap/decoder pairs by sorted-case indexmod8; each pair occupies each position3times; no warmup/repair/examples/retries/retuning",
+    "base": [
+      [
+        "smol135-q4",
+        "short24",
+        "unconstrained"
+      ],
+      [
+        "smol135-q4",
+        "short24",
+        "schema"
+      ],
+      [
+        "smol135-q4",
+        "long96",
+        "unconstrained"
+      ],
+      [
+        "smol135-q4",
+        "long96",
+        "schema"
+      ],
+      [
+        "smol360-q4",
+        "short24",
+        "unconstrained"
+      ],
+      [
+        "smol360-q4",
+        "short24",
+        "schema"
+      ],
+      [
+        "smol360-q4",
+        "long96",
+        "unconstrained"
+      ],
+      [
+        "smol360-q4",
+        "long96",
+        "schema"
+      ]
+    ],
+    "attemptIds": [
+      "smol135-q4--short24--unconstrained--abstain-known-age",
+      "smol135-q4--short24--schema--abstain-known-age",
+      "smol135-q4--long96--unconstrained--abstain-known-age",
+      "smol135-q4--long96--schema--abstain-known-age",
+      "smol360-q4--short24--unconstrained--abstain-known-age",
+      "smol360-q4--short24--schema--abstain-known-age",
+      "smol360-q4--long96--unconstrained--abstain-known-age",
+      "smol360-q4--long96--schema--abstain-known-age",
+      "smol135-q4--short24--schema--extract-bool",
+      "smol135-q4--long96--unconstrained--extract-bool",
+      "smol135-q4--long96--schema--extract-bool",
+      "smol360-q4--short24--unconstrained--extract-bool",
+      "smol360-q4--short24--schema--extract-bool",
+      "smol360-q4--long96--unconstrained--extract-bool",
+      "smol360-q4--long96--schema--extract-bool",
+      "smol135-q4--short24--unconstrained--extract-bool",
+      "smol135-q4--long96--unconstrained--policy-publish",
+      "smol135-q4--long96--schema--policy-publish",
+      "smol360-q4--short24--unconstrained--policy-publish",
+      "smol360-q4--short24--schema--policy-publish",
+      "smol360-q4--long96--unconstrained--policy-publish",
+      "smol360-q4--long96--schema--policy-publish",
+      "smol135-q4--short24--unconstrained--policy-publish",
+      "smol135-q4--short24--schema--policy-publish",
+      "smol135-q4--long96--schema--extract-null",
+      "smol360-q4--short24--unconstrained--extract-null",
+      "smol360-q4--short24--schema--extract-null",
+      "smol360-q4--long96--unconstrained--extract-null",
+      "smol360-q4--long96--schema--extract-null",
+      "smol135-q4--short24--unconstrained--extract-null",
+      "smol135-q4--short24--schema--extract-null",
+      "smol135-q4--long96--unconstrained--extract-null",
+      "smol360-q4--short24--unconstrained--extract-owner",
+      "smol360-q4--short24--schema--extract-owner",
+      "smol360-q4--long96--unconstrained--extract-owner",
+      "smol360-q4--long96--schema--extract-owner",
+      "smol135-q4--short24--unconstrained--extract-owner",
+      "smol135-q4--short24--schema--extract-owner",
+      "smol135-q4--long96--unconstrained--extract-owner",
+      "smol135-q4--long96--schema--extract-owner",
+      "smol360-q4--short24--schema--abstain-unknown-total",
+      "smol360-q4--long96--unconstrained--abstain-unknown-total",
+      "smol360-q4--long96--schema--abstain-unknown-total",
+      "smol135-q4--short24--unconstrained--abstain-unknown-total",
+      "smol135-q4--short24--schema--abstain-unknown-total",
+      "smol135-q4--long96--unconstrained--abstain-unknown-total",
+      "smol135-q4--long96--schema--abstain-unknown-total",
+      "smol360-q4--short24--unconstrained--abstain-unknown-total",
+      "smol360-q4--long96--unconstrained--policy-hold-check",
+      "smol360-q4--long96--schema--policy-hold-check",
+      "smol135-q4--short24--unconstrained--policy-hold-check",
+      "smol135-q4--short24--schema--policy-hold-check",
+      "smol135-q4--long96--unconstrained--policy-hold-check",
+      "smol135-q4--long96--schema--policy-hold-check",
+      "smol360-q4--short24--unconstrained--policy-hold-check",
+      "smol360-q4--short24--schema--policy-hold-check",
+      "smol360-q4--long96--schema--extract-status",
+      "smol135-q4--short24--unconstrained--extract-status",
+      "smol135-q4--short24--schema--extract-status",
+      "smol135-q4--long96--unconstrained--extract-status",
+      "smol135-q4--long96--schema--extract-status",
+      "smol360-q4--short24--unconstrained--extract-status",
+      "smol360-q4--short24--schema--extract-status",
+      "smol360-q4--long96--unconstrained--extract-status",
+      "smol135-q4--short24--unconstrained--abstain-known-total",
+      "smol135-q4--short24--schema--abstain-known-total",
+      "smol135-q4--long96--unconstrained--abstain-known-total",
+      "smol135-q4--long96--schema--abstain-known-total",
+      "smol360-q4--short24--unconstrained--abstain-known-total",
+      "smol360-q4--short24--schema--abstain-known-total",
+      "smol360-q4--long96--unconstrained--abstain-known-total",
+      "smol360-q4--long96--schema--abstain-known-total",
+      "smol135-q4--short24--schema--policy-reject-expiry",
+      "smol135-q4--long96--unconstrained--policy-reject-expiry",
+      "smol135-q4--long96--schema--policy-reject-expiry",
+      "smol360-q4--short24--unconstrained--policy-reject-expiry",
+      "smol360-q4--short24--schema--policy-reject-expiry",
+      "smol360-q4--long96--unconstrained--policy-reject-expiry",
+      "smol360-q4--long96--schema--policy-reject-expiry",
+      "smol135-q4--short24--unconstrained--policy-reject-expiry",
+      "smol135-q4--long96--unconstrained--policy-reject-signature",
+      "smol135-q4--long96--schema--policy-reject-signature",
+      "smol360-q4--short24--unconstrained--policy-reject-signature",
+      "smol360-q4--short24--schema--policy-reject-signature",
+      "smol360-q4--long96--unconstrained--policy-reject-signature",
+      "smol360-q4--long96--schema--policy-reject-signature",
+      "smol135-q4--short24--unconstrained--policy-reject-signature",
+      "smol135-q4--short24--schema--policy-reject-signature",
+      "smol135-q4--long96--schema--arithmetic-difference",
+      "smol360-q4--short24--unconstrained--arithmetic-difference",
+      "smol360-q4--short24--schema--arithmetic-difference",
+      "smol360-q4--long96--unconstrained--arithmetic-difference",
+      "smol360-q4--long96--schema--arithmetic-difference",
+      "smol135-q4--short24--unconstrained--arithmetic-difference",
+      "smol135-q4--short24--schema--arithmetic-difference",
+      "smol135-q4--long96--unconstrained--arithmetic-difference",
+      "smol360-q4--short24--unconstrained--arithmetic-combined",
+      "smol360-q4--short24--schema--arithmetic-combined",
+      "smol360-q4--long96--unconstrained--arithmetic-combined",
+      "smol360-q4--long96--schema--arithmetic-combined",
+      "smol135-q4--short24--unconstrained--arithmetic-combined",
+      "smol135-q4--short24--schema--arithmetic-combined",
+      "smol135-q4--long96--unconstrained--arithmetic-combined",
+      "smol135-q4--long96--schema--arithmetic-combined",
+      "smol360-q4--short24--schema--policy-hold-consent",
+      "smol360-q4--long96--unconstrained--policy-hold-consent",
+      "smol360-q4--long96--schema--policy-hold-consent",
+      "smol135-q4--short24--unconstrained--policy-hold-consent",
+      "smol135-q4--short24--schema--policy-hold-consent",
+      "smol135-q4--long96--unconstrained--policy-hold-consent",
+      "smol135-q4--long96--schema--policy-hold-consent",
+      "smol360-q4--short24--unconstrained--policy-hold-consent",
+      "smol360-q4--long96--unconstrained--abstain-unknown-age",
+      "smol360-q4--long96--schema--abstain-unknown-age",
+      "smol135-q4--short24--unconstrained--abstain-unknown-age",
+      "smol135-q4--short24--schema--abstain-unknown-age",
+      "smol135-q4--long96--unconstrained--abstain-unknown-age",
+      "smol135-q4--long96--schema--abstain-unknown-age",
+      "smol360-q4--short24--unconstrained--abstain-unknown-age",
+      "smol360-q4--short24--schema--abstain-unknown-age",
+      "smol360-q4--long96--schema--extract-quantity",
+      "smol135-q4--short24--unconstrained--extract-quantity",
+      "smol135-q4--short24--schema--extract-quantity",
+      "smol135-q4--long96--unconstrained--extract-quantity",
+      "smol135-q4--long96--schema--extract-quantity",
+      "smol360-q4--short24--unconstrained--extract-quantity",
+      "smol360-q4--short24--schema--extract-quantity",
+      "smol360-q4--long96--unconstrained--extract-quantity",
+      "smol135-q4--short24--unconstrained--arithmetic-division",
+      "smol135-q4--short24--schema--arithmetic-division",
+      "smol135-q4--long96--unconstrained--arithmetic-division",
+      "smol135-q4--long96--schema--arithmetic-division",
+      "smol360-q4--short24--unconstrained--arithmetic-division",
+      "smol360-q4--short24--schema--arithmetic-division",
+      "smol360-q4--long96--unconstrained--arithmetic-division",
+      "smol360-q4--long96--schema--arithmetic-division",
+      "smol135-q4--short24--schema--abstain-unknown-city",
+      "smol135-q4--long96--unconstrained--abstain-unknown-city",
+      "smol135-q4--long96--schema--abstain-unknown-city",
+      "smol360-q4--short24--unconstrained--abstain-unknown-city",
+      "smol360-q4--short24--schema--abstain-unknown-city",
+      "smol360-q4--long96--unconstrained--abstain-unknown-city",
+      "smol360-q4--long96--schema--abstain-unknown-city",
+      "smol135-q4--short24--unconstrained--abstain-unknown-city",
+      "smol135-q4--long96--unconstrained--arithmetic-remaining",
+      "smol135-q4--long96--schema--arithmetic-remaining",
+      "smol360-q4--short24--unconstrained--arithmetic-remaining",
+      "smol360-q4--short24--schema--arithmetic-remaining",
+      "smol360-q4--long96--unconstrained--arithmetic-remaining",
+      "smol360-q4--long96--schema--arithmetic-remaining",
+      "smol135-q4--short24--unconstrained--arithmetic-remaining",
+      "smol135-q4--short24--schema--arithmetic-remaining",
+      "smol135-q4--long96--schema--extract-list",
+      "smol360-q4--short24--unconstrained--extract-list",
+      "smol360-q4--short24--schema--extract-list",
+      "smol360-q4--long96--unconstrained--extract-list",
+      "smol360-q4--long96--schema--extract-list",
+      "smol135-q4--short24--unconstrained--extract-list",
+      "smol135-q4--short24--schema--extract-list",
+      "smol135-q4--long96--unconstrained--extract-list",
+      "smol360-q4--short24--unconstrained--arithmetic-sum",
+      "smol360-q4--short24--schema--arithmetic-sum",
+      "smol360-q4--long96--unconstrained--arithmetic-sum",
+      "smol360-q4--long96--schema--arithmetic-sum",
+      "smol135-q4--short24--unconstrained--arithmetic-sum",
+      "smol135-q4--short24--schema--arithmetic-sum",
+      "smol135-q4--long96--unconstrained--arithmetic-sum",
+      "smol135-q4--long96--schema--arithmetic-sum",
+      "smol360-q4--short24--schema--arithmetic-product",
+      "smol360-q4--long96--unconstrained--arithmetic-product",
+      "smol360-q4--long96--schema--arithmetic-product",
+      "smol135-q4--short24--unconstrained--arithmetic-product",
+      "smol135-q4--short24--schema--arithmetic-product",
+      "smol135-q4--long96--unconstrained--arithmetic-product",
+      "smol135-q4--long96--schema--arithmetic-product",
+      "smol360-q4--short24--unconstrained--arithmetic-product",
+      "smol360-q4--long96--unconstrained--abstain-known-city",
+      "smol360-q4--long96--schema--abstain-known-city",
+      "smol135-q4--short24--unconstrained--abstain-known-city",
+      "smol135-q4--short24--schema--abstain-known-city",
+      "smol135-q4--long96--unconstrained--abstain-known-city",
+      "smol135-q4--long96--schema--abstain-known-city",
+      "smol360-q4--short24--unconstrained--abstain-known-city",
+      "smol360-q4--short24--schema--abstain-known-city",
+      "smol360-q4--long96--schema--policy-admit",
+      "smol135-q4--short24--unconstrained--policy-admit",
+      "smol135-q4--short24--schema--policy-admit",
+      "smol135-q4--long96--unconstrained--policy-admit",
+      "smol135-q4--long96--schema--policy-admit",
+      "smol360-q4--short24--unconstrained--policy-admit",
+      "smol360-q4--short24--schema--policy-admit",
+      "smol360-q4--long96--unconstrained--policy-admit"
+    ]
+  },
+  "budgets": {
+    "download_bytes": 536870912,
+    "preparation_seconds": 180,
+    "network_operation_seconds": 30,
+    "build_seconds": 335,
+    "run_seconds": 600,
+    "maximum_model_calls": 192,
+    "maximum_prompt_tokens": 98304,
+    "maximum_completion_tokens": 11520,
+    "provider_calls": 0,
+    "provider_dollars": 0,
+    "maximum_process_lifetime_peak_rss_kib": 1048576
+  },
+  "resources": {
+    "elapsed": "monotonic nanoseconds around each backend call",
+    "cpu": "whole-process CPU delta including inference worker threads",
+    "rss": "Linux whole-process lifetime peak KiB; shared high-water mark, not per-call allocation",
+    "tokens": "native llama.cpp prompt/completion counts; preflight counts tokenize exact submitted prompt",
+    "limits": "hard process-group595s TERM plus5s KILL; cumulative preflight prompt/completion maxima; whole-process peakRSS checked after each return and independently held if >1GiB; no RSS hardkill; native late returns retained/held"
+  },
+  "decision": "complete retained evidence permits publication of this scoped report, not admission or dispatch of real effects; task quality reported separately by family/configuration; absent attempts remain in denominator",
+  "models": [
+    {
+      "repo": "unsloth/SmolLM2-135M-Instruct-GGUF",
+      "revision": "9e6855bc4be717fca1ef21360a1db4b29d5c559a",
+      "file": "SmolLM2-135M-Instruct-Q4_K_M.gguf",
+      "sha256": "ed5fa30c487b282ec156c29062f1222e5c20875a944ac98289dbd242e947f747",
+      "bytes": 105454144,
+      "id": "smol135-q4"
+    },
+    {
+      "id": "smol360-q4",
+      "repo": "unsloth/SmolLM2-360M-Instruct-GGUF",
+      "revision": "391ed11137586e383b1be0fab9acf01d282c2e11",
+      "file": "SmolLM2-360M-Instruct-Q4_K_M.gguf",
+      "sha256": "16c7f1667fea34bacad196a57b548effcb37614db4ab5677a20c8c7b823b9e63",
+      "bytes": 270590560
+    }
+  ],
+  "cache": {
+    "reset_before_each_call": true,
+    "llama_cache_enabled": false,
+    "warmup_calls": 0,
+    "scope": "Llama.reset clears tracked prompt length and no LlamaCache is configured; model construction/load occurs once per model; both engines coexist; OS page cache and CPU effects remain uncontrolled"
+  },
+  "preparation": {
+    "totalLimitBytes": 536870912,
+    "categoryLimitBytes": {
+      "model": 402653184,
+      "source": 67108864,
+      "metadata": 1048576,
+      "dependencies": 66060288
+    },
+    "dependencySelectionSHA256": "7f2b24a65df36b66fbf23425bb03365e4af560c9c7838c6608886e70f5409a66",
+    "scope": "Fresh selected transfer within512MiB per declared preparation; prior two comparison attempts bodytotal944412699B separately retained. Ten exact build/runtime wheels includepathspec; no cached exemption."
+  },
+  "payloads": [
+    {
+      "path": "smol135-q4.gguf",
+      "url": "https://huggingface.co/unsloth/SmolLM2-135M-Instruct-GGUF/resolve/9e6855bc4be717fca1ef21360a1db4b29d5c559a/SmolLM2-135M-Instruct-Q4_K_M.gguf",
+      "bytes": 105454144,
+      "sha256": "ed5fa30c487b282ec156c29062f1222e5c20875a944ac98289dbd242e947f747",
+      "category": "model"
+    },
+    {
+      "path": "downloads/llama_cpp_python-0.3.16.tar.gz",
+      "url": "https://files.pythonhosted.org/packages/e4/b4/c8cd17629ced0b9644a71d399a91145aedef109c0333443bef015e45b704/llama_cpp_python-0.3.16.tar.gz",
+      "bytes": 50688636,
+      "sha256": "34ed0f9bd9431af045bb63d9324ae620ad0536653740e9bb163a2e1fcb973be6",
+      "category": "source"
+    },
+    {
+      "path": "original-card.txt",
+      "url": "https://huggingface.co/HuggingFaceTB/SmolLM2-135M-Instruct/resolve/12fd25f77366fa6b3b4b768ec3050bf629380bac/README.md",
+      "bytes": 6772,
+      "sha256": "4f97533ad95b1b2fea15fbc075c01b94578ebdd7c8138888fa43fa3abd530dc4",
+      "category": "metadata"
+    },
+    {
+      "path": "quant-card.txt",
+      "url": "https://huggingface.co/unsloth/SmolLM2-135M-Instruct-GGUF/resolve/9e6855bc4be717fca1ef21360a1db4b29d5c559a/README.md",
+      "bytes": 4567,
+      "sha256": "b464dc4a9ff26fea06ec45165546bbeb0c32b1a7847babcef048d5b84486ed84",
+      "category": "metadata"
+    },
+    {
+      "path": "tokenizer-config.json",
+      "url": "https://huggingface.co/HuggingFaceTB/SmolLM2-135M-Instruct/resolve/12fd25f77366fa6b3b4b768ec3050bf629380bac/tokenizer_config.json",
+      "bytes": 3764,
+      "sha256": "4ec77d44f62efeb38d7e044a1db318f6a939438425312dfa333b8382dbad98df",
+      "category": "metadata"
+    },
+    {
+      "path": "smol360-q4.gguf",
+      "url": "https://huggingface.co/unsloth/SmolLM2-360M-Instruct-GGUF/resolve/391ed11137586e383b1be0fab9acf01d282c2e11/SmolLM2-360M-Instruct-Q4_K_M.gguf",
+      "bytes": 270590560,
+      "sha256": "16c7f1667fea34bacad196a57b548effcb37614db4ab5677a20c8c7b823b9e63",
+      "category": "model"
+    },
+    {
+      "path": "candidate-original-README.txt",
+      "url": "https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct/resolve/a10cc1512eabd3dde888204e902eca88bddb4951/README.md",
+      "bytes": 7304,
+      "sha256": "6b88794416ac9da8f254ebb0bec228967a2bdd0badf9a2853863928b25facd95",
+      "category": "metadata"
+    },
+    {
+      "path": "candidate-original-tokenizer_config.json",
+      "url": "https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct/resolve/a10cc1512eabd3dde888204e902eca88bddb4951/tokenizer_config.json",
+      "bytes": 3764,
+      "sha256": "4ec77d44f62efeb38d7e044a1db318f6a939438425312dfa333b8382dbad98df",
+      "category": "metadata"
+    },
+    {
+      "path": "candidate-quant-README.txt",
+      "url": "https://huggingface.co/unsloth/SmolLM2-360M-Instruct-GGUF/resolve/391ed11137586e383b1be0fab9acf01d282c2e11/README.md",
+      "bytes": 4567,
+      "sha256": "4a0a8e83b9c22c340aa73fd047428cc3aa89f16856dc0df2e5bf4555c05a95e8",
+      "category": "metadata"
+    }
+  ],
+  "modelPrimarySources": {
+    "candidateBase": "https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct/tree/a10cc1512eabd3dde888204e902eca88bddb4951",
+    "candidateQuant": "https://huggingface.co/unsloth/SmolLM2-360M-Instruct-GGUF/tree/391ed11137586e383b1be0fab9acf01d282c2e11",
+    "declaredLicense": "Apache-2.0 in pinned original and quantization cards",
+    "selection": "higher parameter-count candidate selected before any comparison inference; quality improvement unknown"
+  },
+  "decoders": [
+    {
+      "id": "unconstrained",
+      "grammar": false
+    },
+    {
+      "id": "schema",
+      "grammar": true
+    }
+  ],
+  "formatControl": {
+    "id": "declared-key-type-json-schema-v1",
+    "scope": "Requests exact named keys in selected order, JSON syntax and declared types only; free strings/integers/booleans/null/list values. No target enums/consts/patterns or target-dependent constraints. Unconstrained prompts unchanged. Schema is provided to sampler, not added to user prompt.",
+    "compiler": {
+      "sourcePath": "selected/llama_grammar_0_3_16.py",
+      "sourceSHA256": "4d39699197909f4aa98f45086c824bd0521fbeb27c7aaee249a723c62e1d0dd8",
+      "version": "llama-cpp-python0.3.16",
+      "entrypoint": "json_schema_to_gbnf(schema, prop_order=required)",
+      "source": "original authenticated native source from run37053301748; purestdlib conversion, no inference",
+      "licensePath": "selected/LICENSE.llama-cpp-python.md",
+      "syntaxPatch": {
+        "from": "char ::= [^\"\\\\]",
+        "to": "char ::= [^\"\\\\\\x00-\\x1F]",
+        "scope": "Exclude unescapedJSONcontrolcharacters only. No target values or semantic patterns are introduced."
+      }
+    },
+    "taskContracts": {
+      "extract-owner": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "owner": {
+              "type": "string"
+            },
+            "amount": {
+              "type": "integer"
+            },
+            "currency": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "owner",
+            "amount",
+            "currency"
+          ],
+          "additionalProperties": false
+        },
+        "schemaSHA256": "25e03d7c016808f0fe255e3c9aef76aa130f5f0cfe14c5bc6e464df81bfc2f74",
+        "grammarPath": "grammars/extract-owner.gbnf",
+        "grammarSHA256": "58b5d8189491d4c9992b425cdf3a78ec99809d7ea24ee1d0a971bb58bd172adb"
+      },
+      "extract-quantity": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "item": {
+              "type": "string"
+            },
+            "quantity": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "item",
+            "quantity"
+          ],
+          "additionalProperties": false
+        },
+        "schemaSHA256": "683b6e227ba6a258c49a37332a81a8936093ef2512ad01c329b90ec27a7cf266",
+        "grammarPath": "grammars/extract-quantity.gbnf",
+        "grammarSHA256": "61bb552597046d7f5c8497b8012e95ffbbe8ac458716995e08e87e43843bff50"
+      },
+      "extract-status": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "ticket": {
+              "type": "string"
+            },
+            "status": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "ticket",
+            "status"
+          ],
+          "additionalProperties": false
+        },
+        "schemaSHA256": "b9fb748539f2e4e4f88217c27058505aa36da98f1989c3a26e7f7b1503df03c0",
+        "grammarPath": "grammars/extract-status.gbnf",
+        "grammarSHA256": "2121a7f982a1fcc8d5636464fca7499a8c09f5feecf6bbb4a3c27d24ea505197"
+      },
+      "extract-bool": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "enabled": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "name",
+            "enabled"
+          ],
+          "additionalProperties": false
+        },
+        "schemaSHA256": "bbdc39c7f64ba587c85d67fd786718c43ae1add1c063e45090da08c618a6efaf",
+        "grammarPath": "grammars/extract-bool.gbnf",
+        "grammarSHA256": "faa36c9f4e310592dd22da85c95473644093aa896c980fa8d14e729527b31c39"
+      },
+      "extract-null": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "reviewer": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "id",
+            "reviewer"
+          ],
+          "additionalProperties": false
+        },
+        "schemaSHA256": "b8110f02bd8f14aecac80a3b260a3ddafdcb57c43d7ffb99e65164e3201cfabc",
+        "grammarPath": "grammars/extract-null.gbnf",
+        "grammarSHA256": "d7d341f6492b0389a89b143c4aeecbfa8bfa2194e38ecb6e22f1769bb31ba01d"
+      },
+      "extract-list": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "colors": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          },
+          "required": [
+            "colors"
+          ],
+          "additionalProperties": false
+        },
+        "schemaSHA256": "8a73ec94757eca448180ecbca4150779233b8e6f8b96e8bece15b3b5cb3a9d07",
+        "grammarPath": "grammars/extract-list.gbnf",
+        "grammarSHA256": "2c4b4c90bfb4ebdded69177ddcd9c875242f9ea76fca1c42cfcf218118b8f7f2"
+      },
+      "arithmetic-sum": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "answer": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "answer"
+          ],
+          "additionalProperties": false
+        },
+        "schemaSHA256": "3247892e7214a387e48649af88525522c650614ef6fc9bb8d675a43f4899bb7a",
+        "grammarPath": "grammars/arithmetic-sum.gbnf",
+        "grammarSHA256": "be5c551c9b48878cb5a3f40cabb361a36aa977ba9395fe16792f977218a05c73"
+      },
+      "arithmetic-difference": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "answer": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "answer"
+          ],
+          "additionalProperties": false
+        },
+        "schemaSHA256": "3247892e7214a387e48649af88525522c650614ef6fc9bb8d675a43f4899bb7a",
+        "grammarPath": "grammars/arithmetic-difference.gbnf",
+        "grammarSHA256": "be5c551c9b48878cb5a3f40cabb361a36aa977ba9395fe16792f977218a05c73"
+      },
+      "arithmetic-product": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "answer": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "answer"
+          ],
+          "additionalProperties": false
+        },
+        "schemaSHA256": "3247892e7214a387e48649af88525522c650614ef6fc9bb8d675a43f4899bb7a",
+        "grammarPath": "grammars/arithmetic-product.gbnf",
+        "grammarSHA256": "be5c551c9b48878cb5a3f40cabb361a36aa977ba9395fe16792f977218a05c73"
+      },
+      "arithmetic-division": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "answer": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "answer"
+          ],
+          "additionalProperties": false
+        },
+        "schemaSHA256": "3247892e7214a387e48649af88525522c650614ef6fc9bb8d675a43f4899bb7a",
+        "grammarPath": "grammars/arithmetic-division.gbnf",
+        "grammarSHA256": "be5c551c9b48878cb5a3f40cabb361a36aa977ba9395fe16792f977218a05c73"
+      },
+      "arithmetic-remaining": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "answer": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "answer"
+          ],
+          "additionalProperties": false
+        },
+        "schemaSHA256": "3247892e7214a387e48649af88525522c650614ef6fc9bb8d675a43f4899bb7a",
+        "grammarPath": "grammars/arithmetic-remaining.gbnf",
+        "grammarSHA256": "be5c551c9b48878cb5a3f40cabb361a36aa977ba9395fe16792f977218a05c73"
+      },
+      "arithmetic-combined": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "answer": {
+              "type": "integer"
+            }
+          },
+          "required": [
+            "answer"
+          ],
+          "additionalProperties": false
+        },
+        "schemaSHA256": "3247892e7214a387e48649af88525522c650614ef6fc9bb8d675a43f4899bb7a",
+        "grammarPath": "grammars/arithmetic-combined.gbnf",
+        "grammarSHA256": "be5c551c9b48878cb5a3f40cabb361a36aa977ba9395fe16792f977218a05c73"
+      },
+      "policy-publish": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "decision": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "decision"
+          ],
+          "additionalProperties": false
+        },
+        "schemaSHA256": "eb2733f327a243309c6a94150e82c7f73cf7b3de799ab7b982161b3d936e854d",
+        "grammarPath": "grammars/policy-publish.gbnf",
+        "grammarSHA256": "71e21d220dc72e8cba0d452a4a0692131b800b9e6b9b5dcc63efd2ddbd906ad5"
+      },
+      "policy-hold-check": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "decision": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "decision"
+          ],
+          "additionalProperties": false
+        },
+        "schemaSHA256": "eb2733f327a243309c6a94150e82c7f73cf7b3de799ab7b982161b3d936e854d",
+        "grammarPath": "grammars/policy-hold-check.gbnf",
+        "grammarSHA256": "71e21d220dc72e8cba0d452a4a0692131b800b9e6b9b5dcc63efd2ddbd906ad5"
+      },
+      "policy-hold-consent": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "decision": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "decision"
+          ],
+          "additionalProperties": false
+        },
+        "schemaSHA256": "eb2733f327a243309c6a94150e82c7f73cf7b3de799ab7b982161b3d936e854d",
+        "grammarPath": "grammars/policy-hold-consent.gbnf",
+        "grammarSHA256": "71e21d220dc72e8cba0d452a4a0692131b800b9e6b9b5dcc63efd2ddbd906ad5"
+      },
+      "policy-admit": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "decision": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "decision"
+          ],
+          "additionalProperties": false
+        },
+        "schemaSHA256": "eb2733f327a243309c6a94150e82c7f73cf7b3de799ab7b982161b3d936e854d",
+        "grammarPath": "grammars/policy-admit.gbnf",
+        "grammarSHA256": "71e21d220dc72e8cba0d452a4a0692131b800b9e6b9b5dcc63efd2ddbd906ad5"
+      },
+      "policy-reject-signature": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "decision": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "decision"
+          ],
+          "additionalProperties": false
+        },
+        "schemaSHA256": "eb2733f327a243309c6a94150e82c7f73cf7b3de799ab7b982161b3d936e854d",
+        "grammarPath": "grammars/policy-reject-signature.gbnf",
+        "grammarSHA256": "71e21d220dc72e8cba0d452a4a0692131b800b9e6b9b5dcc63efd2ddbd906ad5"
+      },
+      "policy-reject-expiry": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "decision": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "decision"
+          ],
+          "additionalProperties": false
+        },
+        "schemaSHA256": "eb2733f327a243309c6a94150e82c7f73cf7b3de799ab7b982161b3d936e854d",
+        "grammarPath": "grammars/policy-reject-expiry.gbnf",
+        "grammarSHA256": "71e21d220dc72e8cba0d452a4a0692131b800b9e6b9b5dcc63efd2ddbd906ad5"
+      },
+      "abstain-unknown-age": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "answer": {
+              "type": [
+                "integer",
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "answer"
+          ],
+          "additionalProperties": false
+        },
+        "schemaSHA256": "8666a18f1bbcadf1a891b4e95e02cef64ffddb09f62d10654074cbb9582f7d1b",
+        "grammarPath": "grammars/abstain-unknown-age.gbnf",
+        "grammarSHA256": "f65d113b2c4ce8849c2536e874a642f7fb23cc80015a0a51a278cb7142a7b0b2"
+      },
+      "abstain-unknown-city": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "answer": {
+              "type": [
+                "integer",
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "answer"
+          ],
+          "additionalProperties": false
+        },
+        "schemaSHA256": "8666a18f1bbcadf1a891b4e95e02cef64ffddb09f62d10654074cbb9582f7d1b",
+        "grammarPath": "grammars/abstain-unknown-city.gbnf",
+        "grammarSHA256": "f65d113b2c4ce8849c2536e874a642f7fb23cc80015a0a51a278cb7142a7b0b2"
+      },
+      "abstain-unknown-total": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "answer": {
+              "type": [
+                "integer",
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "answer"
+          ],
+          "additionalProperties": false
+        },
+        "schemaSHA256": "8666a18f1bbcadf1a891b4e95e02cef64ffddb09f62d10654074cbb9582f7d1b",
+        "grammarPath": "grammars/abstain-unknown-total.gbnf",
+        "grammarSHA256": "f65d113b2c4ce8849c2536e874a642f7fb23cc80015a0a51a278cb7142a7b0b2"
+      },
+      "abstain-known-age": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "answer": {
+              "type": [
+                "integer",
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "answer"
+          ],
+          "additionalProperties": false
+        },
+        "schemaSHA256": "8666a18f1bbcadf1a891b4e95e02cef64ffddb09f62d10654074cbb9582f7d1b",
+        "grammarPath": "grammars/abstain-known-age.gbnf",
+        "grammarSHA256": "f65d113b2c4ce8849c2536e874a642f7fb23cc80015a0a51a278cb7142a7b0b2"
+      },
+      "abstain-known-city": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "answer": {
+              "type": [
+                "integer",
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "answer"
+          ],
+          "additionalProperties": false
+        },
+        "schemaSHA256": "8666a18f1bbcadf1a891b4e95e02cef64ffddb09f62d10654074cbb9582f7d1b",
+        "grammarPath": "grammars/abstain-known-city.gbnf",
+        "grammarSHA256": "f65d113b2c4ce8849c2536e874a642f7fb23cc80015a0a51a278cb7142a7b0b2"
+      },
+      "abstain-known-total": {
+        "schema": {
+          "type": "object",
+          "properties": {
+            "answer": {
+              "type": [
+                "integer",
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "answer"
+          ],
+          "additionalProperties": false
+        },
+        "schemaSHA256": "8666a18f1bbcadf1a891b4e95e02cef64ffddb09f62d10654074cbb9582f7d1b",
+        "grammarPath": "grammars/abstain-known-total.gbnf",
+        "grammarSHA256": "f65d113b2c4ce8849c2536e874a642f7fb23cc80015a0a51a278cb7142a7b0b2"
+      }
+    },
+    "scoring": "Strict JSON format, declared key/type schema validity and frozen typed-exact target correctness scored independently for both decoders; grammar does not imply valid/correct output when truncated or unsupported."
+  },
+  "resourceHistory": {
+    "priorComparisonInitialFailure": {
+      "run": 37052641046,
+      "responseBodyBytes": 472190754,
+      "startedModelCalls": 0
+    },
+    "priorComparisonSuccessful": {
+      "run": 37053301748,
+      "responseBodyBytes": 472221945,
+      "startedModelCalls": 96
+    },
+    "priorComparisonCumulativeResponseBodyBytes": 944412699,
+    "original48Run": {
+      "run": 37044646302,
+      "responseBodyBytes": 278149773
+    },
+    "scope": "Each selected preparation has512MiB envelope; aggregate across failed/successful earlier runs is disclosed separately, not reset or described as one acquisition. This192-call run is a new separate protocol, not a response retry."
+  },
+  "outcomes": [
+    "scored",
+    "error",
+    "unsupported",
+    "incomplete",
+    "unknown-start"
+  ],
+  "unsupported": "A declared schema attempt whose selected native interface is unavailable retains started/error NotImplementedError and explicitunsupportedoutcome; no unconstrainedfallback, response retry or inventedscore."
+}

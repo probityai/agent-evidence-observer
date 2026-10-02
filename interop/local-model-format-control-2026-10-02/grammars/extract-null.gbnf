@@ -1,0 +1,8 @@
+char ::= [^"\\\x00-\x1F] | "\\" (["\\/bfnrt] | "u" [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F])
+id-kv ::= "\"id\"" space ":" space string
+null ::= "null" space
+reviewer ::= string | null
+reviewer-kv ::= "\"reviewer\"" space ":" space reviewer
+root ::= "{" space id-kv "," space reviewer-kv "}" space
+space ::= " "?
+string ::= "\"" char* "\"" space
