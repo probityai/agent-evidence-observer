@@ -6,7 +6,7 @@ policy decides whether its verified report meets the host's selected quality and
 resource limits. All eight family/cap rows stay separate. Model comparison rows
 also include their model identity; no score pooling is permitted.
 
-Build `probity-model-task-reader`0.0.1 from the exact reviewed source contract,
+Build `probity-model-task-reader`0.0.2 from the exact reviewed source contract,
 then normally install its wheel into a clean environment:
 
 ```sh
@@ -64,6 +64,35 @@ both installed CLI decisions.
 A normal upgrade requires a reviewed new distribution version, source contract,
 wheel digest and separately selected policy. Keep the original profile/pins and
 its replay controls. New model/protocol/population profiles need their own reader
-source selection and policy rows; version0.0.1 reads only the original48 profile.
+source selection and policy rows; version0.0.1 reads only the original48 profile; version0.0.2 preserves that source
+and adds the explicitly selected comparison96 reader.
 No outside recurring host, producer acceptance, model deployment decision,
 protected effect or independent custody is established by this owned workflow.
+
+## Executed normal upgrade
+
+The workflow builds the exact public0.0.1 source at
+`3a5efd16d242dc9044fc7492278a524c5c08a0cc`, installs it normally into two
+clean environments and upgrades the candidate with `pip install --upgrade` of
+the reviewed0.0.2 wheel. Version0.0.1 admits the original48 packet and refuses
+the new comparison reader selection before execution. Version0.0.2 admits both
+complete selected evidence records. The original module/pins and exact report
+bytes remain unchanged; the same `probity-model-task-read` CLI remains available.
+
+The new `comparison-run.zip` retains every native packet member from authenticated
+[run37053301748](https://github.com/probityai/agent-evidence-observer/actions/runs/37053301748);
+its provenance preserves the original native source/model selections. This is
+offline original replay, not new inference. The96 scored attempts remain
+16 separate model/family/cap rows:135M typed-exact0/48 and360M8/48, with
+format-valid2/48 and42/48 respectively. The explicitly disclosed comparison
+quality policy requires at least one correct target in each360M family/cap row;
+both grounded-abstention rows refuse at0/6, while evidence stays verified.
+The135M baseline stays visible with explicit zero minima; no pooled score is used.
+
+`run_upgrade_example.py NEW_DIRECTORY --baseline-python BASELINE_PYTHON
+--candidate-python CANDIDATE_PYTHON` retains actual versions, commands, child
+statuses, exact original report, comparison admission, quality holds and native
+mutation refusal. The candidate gate also refuses receipt output under the native
+packet before creating any directory or modifying retained producer bytes.
+The normal upgrade is same-team owned verification; it supplies no outside host
+acceptance, recurring adoption, deployment or dispatch authority.
