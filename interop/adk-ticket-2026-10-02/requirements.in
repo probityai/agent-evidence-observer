@@ -1,0 +1,8 @@
+google-adk==2.11.0
+cryptography==46.0.7
+pytest==9.1.1
+ruff==0.16.10
+setuptools==84.0.0
+wheel==0.48.0
+
+mcp==2.2.0
