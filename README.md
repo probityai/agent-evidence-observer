@@ -47,6 +47,7 @@ exposed. Running an unmodified agent that way, and a separately operated witness
 | <a name="claim-and-trust-boundary"></a><a name="tests-and-remaining-gaps"></a><a name="linux-boundary-gate"></a><a name="consumer-admission"></a><a name="roadmap"></a>[Design, trust boundary and roadmap](https://github.com/probityai/agent-evidence-observer/blob/main/docs/DESIGN.md) | what each mechanism checks and does not establish, the Linux boundary gate, recovery, consumer admission, and the roadmap |
 | [Isolated producer](https://github.com/probityai/agent-evidence-observer/blob/main/docs/ISOLATED-PRODUCER.md) | the acceptance criteria for running an unmodified agent behind the broker |
 | [Witness ledger](https://github.com/probityai/agent-evidence-observer/blob/main/docs/WITNESS-LEDGER.md) | signed begin and terminal receipts, and how a reader checks them |
+| [Atomic native reader](docs/ATOMIC-NATIVE-READER.md) | install an offline reader for selected native delegation runs and their refusal controls |
 
 ## License
 
