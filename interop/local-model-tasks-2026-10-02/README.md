@@ -1,0 +1,9 @@
+# Frozen operational CPU microtasks
+
+This new protocol selects 24 author-written tasks across structured extraction, arithmetic, policy decisions and grounded abstention, each under two output caps (24 and 96 tokens): 48 planned attempts. It keeps the original twelve-question Inspect baseline unchanged. These tasks measure this small operational population; they are not a representative benchmark or real effect admission.
+
+`protocol.json` freezes every input, target, typed JSON rubric, ordering, model revision, runtime and resource boundary before implementation execution. The same selected SmolLM2-135M Q4_K_M weights, two decode/two prefill threads and 512 MiB new-download envelope apply. Preparation, build and inference retain finite deadlines. No paid provider or GPU requests are authorized. The cumulative token caps include all returned native responses; errors and unknown-start attempts remain visible.
+
+The runner will retain original llama.cpp requests/responses, durable call-start/return/error markers, source/model provenance and resource measures, then a separately invoked reader will reconstruct all 48 outcomes from explicitly selected hashes. Report publication requires complete valid retained evidence; quality stays a separate per-family/per-configuration result. A model refusal, malformed JSON, wrong answer or execution failure will not disappear or cause a retry. Peak RSS is a process lifetime high-water mark.
+
+The first commit containing this protocol is the preregistration checkpoint. Record its exact SHA in every execution declaration and verify the protocol bytes from that commit before loading weights. Later implementation fixes require a separate run and all previous outcomes remain retained. No independent operator, protected effects, custody or host adoption is established.
