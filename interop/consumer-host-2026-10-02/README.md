@@ -84,3 +84,28 @@ This framework gate does not relabel those profiles or consume the native
 Inspect-to-ticket effect join. Consumer selection, actual producer execution,
 producer review, recurring host use and independent effect custody remain
 separate observations.
+
+## Explicit durable profile selection
+
+Install the [additive0.0.2 wheel](../framework-consumer-2026-10-02/DURABLE-INSTALL-2026-10-02.md)
+before selecting the durable profile. The v1 schema retains its original two
+reader enums. The separately reviewed v2 schema selects only this exact new
+reader/profile/population:
+
+```json
+{
+  "schema": "probity-framework-host-gate-v2",
+  "reader": "langgraph-durable",
+  "profile": "probity-langgraph-durable-restart-v0",
+  "plannedAttempts": 6,
+  "pinsSha256": "REVIEWED_RAW_DURABLE_PINS_SHA256"
+}
+```
+
+Use the same gate command with the durable packet and separately reviewed durable
+policy/pins outside it. The wrapper launches `probity-langgraph-durable-read` using
+its frozen pin copy. A v1 policy cannot silently select that command, and v2 refuses
+historical reader enums, a different profile or an altered denominator before any
+child launch. Historical packets and policies continue to use v1 and the original
+commands. The admitted report retains committed-effect recovery, pending intent
+and missing-state refusal outcomes without changing their scope ceilings.

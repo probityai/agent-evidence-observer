@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 COMMANDS = {'langgraph': 'probity-langgraph-read', 'pydantic': 'probity-pydantic-read'}
+DURABLE_COMMAND = 'probity-langgraph-durable-read'
 
 
 def unique_names(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
@@ -33,8 +34,21 @@ def write_json(path: Path, value: Any) -> None:
     path.write_text(json.dumps(value, indent=2) + '\n', encoding='utf-8')
 
 
+def durable_shape(selection: dict[str, Any]) -> None:
+    """Require the separately reviewed additive durable reader/profile/population."""
+    if selection['reader'] != 'langgraph-durable':
+        raise ValueError('unsupported durable installed reader')
+    if selection['profile'] != 'probity-langgraph-durable-restart-v0':
+        raise ValueError('unsupported durable profile')
+    if type(selection['plannedAttempts']) is not int or selection['plannedAttempts'] != 6:
+        raise ValueError('durable plannedAttempts must be six')
+
+
 def selection_shape(selection: dict[str, Any]) -> None:
-    """Require an explicitly supported bounded consumer contract."""
+    """Preserve original v1 enums; explicitly select additive durable schema v2."""
+    if selection['schema'] == 'probity-framework-host-gate-v2':
+        durable_shape(selection)
+        return
     if selection['schema'] != 'probity-framework-host-gate-v1':
         raise ValueError('unknown host policy schema')
     if selection['reader'] not in COMMANDS:
@@ -42,6 +56,13 @@ def selection_shape(selection: dict[str, Any]) -> None:
     count = selection['plannedAttempts']
     if type(count) is not int or count < 1:
         raise ValueError('plannedAttempts must be a positive integer')
+
+
+def selected_command(selection: dict[str, Any]) -> str:
+    """Resolve a reviewed command after policy validation, never from packet data."""
+    if selection['schema'] == 'probity-framework-host-gate-v2':
+        return DURABLE_COMMAND
+    return COMMANDS[selection['reader']]
 
 
 def select(args: argparse.Namespace) -> dict[str, Any]:
@@ -101,7 +122,7 @@ def run(args: argparse.Namespace) -> int:
     args.output.mkdir()  # Existing output, including symlinks, must refuse.
     try:
         selection = select(args)
-        executable = args.reader_bin / COMMANDS[selection['reader']]
+        executable = args.reader_bin / selected_command(selection)
         command = [str(executable.resolve(strict=True)), str(args.packet.resolve()),
                    '--pins-file', str((args.output / 'selected-pins.json').resolve())]
         write_json(args.output / 'launch.json', {'command': command})

@@ -1,0 +1,145 @@
+{
+  "schema_version": "probity.framework-consumer-selection.v2",
+  "observer_repository": "probityai/agent-evidence-observer",
+  "observer_base_commit": "5ab81aee1f6be7ddc60fdc36a147e593f6c80e8c",
+  "historical_selection_contract": "FRAMEWORK-CONSUMER-CONTRACT-2026-10-02.json",
+  "distribution": {
+    "name": "probity-langgraph-ticket-reader",
+    "version": "0.0.2",
+    "historical_entrypoint": "probity-langgraph-read",
+    "historical_profile": "probity-langgraph-aae-ticket-v0",
+    "durable_entrypoint": "probity-langgraph-durable-read",
+    "durable_profile": "probity-langgraph-durable-restart-v0",
+    "selected_pin_fields": [
+      "planSha256",
+      "artifactManifestSha256",
+      "evaluationTime"
+    ],
+    "profile_selection": "Explicit command, never inferred from untrusted packet. Historical command preserves original byte-identical CLI and reader."
+  },
+  "source_files": {
+    "LICENSE": {
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    "pyproject.toml": {
+      "sha256": "89656a610305d263a67d22dde4c0c983b4f9c31b49c0e4b8ac1b91f85890dfb9"
+    },
+    "src/probity_observer/__init__.py": {
+      "sha256": "fd35bea460843bd946ee6193b1adf5a557fbe0993dea3ca4c58b3c35df1ea4ae"
+    },
+    "src/probity_observer/aae_binding.py": {
+      "sha256": "72ac29fe90b8b20549a41a1dd6a9d25ec8a945bdbbbf4b1ba4f5891e09b6b093"
+    },
+    "src/probity_observer/aae_dispatch.py": {
+      "sha256": "70e6e669d24fbfd5275b25217523ea55d3da1495bb16e0834ff7a8de2a1cf6bb"
+    },
+    "src/probity_observer/aae_enforce.py": {
+      "sha256": "5b79dacd2fbd873ae073af5186e606b5baa1c6c9d8e627a0387ae9fc7bb96a94"
+    },
+    "src/probity_observer/aae_ticket.py": {
+      "sha256": "ac12299c5d3bd5de030937d55358031a6ba72f152571ef20c521437fabe54743"
+    },
+    "src/probity_observer/admission.py": {
+      "sha256": "5b9f68dbfc59b1c088b7de9c41e81fabdf2e3a72426e8766845d0cea28b2af0f"
+    },
+    "src/probity_observer/attribution.py": {
+      "sha256": "9aa531cfbd99df6185c35220db157c78d1c7b97c7c99bd2e24caa3f498dd0dee"
+    },
+    "src/probity_observer/authorization.py": {
+      "sha256": "35e28320cc6aa344938d9e678efa6de9b803b7b22e2431e8e918a8b57c08e4a9"
+    },
+    "src/probity_observer/broker.py": {
+      "sha256": "9e36cc446dd63112bfda8555df9319345f825d74c5794ac0b037c92d235c0bd8"
+    },
+    "src/probity_observer/cli.py": {
+      "sha256": "615b58fd5ea3401ca3e1ff9ebab63508a22dee6578a28890793054da72fb78d8"
+    },
+    "src/probity_observer/crypto.py": {
+      "sha256": "a334d7d2776d362788ce5e8687a916a62ba1614e97c0ccb8994d2acb22bc315f"
+    },
+    "src/probity_observer/declaration.py": {
+      "sha256": "71c3112fd8bbaffd4adc03af46d16a8f36c41187a36fa86231d8a8d2caf37a66"
+    },
+    "src/probity_observer/evaluation_history.py": {
+      "sha256": "175467e7eac8381cc0a79c8f35efb80b406c99dbdc0b05bb5cec65afb41532c7"
+    },
+    "src/probity_observer/history.py": {
+      "sha256": "e2618b8dc34f1251d9c1fa82232313a9524f8b3a38654352bf7a4d2b9ca1b267"
+    },
+    "src/probity_observer/inspect_history.py": {
+      "sha256": "1d0fc978360c60f8e57cfdb8f3f7b6d07b56bfefc92b4dcdc928006222ca041c"
+    },
+    "src/probity_observer/isolation.py": {
+      "sha256": "737256706038ef6c05db2860dba22af0f023e44ba1cd213ee44516c0f9fcb3c0"
+    },
+    "src/probity_observer/ledger.py": {
+      "sha256": "028a41eefce7abc88f31237a0407dae6a9728394c7b10634424e53967f8b9d53"
+    },
+    "src/probity_observer/native_reader.py": {
+      "sha256": "880501767490ea8c439251df18c269c331522bb406b21bd59265a622bcd494db"
+    },
+    "src/probity_observer/probe_agent.py": {
+      "sha256": "3699eeb662610fea2d8403294fad3239cbecf3dfcaeb542ceb2c40abdb0897f6"
+    },
+    "src/probity_observer/protected_dispatch.py": {
+      "sha256": "91c748e4e21bcbc347fdaab129785671765214758f043482f8f31af043e12b34"
+    },
+    "src/probity_observer/protected_isolation.py": {
+      "sha256": "6d99ddca3f03ada6c05ff21f4796ec3b8eea7097c1119b38e53239b16e44809d"
+    },
+    "src/probity_observer/protected_probe.py": {
+      "sha256": "9e89109a168837662c434f0988e6ab8d90d6dd6e472b516c27ad8b8b16f8138f"
+    },
+    "src/probity_observer/replay.py": {
+      "sha256": "e156c0a2daa2eb56feae8e09339401b4fc8a641375d569ea80a4c50fd7f47261"
+    },
+    "src/probity_observer/ticket_service.py": {
+      "sha256": "c6df218d6a81c21ab99ff2549b07f0691ff00e4e44b3f7520562d5c90fcdbda7"
+    },
+    "src/probity_observer/verify.py": {
+      "sha256": "a787abe4189556cd3da87569eccaf6cfe6fa265662b9505f733a6742867bdcf2"
+    },
+    "interop/langgraph-ticket-2026-10-02/lg_common.py": {
+      "sha256": "68e5f0ca53fc39043829e1feeaa9ccc09ae5adbb305153797a7ba530d775a83d"
+    },
+    "interop/langgraph-ticket-2026-10-02/lg_reader.py": {
+      "sha256": "f029eb67f4f970ff7a1f1a59b700a2252e98f2c23ee6e92e2e1cc4e738a965c6"
+    },
+    "interop/langgraph-ticket-2026-10-02/durable_reader.py": {
+      "sha256": "881e66e51c621bee36044df051a6c0e71c56d146d161a68e161efc36b6fad58b"
+    },
+    "interop/framework-consumer-2026-10-02/FRAMEWORK-LANGGRAPH-DURABLE-READER-2026-10-02.toml": {
+      "sha256": "2aa643d4b0d79c9250c951cfcbdde65e21771257553fea36e07804e54bcd9e7f"
+    },
+    "interop/framework-consumer-2026-10-02/probity_langgraph_reader_cli.py": {
+      "sha256": "8343ff11eaad06a157d410c55dcc0146c2210b9e5eb4f02ec349ec65e44c3bdb"
+    },
+    "interop/framework-consumer-2026-10-02/probity_langgraph_durable_reader_cli.py": {
+      "sha256": "2d8bc3fd4f99b0a3506005a3f06b18dd0a69ebdcec8e320f69385a233c064433"
+    },
+    "interop/framework-consumer-2026-10-02/FRAMEWORK-DURABLE-CONSUMER-BUILD-2026-10-02.sh": {
+      "sha256": "a38062f20d2589a0b6d8e3a334b4ce2bd30528456a29c55a3437e5f8267a6630"
+    },
+    "interop/framework-consumer-2026-10-02/FRAMEWORK-CONSUMER-REQUIREMENTS-2026-10-02.lock": {
+      "sha256": "b98eaf668b9b8a37f1201444eed85f2dd713e957e9204112934a4b23105805e5"
+    }
+  },
+  "upgrade_population": [
+    "original historical LangGraph packet/semantic refusals",
+    "original Pydantic packet/semantic refusals remain unaffected",
+    "original durable local packet and original Ubuntu packet",
+    "missing explicit consumer pins",
+    "wrong plan/artifact selected pins",
+    "reselected changed arguments, duplicated process identity, missing durable state, false recovered success and swapped checkpoint",
+    "durable packet refused by historical command; historical packet refused by durable command",
+    "packaged Python source bytes match frozen selection; producer/framework modules absent"
+  ],
+  "publication_gate": "Exit zero, exact selected profile and complete population; preserve every effect/recovery disposition. Admission of a bounded historical record does not authorize a new effect.",
+  "scope": {
+    "agent_framework_dependency": false,
+    "new_native_execution": false,
+    "outside_adoption": false,
+    "independent_custody": false
+  },
+  "upgrade_rule": "Review every source/metadata/dependency selection and both full acceptance/refusal populations before replacing host reader. Version labels alone are not provenance; retain source contract and original packet pins."
+}

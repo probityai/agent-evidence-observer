@@ -16,7 +16,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: probityai/agent-evidence-observer
-          ref: afce9b8517f9297f30cbac949ffac1686172efbf
+          ref: 5b5b6328bf70fef0fa17e86e62c6163c5943b13f
           path: reader-source
           persist-credentials: false
       - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065

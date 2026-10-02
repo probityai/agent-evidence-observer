@@ -8,7 +8,9 @@ standard wheels. The commands require a separately selected pins file.
 ```sh
 python -m venv .reader-env
 .reader-env/bin/python -m pip install --require-hashes -r interop/framework-consumer-2026-10-02/FRAMEWORK-CONSUMER-REQUIREMENTS-2026-10-02.lock
-PATH="$PWD/.reader-env/bin:$PATH" bash interop/framework-consumer-2026-10-02/FRAMEWORK-CONSUMER-BUILD-2026-10-02.sh "$PWD" "$PWD/reader-wheels"
+git fetch origin 5b5b6328bf70fef0fa17e86e62c6163c5943b13f
+git worktree add --detach selected-reader-source 5b5b6328bf70fef0fa17e86e62c6163c5943b13f
+PATH="$PWD/.reader-env/bin:$PATH" bash interop/framework-consumer-2026-10-02/FRAMEWORK-CONSUMER-BUILD-2026-10-02.sh "$PWD/selected-reader-source" "$PWD/reader-wheels"
 .reader-env/bin/python -m pip install --no-deps reader-wheels/*.whl
 ```
 
@@ -36,3 +38,5 @@ its own policy. In-memory LangGraph checkpoints do not establish process-restart
 durability. Synthetic ticket effects, same-operator custody and scripted Pydantic
 FunctionModel provenance remain explicit in each report. Host CI adoption and
 independent effect custody require separate records. No release tag is created.
+
+The historical0.0.1 builder now uses the explicit baseline `5b5b6328bf70fef0fa17e86e62c6163c5943b13f`, whose files match the frozen contract. The contract's recorded34550 provenance label predates two Pydantic reader byte corrections; it is retained as historical metadata, not used as a valid build selection. Native LangGraph producer changes also require the historical source checkout. The [additive durable reader upgrade](DURABLE-INSTALL-2026-10-02.md) installs0.0.2 with separate explicit commands and a new complete source/metadata selection.
