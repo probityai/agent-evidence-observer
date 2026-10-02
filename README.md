@@ -1,5 +1,10 @@
 # Agent Evidence Observer (prototype)
 
+The [HTTP ticket service](docs/HTTP-TICKET-SERVICE.md) owns a persistent native
+ticket, checks exact grants before dispatch, and joins retained completion with
+a separate HTTP read-back. Its local demo covers restart, revocation, persistent
+bypass and hard process crashes across nine declared controls.
+
 [Artifact consumption records](docs/ARTIFACT-CONSUMPTION.md) retain checked input
 bytes and attribution, bound to one action and claim. The runnable example keeps
 authorization, observation and use separate; it does not assign economic value.
