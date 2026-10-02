@@ -1,0 +1,15 @@
+{
+  "repository": "https://github.com/a2aproject/a2a-python",
+  "version": "1.2.1",
+  "commit": "041c17bbe8d5ced7a8f6c48761152ce01ffbfc14",
+  "license": "Apache-2.0",
+  "modules": {
+    "a2a.client.transports.jsonrpc": "5a9b3442ee623f1995e550095eddd7c85e2c23a07ab11af39aa0d5fcfdf1d3df",
+    "a2a.server.routes.jsonrpc_routes": "46643f27eb7e723a6b68dad194a3a3f3af1fdb77f7c026ee680bc209efa464bb",
+    "a2a.server.routes.jsonrpc_dispatcher": "5f49f9dd4079e8039a6a6041aa3dbb0f56c4ef3b57bd5ea15c13e9735b4240e9",
+    "a2a.server.routes.agent_card_routes": "8a55983dc9e43f8d5d4db06875882f640214c23473901450a0198549bc7a67f6",
+    "a2a.server.request_handlers.default_request_handler_v2": "eb019b851e4bfbe63850b067d752e13e5ececf7986208c13b64c75a36a6439f4",
+    "a2a.server.agent_execution.agent_executor": "d5609ff0487616e83c0d632080822757dff48b36fc4f29af1fcc604e3e5aa936",
+    "a2a.helpers.proto_helpers": "fa6a16b26b8d1d30bbc842700c5d3c42f6da33b28a2b8688e83892d87ec7baea"
+  }
+}
