@@ -112,6 +112,27 @@ class TestLangGraphPacket:
             assert report["independentCustody"] == report["exactlyOnce"] == "not-established"
             assert report["providerCalls"] == report["inputTokens"] == report["outputTokens"] == 0
 
+        def test_producer_evidence_clock_preserves_fractional_seconds(self, monkeypatch: pytest.MonkeyPatch) -> None:
+            import lg_run
+            instant = datetime(2026, 10, 2, 12, 0, 0, 987654, tzinfo=timezone.utc)
+            class FixedClock:
+                @staticmethod
+                def now(zone: Any) -> datetime:
+                    assert zone is timezone.utc
+                    return instant
+            monkeypatch.setattr(lg_run, "datetime", FixedClock)
+            assert lg_run.evidence_clock() == instant
+            assert lg_run.evidence_clock().microsecond == 987654
+
+        def test_subsecond_checkpoint_inside_precise_envelope(self, packet: tuple) -> None:
+            root, pins = packet
+            floor = datetime.fromisoformat(pins["evaluationTime"]).replace(microsecond=0)
+            checkpoint = floor + timedelta(microseconds=500000)
+            for name in CASES:
+                rewrite(root, pins, name, lambda attempt: retime(attempt, lambda _: checkpoint.isoformat()))
+            pins["evaluationTime"] = (floor + timedelta(microseconds=750000)).isoformat()
+            assert verify_saved(root, pins)["status"] == "verified"
+
         @pytest.mark.parametrize("endpoint", ["selectedTime", "evaluationTime"])
         def test_inclusive_checkpoint_time_boundaries(self, packet: tuple, endpoint: str) -> None:
             root, pins = packet
@@ -178,6 +199,15 @@ class TestLangGraphPacket:
                 decode(b'{"status":1,"status":2}')
             assert str(caught.value) == "duplicate-json-name"
             assert caplog.messages == ["LangGraph packet refused: duplicate-json-name"]
+
+        def test_floored_evaluation_time_refuses_later_subsecond_checkpoint(self, packet: tuple, caplog: pytest.LogCaptureFixture) -> None:
+            root, pins = packet
+            floor = datetime.fromisoformat(pins["evaluationTime"]).replace(microsecond=0)
+            checkpoint = floor + timedelta(microseconds=500000)
+            for name in CASES:
+                rewrite(root, pins, name, lambda attempt: retime(attempt, lambda _: checkpoint.isoformat()))
+            pins["evaluationTime"] = floor.isoformat()
+            refuse(root, pins, "native-checkpoint-window", caplog)
 
         @pytest.mark.parametrize("direction", ["past", "future"])
         def test_reselected_outside_plan_time_window_refused(self, packet: tuple, direction: str, caplog: pytest.LogCaptureFixture) -> None:

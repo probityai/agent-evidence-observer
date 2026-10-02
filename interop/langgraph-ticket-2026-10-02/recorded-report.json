@@ -15,7 +15,7 @@
     {
       "attemptId": "permit",
       "effectOutcome": "verified-local-ticket-update",
-      "elapsedNs": 17628616,
+      "elapsedNs": 18211756,
       "httpCalls": 1,
       "kernelVerdict": "PERMIT",
       "nativeRevision": 1,
@@ -25,7 +25,7 @@
     {
       "attemptId": "deny",
       "effectOutcome": "refused-no-local-row",
-      "elapsedNs": 6968484,
+      "elapsedNs": 8001684,
       "httpCalls": 1,
       "kernelVerdict": "DENY",
       "nativeRevision": 0,
@@ -35,7 +35,7 @@
     {
       "attemptId": "altered-argument",
       "effectOutcome": "refused-no-local-row",
-      "elapsedNs": 7889332,
+      "elapsedNs": 8929932,
       "httpCalls": 1,
       "kernelVerdict": "PERMIT",
       "nativeRevision": 0,
@@ -45,7 +45,7 @@
     {
       "attemptId": "interrupt-before",
       "effectOutcome": "verified-local-ticket-update",
-      "elapsedNs": 15600967,
+      "elapsedNs": 16012402,
       "httpCalls": 1,
       "kernelVerdict": "PERMIT",
       "nativeRevision": 1,
@@ -55,7 +55,7 @@
     {
       "attemptId": "resume-after-effect",
       "effectOutcome": "verified-local-ticket-update",
-      "elapsedNs": 19106767,
+      "elapsedNs": 24301862,
       "httpCalls": 2,
       "kernelVerdict": "PERMIT",
       "nativeRevision": 1,
@@ -65,7 +65,7 @@
     {
       "attemptId": "pending-intent",
       "effectOutcome": "incomplete-no-automatic-replay",
-      "elapsedNs": 10277912,
+      "elapsedNs": 10907932,
       "httpCalls": 1,
       "kernelVerdict": "PERMIT",
       "nativeRevision": 0,

@@ -35,8 +35,8 @@
   },
   "sourceFilesSha256": {
     "adapter/lg_common.py": "68e5f0ca53fc39043829e1feeaa9ccc09ae5adbb305153797a7ba530d775a83d",
-    "adapter/lg_reader.py": "1bc96bf3bc4b7730e4dcf84042563357ee934a73b5b6e34be7ebb874e39252e1",
-    "adapter/lg_run.py": "cacbab012a05807fa56387a56ef892cbebdd956ebbc3855827dd5d89706b06ba",
+    "adapter/lg_reader.py": "f029eb67f4f970ff7a1f1a59b700a2252e98f2c23ee6e92e2e1cc4e738a965c6",
+    "adapter/lg_run.py": "16c0dc181056b4725e493e0d7d23a2fb9be5cc882aa4ad00c9c17d1bdd29a3da",
     "observer/aae_enforce.py": "5b79dacd2fbd873ae073af5186e606b5baa1c6c9d8e627a0387ae9fc7bb96a94",
     "observer/aae_ticket.py": "ac12299c5d3bd5de030937d55358031a6ba72f152571ef20c521437fabe54743",
     "observer/authorization.py": "35e28320cc6aa344938d9e678efa6de9b803b7b22e2431e8e918a8b57c08e4a9",
@@ -44,9 +44,9 @@
     "observer/ticket_service.py": "c6df218d6a81c21ab99ff2549b07f0691ff00e4e44b3f7520562d5c90fcdbda7"
   },
   "selectedRunPins": {
-    "artifactManifestSha256": "d5afe42ee7b4fe1aa914c5aea89fe17f7e5f8e80b4ccc2fd297a0f376e5e9cb8",
-    "evaluationTime": "2026-10-02T11:41:35+00:00",
-    "planSha256": "a5225735154708aaa9565f986883612b5ae3fe2528df2d2c5559aea6523fc970"
+    "artifactManifestSha256": "636c0dc1f7585312e9a673b35a18e7c93a0f3053635c1e5c58c7c9de0f96216e",
+    "evaluationTime": "2026-10-02T11:55:20.220711+00:00",
+    "planSha256": "7b289f9d0e27eee0ae851cbe5b82d26489cc50ef20af220dcb40e6662f44ebcb"
   },
   "scope": "Local exact source and dependency provenance; not independently selected authority or remote CI evidence"
 }

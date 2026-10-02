@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import argparse
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -253,14 +253,18 @@ def verify_saved(root: Path, pins: dict[str, Any]) -> dict[str, Any]:
     now = aware_time(pins["evaluationTime"], "consumer-time")
     selected_time = aware_time(plan.get("selectedTime"), "selected-time")
     require(now >= selected_time, "consumer-time")
+    # Grant/service profiles require UTC whole seconds; their signed validity
+    # endpoints are whole seconds, so flooring preserves the half-open window.
+    # Native checkpoint bounds continue to use the original precise instant.
+    authority_time = now.astimezone(timezone.utc).replace(microsecond=0)
     records = []
     for case in plan["cases"]:
-        selection(case, plan["runId"], now)
+        selection(case, plan["runId"], authority_time)
         raw = read(root / "attempts", case["id"] + ".json")
         require(sha(raw) == manifest[case["id"] + ".json"], "native-artifact-pin")
         attempt = decode(raw)
         require(type(attempt["elapsedNs"]) is int and attempt["elapsedNs"] >= 0, "resource-elapsed")
-        effect = http_effect(case, attempt, now)
+        effect = http_effect(case, attempt, authority_time)
         history(case, attempt, selected_time, now)
         records.append({"attemptId": case["id"], "status": "complete", "taskOutcome": "controlled-scenario-matched", "kernelVerdict": case["decision"]["record"]["verdict"], "effectOutcome": effect, "httpCalls": len(attempt["http"]), "nativeRevision": attempt["finalReadback"]["revision"], "elapsedNs": attempt["elapsedNs"]})
     return {"profile": PROFILE, "status": "verified", "plannedAttempts": 6, "records": records, "providerCalls": 0, "inputTokens": 0, "outputTokens": 0, "taskScope": "deterministic-real-framework-integration-control", "checkpointScope": "in-memory-same-process-native-snapshots", "effectScope": "selected-loopback-service-local-SQLite-row", "independentCustody": "not-established", "issuerAuthentication": "not-established", "exactlyOnce": "not-established", "priorSelection": "author-local-plan-consumer-must-select-pins", "peakMemoryBytes": None}

@@ -8,7 +8,7 @@ import platform
 import time
 import uuid
 from dataclasses import asdict
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, TypedDict
 from urllib.error import HTTPError
@@ -28,6 +28,17 @@ class GraphState(TypedDict):
     """Explicit graph channels, retained in native checkpoint snapshots."""
     contentHex: str
     result: dict[str, Any]
+
+
+def evidence_clock() -> datetime:
+    """Return the full-precision UTC clock for the native evidence interval.
+
+    Native checkpoint timestamps retain fractional seconds. Their selection and
+    evaluation envelope must therefore retain the same clock precision. This is
+    separate from :func:`probity_observer.authorization.utc_clock`, whose whole
+    seconds are required by the signed grant and ticket service profiles.
+    """
+    return datetime.now(timezone.utc)
 
 
 def select_case(root: Path, run_id: str, name: str) -> tuple[dict[str, Any], AaeTicketStore]:
@@ -138,13 +149,13 @@ def run(output: Path, revision: str) -> dict[str, Any]:
     sources = retain_sources(output)
     write(output / "sources-before-run.json", sources)
     write(output / "environment-before-run.json", environment())
-    plan = {"profile": PROFILE, "frameworkVersion": VERSION, "runId": run_id, "sourceRevision": revision, "selectedTime": utc_clock().isoformat(), "cases": [case for case, _ in selections], "sourcesSha256": sha(encode(sources)), "environmentSha256": sha((output / "environment-before-run.json").read_bytes()), "graph": {"nodes": ["dispatch"], "edges": [["__start__", "dispatch"], ["dispatch", "__end__"]], "checkpointer": "InMemorySaver", "recursionLimit": 4, "providerCalls": 0}}
+    plan = {"profile": PROFILE, "frameworkVersion": VERSION, "runId": run_id, "sourceRevision": revision, "selectedTime": evidence_clock().isoformat(), "cases": [case for case, _ in selections], "sourcesSha256": sha(encode(sources)), "environmentSha256": sha((output / "environment-before-run.json").read_bytes()), "graph": {"nodes": ["dispatch"], "edges": [["__start__", "dispatch"], ["dispatch", "__end__"]], "checkpointer": "InMemorySaver", "recursionLimit": 4, "providerCalls": 0}}
     write(output / "plan-before-run.json", plan)
     for case, store in selections:
         write(output / "attempts" / (case["id"] + ".json"), execute(case, store))
     manifest = {p.name: sha(p.read_bytes()) for p in sorted((output / "attempts").iterdir())}
     write(output / "artifact-manifest.json", manifest)
-    pins = {"planSha256": sha(encode(plan)), "artifactManifestSha256": sha(encode(manifest)), "evaluationTime": utc_clock().isoformat()}
+    pins = {"planSha256": sha(encode(plan)), "artifactManifestSha256": sha(encode(manifest)), "evaluationTime": evidence_clock().isoformat()}
     write(output / "consumer-pins.json", pins)
     report = verify_saved(output, pins)
     write(output / "report.json", report)

@@ -57,6 +57,13 @@ resume boundary, selected arguments and every HTTP-to-graph result join. It
 recomputes the native AAE decision and verifies the selected signed authority,
 service receipt and separate native readback using existing Observer readers.
 
+The pre-run selection and consumer evaluation clocks retain fractional seconds
+to bound native checkpoints precisely; signed grants and service reference times
+retain their existing whole-second profile. Grant verification projects the aware
+evaluation instant to UTC whole seconds, preserving its signed whole-second
+half-open validity window. The reader does not round checkpoint
+times or widen the selected interval.
+
 The three selected pins are plan SHA-256, artifact-manifest SHA-256 and an aware
 consumer evaluation time. A consumer must approve these separately and select its
 service/issuer policy before admitting a result. The convenient author-generated
