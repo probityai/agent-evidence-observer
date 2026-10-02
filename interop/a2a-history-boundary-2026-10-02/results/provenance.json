@@ -1,9 +1,9 @@
 {
   "profile": "probity-a2a-native-history-boundary-v1",
-  "implementationHead": "acd234cc5ee56107651045969a98f308f31d2d41",
-  "fixtureSha256": "1d25bef48864db76db101924a1de841c405989fa1bf1eae4758631af34ff33b8",
-  "consumerPinsSha256": "6b791d8652aec05605ef0fe6157adc80845a26e0262c0b6b063ed872d6276d23",
-  "recordedReportSha256": "c9b1ca16553c284b4d84b66c2027ec2f7158ccd03029222b6451202697e792cc",
+  "implementationHead": "cba0a82a170ceaf762635b7d31c3e7b6530f2edf",
+  "fixtureSha256": "58addb8dfea4fe0508e0fecbda3db1c231535c290ec05ed33858863bbfd1d778",
+  "consumerPinsSha256": "278cd12868ae94a275a0deb8ed46c574a61dc689c161521a6dfcc39f168f983e",
+  "recordedReportSha256": "46afbc0357f1706a80a60eb11d91b92aac90ade3ae0899ae90b47f8933498bda",
   "nativeSourceFilesMatchImplementation": {
     "boundary_native.py": true,
     "boundary_reader.py": true,

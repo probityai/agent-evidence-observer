@@ -38,7 +38,7 @@ loopback port. The complete native run is limited to 120 seconds; each request
 is limited to 15 seconds, and the separate reader to 15 seconds.
 
 From this directory, after installing the workflow's requirements and exact
-native SDK, run `python -m pytest -q`. Run the native population with the local
+native SDK, run `python -m pytest -q tests`. Run the native population with the local
 fixture DSN in `PROBITY_FIXTURE_MYSQL_DSN`:
 
 ```sh
