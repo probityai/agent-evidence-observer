@@ -1,0 +1,1 @@
+{"include":["*.py","tests"],"venvPath":"../..","venv":".venv","extraPaths":["../a2a-native-2026-10-02","../evaluation-contract-2026-10-01"],"pythonVersion":"3.13","typeCheckingMode":"basic"}
