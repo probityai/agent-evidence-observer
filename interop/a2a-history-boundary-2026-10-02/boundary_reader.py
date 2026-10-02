@@ -20,6 +20,7 @@ from boundary_common import (
     decode,
     same,
     sha,
+    native_uuid,
 )
 
 
@@ -80,6 +81,17 @@ def rpc(receipt, message_id):
     value = decode(bytes.fromhex(receipt["responseHex"]))
     same(value, receipt["parsed"], "caller-response-bytes")
     request = decode(bytes.fromhex(receipt["requestHex"]))
+    same(set(request), {"jsonrpc", "id", "method", "params"}, "rpc-request-fields")
+    same(set(request["params"]), {"message"}, "rpc-request-params")
+    message = request["params"]["message"]
+    expected = {
+        "messageId": message_id,
+        "role": "ROLE_USER",
+        "parts": [{"text": "public fixture turn"}],
+    }
+    if message_id.startswith("followup-"):
+        expected.update(taskId=message["taskId"], contextId=message["contextId"])
+    same(message, expected, "rpc-selected-message-payload")
     same(request["jsonrpc"], "2.0", "rpc-version")
     same(request["id"], "rpc-" + message_id, "rpc-request-id")
     same(request["method"], "SendMessage", "rpc-method")
@@ -88,6 +100,24 @@ def rpc(receipt, message_id):
     same(value["id"], request["id"], "rpc-response-id")
     same(value["jsonrpc"], "2.0", "rpc-response-version")
     return request["params"]["message"], value
+
+
+def selected_user_messages(task):
+    """Bind every committed user turn to the selected caller payload and native identifiers."""
+    for message in task["history"]:
+        if message["role"] == "ROLE_USER":
+            same(
+                message,
+                {
+                    "messageId": message["messageId"],
+                    "role": "ROLE_USER",
+                    "parts": [{"text": "public fixture turn"}],
+                    "taskId": task["id"],
+                    "contextId": task["contextId"],
+                },
+                "committed-user-payload",
+            )
+    same(task["status"]["state"], "TASK_STATE_INPUT_REQUIRED", "selected-task-state")
 
 
 def sql(case, task):
@@ -241,6 +271,10 @@ def check_case(case, name, budget):
     initial_message, initial_reply = rpc(case["initial"], "initial-" + name)
     same(set(initial_reply), {"result", "id", "jsonrpc"}, "initial-accepted")
     before, final = proto(case["before"]), proto(case["final"])
+    native_uuid(before["id"])
+    native_uuid(before["contextId"])
+    selected_user_messages(before)
+    selected_user_messages(final)
     same(initial_reply["result"], {"task": before}, "initial-caller-readback")
     same(len(case["initialNativeCaller"]), 1, "initial-native-caller-population")
     initial_caller = case["initialNativeCaller"][0]

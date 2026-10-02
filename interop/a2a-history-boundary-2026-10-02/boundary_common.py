@@ -3,6 +3,7 @@
 import hashlib
 import json
 from typing import Any
+from uuid import UUID
 
 PROFILE = "probity-a2a-native-history-boundary-v1"
 SOURCE_HEAD = "52030cf43f2e96d25949952e385e3b73fe93bc2a"
@@ -79,3 +80,12 @@ SOURCE_DIGESTS = {
     "src/a2a/types/a2a_pb2.py": "d0aac0be3a3b639b17be3f3c42ac2aab185a10e3d085f38c05410472769483ba",
     "uv.lock": "dcdc91b35a5409ff03c834cd8613799d919249244b737313d5c1117ab3e4ac07",
 }
+
+
+def native_uuid(value):
+    """Require canonical native UUID4 strings, preserving type and identity."""
+    if type(value) is not str:
+        raise ValueError("native-task-id-type")
+    parsed = UUID(value)
+    if str(parsed) != value or parsed.version != 4:
+        raise ValueError("native-task-id-not-canonical-uuid4")

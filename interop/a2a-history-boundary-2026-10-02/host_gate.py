@@ -9,7 +9,7 @@ import subprocess
 from pathlib import Path
 from typing import Any
 
-from boundary_common import PROFILE, CASES, NONCLAIMS
+from boundary_common import PROFILE, CASES, NONCLAIMS, native_uuid
 
 
 def unique_names(pairs: list[tuple[str, Any]]) -> dict:
@@ -65,7 +65,6 @@ def gate(
     packet: Path, pins: Path, policy: Path, digest: str, reader: Path, output: Path
 ) -> dict:
     """Retain the complete selected-reader outcome and refuse on every invalid path."""
-    output.mkdir(parents=True, exist_ok=False)
     report = {
         "decision": "refuse",
         "profile": PROFILE,
@@ -74,6 +73,10 @@ def gate(
         "readerReturncode": None,
         "policySha256": digest,
     }
+    if output.resolve().is_relative_to(packet.resolve()):
+        report["reason"] = "output-must-be-outside-packet"
+        return report
+    output.mkdir(parents=True, exist_ok=False)
     try:
         select(packet, pins, policy, digest, output)
         execute(packet, output / "selected-pins.json", reader, output, report)
@@ -87,8 +90,11 @@ def execute(
     packet: Path, selected: Path, reader: Path, output: Path, report: dict
 ) -> None:
     """Bound child time and output retention, preserving errors and timeout streams."""
+    reader_path = reader.resolve(strict=True)
+    if reader_path.is_relative_to(packet.resolve(strict=True)):
+        raise ValueError("reader-must-be-outside-packet")
     command = [
-        str(reader.resolve(strict=True)),
+        str(reader_path),
         str(packet.resolve()),
         "--pins-file",
         str(selected.resolve()),
@@ -133,6 +139,7 @@ def counters(value: dict) -> None:
 def case_counters(rows):
     """Preserve complete ordered decisions and distinct native tasks."""
     for row, (name, budget) in zip(rows, CASES, strict=True):
+        native_uuid(row["taskId"])
         expected_decision = (
             "accepted-and-persisted"
             if budget == 1
@@ -160,6 +167,17 @@ def admit(raw: bytes, report: dict) -> None:
         or value.get("doesNotAssert") != NONCLAIMS
     ):
         raise ValueError("reader-selection-differs")
+    if set(value) != {
+        "profile",
+        "status",
+        "witnessScope",
+        "doesNotAssert",
+        "plannedAttempts",
+        "acceptedAndPersisted",
+        "rejectedAndAbsentInternalError",
+        "records",
+    }:
+        raise ValueError("reader-output-fields-differ")
     counters(value)
     report.update(decision="publish", reason="selected-complete-bounded-report")
 

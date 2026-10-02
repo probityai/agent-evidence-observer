@@ -312,3 +312,81 @@ async def test_failed_handler_close_still_disposes_all_connections():
         "handler-0",
         "handler-1",
     ]
+
+
+def test_reselected_literal_caller_payload_refused(packet):
+    def mutate(case):
+        request = decode(bytes.fromhex(case["followup"]["requestHex"]))
+        request["params"]["message"]["parts"][0]["text"] = (
+            "different actual caller payload"
+        )
+        case["followup"]["requestHex"] = json.dumps(request).encode().hex()
+
+    pins = modify(packet, "cases/accepted-retry-00.json", mutate)
+    with pytest.raises(ValueError, match="rpc-selected-message-payload"):
+        read(packet, pins)
+
+
+def test_host_output_inside_packet_refused_without_mutation(packet):
+    pins = select(packet)
+    before = {
+        str(p.relative_to(packet)): p.read_bytes()
+        for p in packet.rglob("*")
+        if p.is_file()
+    }
+    output = packet / "host-output"
+    report = gate(
+        packet,
+        pins,
+        packet.parent / "policy.json",
+        "0" * 64,
+        Path("/nonexistent"),
+        output,
+    )
+    assert report["decision"] == "refuse"
+    assert report["reason"] == "output-must-be-outside-packet"
+    assert not output.exists()
+    assert before == {
+        str(p.relative_to(packet)): p.read_bytes()
+        for p in packet.rglob("*")
+        if p.is_file()
+    }
+
+
+def test_candidate_reader_refused_before_launch(packet):
+    pins = select(packet)
+    policy = packet.parent / "policy.json"
+    policy.write_text(
+        json.dumps(
+            {
+                "profile": PROFILE,
+                "pinsSha256": sha(pins.read_bytes()),
+                "plannedAttempts": 20,
+            }
+        )
+    )
+    reader = packet / "malicious-reader"
+    reader.write_text("#!/bin/sh\ntouch should-never-execute\n")
+    reader.chmod(0o700)
+    output = packet.parent / "outside-host-output"
+    report = gate(packet, pins, policy, sha(policy.read_bytes()), reader, output)
+    assert report["decision"] == "refuse"
+    assert report["reason"] == "reader-must-be-outside-packet"
+    assert not (output / "launch.json").exists()
+
+
+@pytest.mark.parametrize(
+    "value", [0, True, [], "not-a-uuid", "00000000-0000-0000-0000-000000000000"]
+)
+def test_fake_child_task_identity_refused(packet, value):
+    report = read(packet, select(packet))
+    report["records"][0]["taskId"] = value
+    with pytest.raises((ValueError, TypeError)):
+        admit(json.dumps(report).encode(), {})
+
+
+def test_fake_child_extra_fields_refused(packet):
+    report = read(packet, select(packet))
+    report["independentCustody"] = True
+    with pytest.raises(ValueError, match="reader-output-fields-differ"):
+        admit(json.dumps(report).encode(), {})
