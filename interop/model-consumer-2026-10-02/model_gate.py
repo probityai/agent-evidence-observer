@@ -8,6 +8,7 @@ import math
 import subprocess
 import sys
 from pathlib import Path
+import boundary_policy
 
 FORMAT_PROFILE = "probity-local-cpu-format-control-v1"
 DIGEST_KEYS = ("pinsSha256", "readerSha256")
@@ -83,6 +84,8 @@ def validate_row(row, format_profile=False):
 
 
 def validate_policy(policy):
+    if type(policy) is dict and policy.get("profile") == boundary_policy.PROFILE:
+        return boundary_policy.validate_policy(policy)
     keys = {"schema", "profile", "planned", "rows", "limits", *DIGEST_KEYS}
     if type(policy) is not dict or set(policy) != keys:
         raise ValueError("policy fields differ")
@@ -122,6 +125,8 @@ def validate_policy(policy):
 
 
 def report_rows(report, policy):
+    if policy["profile"] == boundary_policy.PROFILE:
+        return boundary_policy.report_rows(report, policy)
     population = report["population"]
     expected = {
         "planned": policy["planned"],
@@ -191,6 +196,8 @@ def report_rows(report, policy):
 
 
 def decide(report, policy):
+    if policy["profile"] == boundary_policy.PROFILE:
+        return boundary_policy.decide(report, policy)
     rows = report_rows(report, policy)
     failures = []
     for selected in policy["rows"]:
@@ -291,7 +298,11 @@ def gate(packet, pins_file, policy_file, policy_sha256, output, timeout):
         pins = pins_file.read_bytes()
         if digest(pins) != policy["pinsSha256"]:
             raise ValueError("pins differ from reviewed policy")
-        strict_json(pins)
+        selected_pins = strict_json(pins)
+        if policy["profile"] == boundary_policy.PROFILE:
+            boundary_policy.verify_host_selection(
+                packet, selected_pins, policy, strict_json
+            )
         frozen = output / "selected-pins.json"
         frozen.write_bytes(pins)
         command = [
