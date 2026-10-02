@@ -22,7 +22,14 @@ The profile suite passes 55 controls, including 40 Hypothesis-generated argument
 and HTTP mutations. New controls refuse omitted and swapped native histories,
 malformed histories, hidden exhausted attempts, rewritten exceptions, lost or
 swapped committed effects, wrong HTTP digest joins and completion substituted
-for failure. A freshly installed dedicated reader also passes all 14 original
+for failure. The exact implementation revision is
+`3893a4536a607f85971a75b06ce87b2705978225`. Python 3.13.15 with the locked
+cryptography 46.0.7 runtime executes installed producer wheels outside the
+checkout. A separately installed dedicated reader, without Pydantic AI,
+reconstructs the complete seven-case packet and passes six additional semantic
+refusal controls after reselected hashes.
+
+A freshly installed dedicated reader also passes all 14 original
 archive/refusal controls, including byte-exact original v0 report reconstruction.
 The producer and reader code pass the declared Ruff checks and complexity limit.
 
