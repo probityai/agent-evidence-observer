@@ -1,0 +1,67 @@
+name: ExecSurface native state companion
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'interop/execsurface-state-2026-10-02/**'
+      - '.github/workflows/execsurface-native-state.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'interop/execsurface-state-2026-10-02/**'
+      - '.github/workflows/execsurface-native-state.yml'
+permissions:
+  contents: read
+jobs:
+  reproduce:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: interop/execsurface-state-2026-10-02
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.13'
+      - name: Install hash-selected profile dependencies
+        run: |
+          python -m pip install --require-hashes --only-binary=:all: -r requirements.lock --report install-report.json
+      - name: Retrieve and verify selected published native binary
+        run: |
+          python download_binary.py execsurface > download-report.json
+          ./execsurface doctor > doctor-report.json
+      - name: Check owned adapter code and complexity
+        run: |
+          python -m ruff check companion.py workload.py download_binary.py tests
+          python -m ruff check --select C901 --config 'lint.mccabe.max-complexity=5' companion.py workload.py download_binary.py tests
+      - name: Test real native execution, reference verifier and semantic refusal controls
+        env:
+          EXECSURFACE_BINARY: ${{ github.workspace }}/interop/execsurface-state-2026-10-02/execsurface
+        run: python -m pytest -q tests --junitxml=test-results.xml
+      - name: Execute finite exact-source capture and state binding
+        run: |
+          timeout --signal=TERM --kill-after=5s 60s python companion.py run native-run --binary ./execsurface --source-revision "$GITHUB_SHA" --write-pins "$RUNNER_TEMP/execsurface-pins.json" > native-report.json
+          cp "$RUNNER_TEMP/execsurface-pins.json" selected-pins.json
+      - name: Apply separately selected publication policy
+        run: |
+          cp publication-policy.json "$RUNNER_TEMP/execsurface-policy.json"
+          policy_digest=$(sha256sum publication-policy.json | cut -d' ' -f1)
+          python companion.py read native-run --pins-file "$RUNNER_TEMP/execsurface-pins.json" --policy-file "$RUNNER_TEMP/execsurface-policy.json" --policy-sha256 "$policy_digest" > publication-report.json
+      - name: Retain original trace, state bytes, authority, commitment and source selection
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: execsurface-state-${{ github.sha }}
+          path: |
+            interop/execsurface-state-2026-10-02/native-run/
+            interop/execsurface-state-2026-10-02/*-report.json
+            interop/execsurface-state-2026-10-02/selected-pins.json
+            interop/execsurface-state-2026-10-02/source-pins.json
+            interop/execsurface-state-2026-10-02/test-results.xml
+            interop/execsurface-state-2026-10-02/execsurface.tar.gz
+          if-no-files-found: error
+          retention-days: 90
