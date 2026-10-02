@@ -1,0 +1,4 @@
+boolean ::= ("true" | "false") space
+root ::= "{" space value-kv "}" space
+space ::= " "?
+value-kv ::= "\"value\"" space ":" space boolean

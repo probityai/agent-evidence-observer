@@ -1,0 +1,5 @@
+char ::= [^"\\\x00-\x1F] | "\\" (["\\/bfnrt] | "u" [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F])
+decision-kv ::= "\"decision\"" space ":" space string
+root ::= "{" space decision-kv "}" space
+space ::= " "?
+string ::= "\"" char* "\"" space

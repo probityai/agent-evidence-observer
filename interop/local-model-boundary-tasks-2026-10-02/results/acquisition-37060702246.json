@@ -1,0 +1,81 @@
+{
+  "schema": "probity-retained-model-boundary-tasks-v1",
+  "nativeRun": {
+    "id": 37060702246,
+    "url": "https://github.com/probityai/agent-evidence-observer/actions/runs/37060702246",
+    "head": "6cfd28dc61aa0ae43be5da8382fe959c94235997",
+    "conclusion": "success"
+  },
+  "protocolCommit": "f63ff5a7c236c8f0122dec71fbaabde8c2feb6a3",
+  "protocolSHA256": "78ee69f5c5a8cc51095e960939ca42497d6f48f2bb6aad54deff098a5faf2ea2",
+  "nativeRunnerSHA256": "52a6000faae93178ce9e5acbf0e19c246fde69ee57055eb28cca8bddcc8f99b3",
+  "compactArtifact": {
+    "id": 11250931257,
+    "bytes": 2745888,
+    "providerSHA256": "d8ff26e82aca136daf734da65ede259b2bfaed9dd547ba25b92d65bdeeef019f",
+    "retainedPath": "boundary-cpu-native-37060702246.zip",
+    "memberReportSHA256": "fa7b0e39b69bcd42f82fc93096e071b534557c34cf0e03e73e1bac56dcdd72af",
+    "expiresAt": "2026-12-31T20:27:31Z",
+    "downloadProviderSHA256Matched": true,
+    "originalMemberCount": 871
+  },
+  "fullPreparationArtifact": {
+    "id": 11251021191,
+    "bytes": 466005528,
+    "providerSHA256": "a8036f8cc32d7452be17e1f848d0c4c2d482815817ab51087fda8673bd92d91b",
+    "expiresAt": "2026-12-31T20:27:31Z",
+    "originalMemberCount": 901,
+    "fullOnlyMemberCount": 30,
+    "retention": "Complete original private archive; compact public original excludes weights/preparation source/wheels only."
+  },
+  "consumerPins": {
+    "declaration": {
+      "path": "declaration.json",
+      "sha256": "32fa5bdc1c02014957060e20499d58f7cf6a2aacbb7806190158462614aa578b"
+    },
+    "manifest": {
+      "path": "manifest.json",
+      "sha256": "bb01dc9beecf848e99701c26d0f51ca0d4cf9698e85aba17716aec25c9427d5f"
+    },
+    "protocol": {
+      "path": "protocol.json",
+      "sha256": "78ee69f5c5a8cc51095e960939ca42497d6f48f2bb6aad54deff098a5faf2ea2"
+    },
+    "terminal": {
+      "path": "terminal.json",
+      "sha256": "f096e1135917d09e82fbf414b8595433b35c02953376fc1cc96e1babbe848f59"
+    }
+  },
+  "population": {
+    "authoredCaseIdentities": 48,
+    "uniqueLiteralInputs": 46,
+    "families": {
+      "typed-boundary": 16,
+      "policy-boundary": 16,
+      "grounded-boundary": 16
+    },
+    "repeatedPositiveControls": [
+      [
+        "policy-publish-consent-a",
+        "policy-publish-checks-a"
+      ],
+      [
+        "policy-admit-expiry-a",
+        "policy-admit-signature-a"
+      ]
+    ],
+    "plannedCalls": 384
+  },
+  "grammarLimits": "Selected frozen compiler: at most16 decimal integer digits, one optional ASCII space and fixed required-key order. No target constants/enums/patterns; null/string-null and all known/unknown cases retain shared free-value contracts.",
+  "preparationHistory": {
+    "original48RunBytes": 278149773,
+    "comparisonInitialFailureBytes": 472190754,
+    "comparisonSuccessfulBytes": 472221945,
+    "formatControlBytes": 472221945,
+    "currentBoundaryBytes": 472221945,
+    "allFiveAttemptsBodyBytes": 2167006362,
+    "scope": "Each declared preparation has its own512MiB envelope. Cumulative cost is separate and exceeds one envelope; no response retry/repair/retuning."
+  },
+  "reader": "Separate reviewed stdlib reader exactly reproduces original report; no native runtime or producer code import required.",
+  "exposure": "Finite authored diagnostic population informed by prior public failures, public targets, outputs/scores together. No representative/blind benchmark, real protected effect, outside acceptance/adoption or independent execution custody."
+}

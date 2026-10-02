@@ -1,0 +1,6 @@
+char ::= [^"\\\x00-\x1F] | "\\" (["\\/bfnrt] | "u" [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F])
+root ::= "{" space value-kv "}" space
+space ::= " "?
+string ::= "\"" char* "\"" space
+value- ::= "[" space (string ("," space string)*)? "]" space
+value-kv ::= "\"value\"" space ":" space value-
