@@ -40,7 +40,9 @@ The profile builds an additive `probity-target-recovery-reader` wheel with the
 and cryptography; no agent framework, model or target signing key is required by
 the offline reader. The workflow actually installs both wheels in a separate
 virtual environment and calls its installed command through `host_gate.py`.
-The host policy separately fixes the profile, pins digest and denominator seven;
+The host policy separately fixes the profile, pins digest and denominator seven.
+The gate requires its reviewed raw policy digest and refuses policy/pins inside
+the producer packet, duplicated JSON names or missing/nonclaim populations;
 reader refusals and failed launches are retained and refuse publication. A host
 must review and maintain its own selected pins/policy and revision/job.
 

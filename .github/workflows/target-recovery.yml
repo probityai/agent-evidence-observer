@@ -57,7 +57,7 @@ jobs:
           pins = Path(sys.argv[1]).read_bytes()
           Path(sys.argv[2]).write_text(json.dumps({'profile': 'probity-target-process-recovery-v1', 'pinsSha256': hashlib.sha256(pins).hexdigest(), 'plannedAttempts': 7}))
           PY
-          python host_gate.py fresh-run --pins-file "$RUNNER_TEMP/target-selected-pins.json" --policy-file "$RUNNER_TEMP/target-host-policy.json" --reader "$RUNNER_TEMP/target-reader/bin/probity-read-target-recovery" --output host-receipts > host-decision.json
+          python host_gate.py fresh-run --pins-file "$RUNNER_TEMP/target-selected-pins.json" --policy-file "$RUNNER_TEMP/target-host-policy.json" --policy-sha256 "$(sha256sum "$RUNNER_TEMP/target-host-policy.json" | cut -d' ' -f1)" --reader "$RUNNER_TEMP/target-reader/bin/probity-read-target-recovery" --output host-receipts > host-decision.json
       - name: Retain complete public packet and separately installed reader receipts
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

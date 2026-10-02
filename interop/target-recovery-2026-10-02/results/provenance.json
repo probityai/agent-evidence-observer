@@ -1,0 +1,17 @@
+{
+  "schema": "probity-target-recovery-provenance-v1",
+  "nativeSourceRevision": "48c30d246e5c8a11163973f25435676dc837c7ca",
+  "fixtureSha256": "94117b13bff70d6b9fc2ef5ae100fc746d8522c48168c4c30fb07b5ec66720ec",
+  "fixtureBytes": 60516,
+  "reportSha256": "f145808749520d60262b72b5c8aa0a733fb4c1374a4d463b1da0a7def427cea5",
+  "cases": 7,
+  "targetProcesses": 14,
+  "scope": "original same-team local native run; source selected before execution; comparison authored with runner, not blind custody",
+  "doesNotAssert": [
+    "power-loss",
+    "general-exactly-once",
+    "remote-identity",
+    "independent-custody",
+    "production-containment"
+  ]
+}
