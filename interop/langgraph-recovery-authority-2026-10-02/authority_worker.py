@@ -60,8 +60,8 @@ def locked_gate(conn, case, current, phase):
     status = validate(current, binding, prior)
     if phase == "second" and row is None:
         status = "refused-missing-clock-anchor"
-    if status == "authorized":
-        conn.execute("INSERT OR REPLACE INTO recovery_clock VALUES (?, ?)", (binding, current["clock"]))
+    if row is not None or (phase == "first" and status == "authorized"):
+        conn.execute("INSERT OR REPLACE INTO recovery_clock VALUES (?, ?)", (binding, max(prior, current["clock"])))
     return {"current": current, "priorClock": prior, "status": status}
 
 

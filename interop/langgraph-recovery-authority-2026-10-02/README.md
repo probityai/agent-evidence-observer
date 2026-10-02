@@ -13,7 +13,9 @@ external issuer. This fixture uses a declared deterministic integer host clock:
 initial100, expiry200, selected expiry200 and rollback99. It exercises the
 boundary without waiting or pretending these are independent clock observations.
 A SQLite `BEGIN IMMEDIATE` serializes comparison/update of the action's durable
-clock high-water mark. Missing recovery anchors fail closed. Revocation, expiry
+clock high-water mark. Every well-typed, action-bound observation raises that
+mark even when revocation or expiry denies recovery; a later replay of an older
+permit therefore refuses. Missing recovery anchors fail closed. Revocation, expiry
 and rollback refuse before recovery dispatch or release of a cached native graph
 result. An earlier signed revision-one commit remains present and is reported
 separately from the recovery refusal. A valid after-effect recovery sends the

@@ -162,3 +162,21 @@ def test_retained_original_native_fixture_replays(tmp_path):
         retained.extractall(tmp_path)
     report = verify_saved(tmp_path, provenance["consumerPins"])
     assert report == decode((profile / "recorded-report.json").read_bytes())
+
+
+@pytest.mark.parametrize("denied,status,stale", [({"clock": 150, "revoked": True}, "refused-revoked", 100), ({"clock": 200}, "refused-expired", 199)])
+def test_denied_observation_prevents_stale_permit(packet, tmp_path, denied, status, stale):
+    case, current = selected(packet)
+    with sqlite3.connect(tmp_path / "denied-clock.sqlite") as conn:
+        gate(conn, case, current, "first")
+        assert gate(conn, case, {**current, **denied}, "second")["status"] == status
+        assert gate(conn, case, {**current, "clock": stale}, "second")["status"] == "refused-clock-rollback"
+        assert conn.execute("SELECT clock FROM recovery_clock").fetchone()[0] == denied["clock"]
+
+
+def test_host_explicit_later_permit_after_revocation(packet, tmp_path):
+    case, current = selected(packet)
+    with sqlite3.connect(tmp_path / "later-permit.sqlite") as conn:
+        gate(conn, case, current, "first")
+        assert gate(conn, case, {**current, "clock": 150, "revoked": True}, "second")["status"] == "refused-revoked"
+        assert gate(conn, case, {**current, "clock": 151}, "second")["status"] == "authorized"
