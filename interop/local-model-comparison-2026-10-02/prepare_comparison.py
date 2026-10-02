@@ -27,7 +27,7 @@ CATEGORY_LIMITS = {
 DOWNLOAD_SECONDS = 180
 LOCK_PATH = Path(__file__).with_name("dependency-lock-linux-cp312.json")
 
-PROTOCOL_SHA256 = "5421f00e5e0c46aeed5d851a41012559f30edb79ec218856b3a71103ff3aee10"
+PROTOCOL_SHA256 = "fb11ab63a4e26acac255a176b0af89931bd8424aa246a1b291e9c35991c85a00"
 PROTOCOL_RAW = Path(__file__).with_name("protocol.json").read_bytes()
 if hashlib.sha256(PROTOCOL_RAW).hexdigest() != PROTOCOL_SHA256:
     raise ValueError("preparation protocol differs from frozen selection")

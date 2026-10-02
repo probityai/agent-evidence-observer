@@ -23,11 +23,12 @@ jobs:
           set -euo pipefail
           python interop/local-model-comparison-2026-10-02/prepare_comparison.py model-comparison-artifacts --verify-downloads
           python -m pip install --no-index --no-deps --force-reinstall --require-hashes --find-links model-comparison-artifacts/downloads -r model-comparison-artifacts/requirements.txt
+          python -m pip check
           CC=/usr/bin/gcc CXX=/usr/bin/g++ CMAKE_BUILD_PARALLEL_LEVEL=2 CMAKE_ARGS='-DGGML_NATIVE=OFF -DGGML_OPENMP=OFF -DGGML_CUDA=OFF -DGGML_BLAS=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF' timeout --signal=TERM --kill-after=5s 330s python -m pip install --no-index --find-links model-comparison-artifacts/downloads --no-build-isolation --no-deps model-comparison-artifacts/downloads/llama_cpp_python-0.3.16.tar.gz > model-comparison-artifacts/build-gcc.log 2>&1
           python interop/local-model-comparison-2026-10-02/prepare_comparison.py model-comparison-artifacts --finalize
       - name: Execute all 96 frozen paired attempts within the original ten-minute envelope
         run: |
-          timeout --signal=TERM --kill-after=5s 595s python interop/local-model-comparison-2026-10-02/task_matrix.py model-comparison-artifacts/run --protocol-commit a5abe02e8378ca3813c99a2882454be9e2bfc9b0 --weights model-comparison-artifacts --provenance model-comparison-artifacts/provenance.json > model-comparison-artifacts/run-stdout.json 2> model-comparison-artifacts/run-stderr.txt
+          timeout --signal=TERM --kill-after=5s 595s python interop/local-model-comparison-2026-10-02/task_matrix.py model-comparison-artifacts/run --protocol-commit 6d6b205cc1c544968573381b72fbbe33c9ec4b3e --weights model-comparison-artifacts --provenance model-comparison-artifacts/provenance.json > model-comparison-artifacts/run-stdout.json 2> model-comparison-artifacts/run-stderr.txt
       - name: Print the produced artifact selections for later independent readers
         run: cat model-comparison-artifacts/run/consumer-pins.json
       - name: Recompute from selected retained bytes in a separate reader invocation

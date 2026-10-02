@@ -15,8 +15,8 @@ import time
 from datetime import UTC, datetime
 from pathlib import Path
 
-PROTOCOL_SHA256 = "5421f00e5e0c46aeed5d851a41012559f30edb79ec218856b3a71103ff3aee10"
-PROTOCOL_COMMIT = "a5abe02e8378ca3813c99a2882454be9e2bfc9b0"  # resolved to the full hash before execution
+PROTOCOL_SHA256 = "fb11ab63a4e26acac255a176b0af89931bd8424aa246a1b291e9c35991c85a00"
+PROTOCOL_COMMIT = "6d6b205cc1c544968573381b72fbbe33c9ec4b3e"  # resolved to the full hash before execution
 PROTOCOL_PATH = "interop/local-model-comparison-2026-10-02/protocol.json"
 
 
@@ -333,6 +333,7 @@ def verify(root, pins):
     last_start = timestamp(d["declaredAt"])
     previous_finished = last_start
     measured_call_ns = 0
+    previous_peak_rss = 0
     for ident, cfg, case in population(p):
         start_name, return_name, error_name = [
             f"calls/{ident}-{suffix}.json"
@@ -414,6 +415,9 @@ def verify(root, pins):
                     "process_maxrss_kib",
                 } or any(type(v) is not int or v < 0 for v in resources.values()):
                     raise ValueError("invalid native resource accounting")
+                if resources["process_maxrss_kib"] < previous_peak_rss:
+                    raise ValueError("process lifetime peak RSS decreased")
+                previous_peak_rss = resources["process_maxrss_kib"]
                 text = response["choices"][0]["text"]
                 if not isinstance(text, str):
                     raise ValueError("native output must be text")

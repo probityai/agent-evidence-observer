@@ -466,7 +466,7 @@ def test_rss_limit_holds_complete_quality_report(tmp_path):
     fixture(tmp_path)
     first = population(
         protocol(Path(__file__).parents[1].joinpath("protocol.json").read_bytes())
-    )[0][0]
+    )[-1][0]
     change(
         tmp_path,
         f"calls/{first}-returned.json",
@@ -546,4 +546,18 @@ def test_preparation_accounting_and_source_selection_refuse_reselected_mutations
             lambda v: v["selectedRuntime"].update(sourceSHA256="0" * 64),
         )
     with pytest.raises(ValueError, match="preparation|provenance"):
+        verify(tmp_path, repin(tmp_path))
+
+
+def test_serial_lifetime_peak_rss_cannot_decrease(tmp_path):
+    fixture(tmp_path)
+    order = population(
+        protocol(Path(__file__).parents[1].joinpath("protocol.json").read_bytes())
+    )
+    change(
+        tmp_path,
+        "calls/" + order[1][0] + "-returned.json",
+        lambda v: v["measurement"].update(process_maxrss_kib=999),
+    )
+    with pytest.raises(ValueError, match="lifetime peak RSS decreased"):
         verify(tmp_path, repin(tmp_path))

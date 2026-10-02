@@ -16,10 +16,10 @@ def test_both_models_and_minimal_dependencies_fit_selected_budget():
         "model": 376044704,
         "source": 50688636,
         "metadata": 30738,
-        "dependencies": 45426676,
+        "dependencies": 45457867,
     }
-    assert sum(totals.values()) == 472190754 < prep.TOTAL_LIMIT
-    assert len(lock["dependencies"]) == 9
+    assert sum(totals.values()) == 472221945 < prep.TOTAL_LIMIT
+    assert len(lock["dependencies"]) == 10
     assert sum(prep.CATEGORY_LIMITS.values()) == prep.TOTAL_LIMIT
 
 
