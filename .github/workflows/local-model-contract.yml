@@ -17,3 +17,6 @@ jobs:
       - name: Check the local-model reader's refusal contract
         working-directory: interop/local-model-2026-10-02
         run: python -m pytest tests -q
+      - name: Check the operational task matrix reader and frozen rubric
+        working-directory: interop/local-model-tasks-2026-10-02
+        run: python -m pytest tests -q
