@@ -67,6 +67,17 @@ def _refuse(reason: str) -> NoReturn:
     raise VerificationError(reason)
 
 
+def _decision_configuration(value: str | None) -> dict[str, str]:
+    """Preserve legacy configurations while binding an optional decision."""
+    if value is None:
+        return {}
+    if not isinstance(value, str) or len(value) != 64:
+        _refuse("decision digest must be a lowercase SHA-256-sized value")
+    if any(character not in "0123456789abcdef" for character in value):
+        _refuse("decision digest must be a lowercase SHA-256-sized value")
+    return {"decisionDigest": value}
+
+
 def _sync_directory(path: Path) -> None:
     """Flush a directory after a durable state-file replacement."""
     descriptor = os.open(path, os.O_RDONLY)
@@ -186,6 +197,10 @@ class ProtectedDispatcher:
         Consumer-selected digest of a concrete launch policy. The authorization
         journal commits it before dispatch; ordinary library calls may leave it
         unset and must not claim a measured isolated launch.
+    decision_digest : str | None, optional
+        Consumer-selected decision binding committed into initialization and the
+        prior journal. Use a decision-aware dispatcher to replay its semantics.
+        Omission preserves the original configuration schema and signing bytes.
 
     Notes
     -----
@@ -210,6 +225,7 @@ class ProtectedDispatcher:
         clock: Callable[[], datetime] = utc_clock,
         retained_authorization_head: dict[str, Any] | None = None,
         execution_digest: str | None = None,
+        decision_digest: str | None = None,
     ) -> None:
         self.workspace = workspace.resolve(strict=True)
         self.state_dir = state_dir.resolve()
@@ -219,6 +235,7 @@ class ProtectedDispatcher:
         self.witness_key = witness_key
         self.clock = clock
         self.execution_digest = execution_digest
+        self.decision_digest = decision_digest
         self._retained_authorization_head = strict_loads(
             canonical(retained_authorization_head)
         )
@@ -242,6 +259,8 @@ class ProtectedDispatcher:
         if len(keys) != 3:
             _refuse("issuer, observer, and witness keys must differ")
         self._check_execution_digest()
+        if self.decision_digest is not None:
+            _decision_configuration(self.decision_digest)
 
     def _check_execution_digest(self) -> None:
         """Validate an optional exact launch-policy digest."""
@@ -265,6 +284,7 @@ class ProtectedDispatcher:
             "observerKey": self.observer_key.public_hex,
             "witnessKey": self.witness_key.public_hex,
             "executionDigest": self.execution_digest,
+            **_decision_configuration(self.decision_digest),
         }
 
     def _paths(self) -> tuple[Path, Path, Witness]:
@@ -672,6 +692,7 @@ def verify_dispatch_bundle(
     *,
     workspace: Path | None = None,
     execution_digest: str | None = None,
+    decision_digest: str | None = None,
 ) -> dict[str, Any]:
     """Verify the witnessed grant relation and exactly one completed native effect.
 
@@ -687,6 +708,9 @@ def verify_dispatch_bundle(
         detects rollback only as far as that externally retained prefix.
     workspace : Path | None, optional
         If supplied, compare current durable target bytes to the native claim.
+    execution_digest, decision_digest : str | None, optional
+        Separately selected launch and decision bindings. A present decision
+        digest must match; this generic verifier does not replay its semantics.
 
     Returns
     -------
@@ -707,6 +731,7 @@ def verify_dispatch_bundle(
         "observerKey": observer_key,
         "witnessKey": witness_key,
         "executionDigest": execution_digest,
+        **_decision_configuration(decision_digest),
     }
     if state.get("configuration") != configured or state.get("phase") != "complete":
         _refuse("dispatch bundle differs from the expected completed action")

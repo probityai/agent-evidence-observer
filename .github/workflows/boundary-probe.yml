@@ -97,9 +97,10 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -e '.[test,aae]'
-      - run: pytest -q tests/test_aae_enforce.py tests/test_aae_binding.py
+      - run: pytest -q tests/test_aae_enforce.py tests/test_aae_binding.py tests/test_aae_dispatch.py
       - run: python examples/aae_replay.py > aae-replay.json
       - run: python examples/aae_demo.py ./aae-run > aae-demo-stdout.json
+      - run: python examples/aae_protected_dispatch_demo.py ./aae-protected-run > aae-protected-stdout.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -108,3 +109,5 @@ jobs:
             aae-run/
             aae-replay.json
             aae-demo-stdout.json
+            aae-protected-run/
+            aae-protected-stdout.json
