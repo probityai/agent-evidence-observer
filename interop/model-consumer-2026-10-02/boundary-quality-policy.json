@@ -1,0 +1,650 @@
+{
+  "schema": "probity-model-publication-policy-v3",
+  "profile": "probity-local-cpu-boundary-tasks-v1",
+  "planned": 384,
+  "pinsSha256": "8fad18a9e6bbc0fab3b9ef697c2cf859b9c003e046c6ca9c616fc83a21bdd837",
+  "readerSha256": "52a6000faae93178ce9e5acbf0e19c246fde69ee57055eb28cca8bddcc8f99b3",
+  "casePopulation": {
+    "authoredIdentities": 48,
+    "uniqueLiteralInputs": 46,
+    "casesPerFamily": 16,
+    "pairsPerFamily": 8
+  },
+  "cases": [
+    {
+      "id": "typed-integer-zero",
+      "family": "typed-boundary",
+      "pair": "typed-pair-0",
+      "pairRole": "a",
+      "inputSha256": "d23d035cde9750b2f5cee2361cc46c4f1cb116111595e88edca3e2aac16e887c"
+    },
+    {
+      "id": "typed-integer-negative",
+      "family": "typed-boundary",
+      "pair": "typed-pair-0",
+      "pairRole": "b",
+      "inputSha256": "84e43419cd4d8ded061669439673b7dc2cfc033c4ca11081b45006095cfbcffa"
+    },
+    {
+      "id": "typed-boolean-false",
+      "family": "typed-boundary",
+      "pair": "typed-pair-1",
+      "pairRole": "a",
+      "inputSha256": "ed916a598dd37e8f0358f5b08088c44b16bd021d13a9749240e9d495af794d07"
+    },
+    {
+      "id": "typed-boolean-true",
+      "family": "typed-boundary",
+      "pair": "typed-pair-1",
+      "pairRole": "b",
+      "inputSha256": "b43eecd6b2e2f9111dfa4ecbaeb1bc1771642b58b3ff4c5ddbb9cd2836be856d"
+    },
+    {
+      "id": "typed-null-value",
+      "family": "typed-boundary",
+      "pair": "typed-pair-2",
+      "pairRole": "a",
+      "inputSha256": "9ab3e20d41ef509b201fe514f2eff5edbf85c0f129866eed81f8905b28d904ac"
+    },
+    {
+      "id": "typed-string-null",
+      "family": "typed-boundary",
+      "pair": "typed-pair-2",
+      "pairRole": "b",
+      "inputSha256": "1ee230f86a109e2c461e01abda1036b1c90a18accce75ed154718c0725b0bfa8"
+    },
+    {
+      "id": "typed-string-number",
+      "family": "typed-boundary",
+      "pair": "typed-pair-3",
+      "pairRole": "a",
+      "inputSha256": "6d5c1aa9ba74c89381d938f6461c8de3f458b76a0cbcfe13ac8a8954a7518241"
+    },
+    {
+      "id": "typed-integer-seven",
+      "family": "typed-boundary",
+      "pair": "typed-pair-3",
+      "pairRole": "b",
+      "inputSha256": "99bebf919837c71a44bf6c1d5c07b64413938601bd9a15d25beec38387c50f2f"
+    },
+    {
+      "id": "typed-empty-string",
+      "family": "typed-boundary",
+      "pair": "typed-pair-4",
+      "pairRole": "a",
+      "inputSha256": "03dba7cecc4095e11f0f2774e3856060a674d903c6892dd8689506534f3d202e"
+    },
+    {
+      "id": "typed-space-string",
+      "family": "typed-boundary",
+      "pair": "typed-pair-4",
+      "pairRole": "b",
+      "inputSha256": "88cdeed28d74d65834f79f9e365824563b148dd53fb88d8195b360b662a988cf"
+    },
+    {
+      "id": "typed-escaped-quote",
+      "family": "typed-boundary",
+      "pair": "typed-pair-5",
+      "pairRole": "a",
+      "inputSha256": "3b6a54b64cb3f253e274780d2b8bca044954f429d3543230c322ecdb62e3ae35"
+    },
+    {
+      "id": "typed-escaped-backslash",
+      "family": "typed-boundary",
+      "pair": "typed-pair-5",
+      "pairRole": "b",
+      "inputSha256": "4482710699b49313b24b516aa1ac5f3439df4e4c68661815cd57e23615bceb5f"
+    },
+    {
+      "id": "typed-empty-list",
+      "family": "typed-boundary",
+      "pair": "typed-pair-6",
+      "pairRole": "a",
+      "inputSha256": "b49a6e0da469433c774c269f9bcd36f6f1336a2c0702db64d516ba7d985f9dab"
+    },
+    {
+      "id": "typed-ordered-list",
+      "family": "typed-boundary",
+      "pair": "typed-pair-6",
+      "pairRole": "b",
+      "inputSha256": "a5c6a55b4d78785d7421c00bef09fbbea138bb8644784e7782fbfa8fe9b33134"
+    },
+    {
+      "id": "typed-unicode-string",
+      "family": "typed-boundary",
+      "pair": "typed-pair-7",
+      "pairRole": "a",
+      "inputSha256": "3954474fc75eeecfdf4a878d331d61c4ce26b9340da8abe16a393cf18e040122"
+    },
+    {
+      "id": "typed-newline-string",
+      "family": "typed-boundary",
+      "pair": "typed-pair-7",
+      "pairRole": "b",
+      "inputSha256": "f927a45c5d0af4845669cc96610769adfe6cc161bd5c6eb6bd91de152549106e"
+    },
+    {
+      "id": "policy-publish-consent-a",
+      "family": "policy-boundary",
+      "pair": "policy-publish-consent",
+      "pairRole": "a",
+      "inputSha256": "7293c366bdc90dd91865ac7ce8b9206cea987a8b25b57c4c9d85ea702e53bdfa"
+    },
+    {
+      "id": "policy-publish-consent-b",
+      "family": "policy-boundary",
+      "pair": "policy-publish-consent",
+      "pairRole": "b",
+      "inputSha256": "dd048fb509f53d9eabbbdd59cc6dcb77f2b7528559f320dd822f4101fcf33476"
+    },
+    {
+      "id": "policy-publish-checks-a",
+      "family": "policy-boundary",
+      "pair": "policy-publish-checks",
+      "pairRole": "a",
+      "inputSha256": "7293c366bdc90dd91865ac7ce8b9206cea987a8b25b57c4c9d85ea702e53bdfa"
+    },
+    {
+      "id": "policy-publish-checks-b",
+      "family": "policy-boundary",
+      "pair": "policy-publish-checks",
+      "pairRole": "b",
+      "inputSha256": "301b90d7ad08b7638d3e406c5fc968a83b111f664124c5fc42ff7e4fcda32aa8"
+    },
+    {
+      "id": "policy-admit-expiry-a",
+      "family": "policy-boundary",
+      "pair": "policy-admit-expiry",
+      "pairRole": "a",
+      "inputSha256": "ce2d1cc80993b04c1afafa4b7fbc6ef34967c34c0d15f40abb0d7eab79413fa5"
+    },
+    {
+      "id": "policy-admit-expiry-b",
+      "family": "policy-boundary",
+      "pair": "policy-admit-expiry",
+      "pairRole": "b",
+      "inputSha256": "6cfd2bf93a93888cfd29a8f2f049871f7e81762c56bba189b45652f2ac0cfca9"
+    },
+    {
+      "id": "policy-admit-signature-a",
+      "family": "policy-boundary",
+      "pair": "policy-admit-signature",
+      "pairRole": "a",
+      "inputSha256": "ce2d1cc80993b04c1afafa4b7fbc6ef34967c34c0d15f40abb0d7eab79413fa5"
+    },
+    {
+      "id": "policy-admit-signature-b",
+      "family": "policy-boundary",
+      "pair": "policy-admit-signature",
+      "pairRole": "b",
+      "inputSha256": "58ad28be102e1b164cbd9b6d921d8c02699717d0323b6743615c34964a615683"
+    },
+    {
+      "id": "policy-recover-committed-a",
+      "family": "policy-boundary",
+      "pair": "policy-recover-committed",
+      "pairRole": "a",
+      "inputSha256": "20d8e4bd7a683798e3434d4662b7f9babde5f216f224fb57159e7700427ac0bb"
+    },
+    {
+      "id": "policy-recover-committed-b",
+      "family": "policy-boundary",
+      "pair": "policy-recover-committed",
+      "pairRole": "b",
+      "inputSha256": "d7dc9444923715e004a07dbf44d4deedab7f81f56a3903d936459fb0e9d78437"
+    },
+    {
+      "id": "policy-recover-authorized-a",
+      "family": "policy-boundary",
+      "pair": "policy-recover-authorized",
+      "pairRole": "a",
+      "inputSha256": "097c1f06ec1850a3312bed71322665f781a6e028aa321f91c18e79f6ec0cbd00"
+    },
+    {
+      "id": "policy-recover-authorized-b",
+      "family": "policy-boundary",
+      "pair": "policy-recover-authorized",
+      "pairRole": "b",
+      "inputSha256": "04821fd97895331e92c78dca217fab616bfe0f8440ab1f0a1163b5d65b9f4886"
+    },
+    {
+      "id": "policy-dispatch-spent-a",
+      "family": "policy-boundary",
+      "pair": "policy-dispatch-spent",
+      "pairRole": "a",
+      "inputSha256": "9c36f41481725267c60f1198cfbe61579e591863cd89ec32ea621a60cc9062d1"
+    },
+    {
+      "id": "policy-dispatch-spent-b",
+      "family": "policy-boundary",
+      "pair": "policy-dispatch-spent",
+      "pairRole": "b",
+      "inputSha256": "d5f2b94ee49aaa572afd77ffcbe39692067310a51254d056424201abc58f8574"
+    },
+    {
+      "id": "policy-publish-reader-a",
+      "family": "policy-boundary",
+      "pair": "policy-publish-reader",
+      "pairRole": "a",
+      "inputSha256": "fd3f0623bd51dc517761d5bf3f4c71223fe6609deee62915a7b78103d8f8ae0b"
+    },
+    {
+      "id": "policy-publish-reader-b",
+      "family": "policy-boundary",
+      "pair": "policy-publish-reader",
+      "pairRole": "b",
+      "inputSha256": "0b2c628bbfd8a280668d0a8a694df098138b027848f7d5cc93bba0a924974d94"
+    },
+    {
+      "id": "grounded-zero-a",
+      "family": "grounded-boundary",
+      "pair": "grounded-zero",
+      "pairRole": "a",
+      "inputSha256": "8043d4b36e1cefd5487e00eb19a4cac0507e81690fc342ce1735157353f2cacf"
+    },
+    {
+      "id": "grounded-zero-b",
+      "family": "grounded-boundary",
+      "pair": "grounded-zero",
+      "pairRole": "b",
+      "inputSha256": "dda12a4b6d79b4c5d65326e364a5bd858ecae0e522258e52a21cb63ac1a4f293"
+    },
+    {
+      "id": "grounded-false-a",
+      "family": "grounded-boundary",
+      "pair": "grounded-false",
+      "pairRole": "a",
+      "inputSha256": "3bf41d2b567c851a1fe1fbcd5bc0c23b32e5fe9d84ba026ce7eccd59f5e788c9"
+    },
+    {
+      "id": "grounded-false-b",
+      "family": "grounded-boundary",
+      "pair": "grounded-false",
+      "pairRole": "b",
+      "inputSha256": "3093e09ff650bdec35407aa6e32544ec60f1c3311e11daface33d51a36a9e52c"
+    },
+    {
+      "id": "grounded-empty-a",
+      "family": "grounded-boundary",
+      "pair": "grounded-empty",
+      "pairRole": "a",
+      "inputSha256": "df056e6633df24269f7cd2a9824efe90db0ef58a3007e43cecca3e2dea8820c8"
+    },
+    {
+      "id": "grounded-empty-b",
+      "family": "grounded-boundary",
+      "pair": "grounded-empty",
+      "pairRole": "b",
+      "inputSha256": "50110a482f2107ebf97f7d109b719c605bf89ceabd6892b1b302b0f640034794"
+    },
+    {
+      "id": "grounded-string-number-a",
+      "family": "grounded-boundary",
+      "pair": "grounded-string-number",
+      "pairRole": "a",
+      "inputSha256": "55acabe1dbdc4b3e5f378e74e4c2f26da02fb00be3d13b8f9f1e531409d25b7b"
+    },
+    {
+      "id": "grounded-string-number-b",
+      "family": "grounded-boundary",
+      "pair": "grounded-string-number",
+      "pairRole": "b",
+      "inputSha256": "11afe3f041301ce31a979e726fb1d87a3c4f42a7375b63e7ee57a169aeab84ad"
+    },
+    {
+      "id": "grounded-null-a",
+      "family": "grounded-boundary",
+      "pair": "grounded-null",
+      "pairRole": "a",
+      "inputSha256": "9ec7d7a0370fd17ee92cdb7b9723203baa36f6565b132a69159048f46549dcc4"
+    },
+    {
+      "id": "grounded-null-b",
+      "family": "grounded-boundary",
+      "pair": "grounded-null",
+      "pairRole": "b",
+      "inputSha256": "700fd0cfc592c6b8947d387cd147ad20793a7fe7a32e8388b571f199dc47f99e"
+    },
+    {
+      "id": "grounded-integer-conflict-a",
+      "family": "grounded-boundary",
+      "pair": "grounded-integer-conflict",
+      "pairRole": "a",
+      "inputSha256": "8a2119e8acd91fe1d4b8478001102e8deaf191d6b248a9236ab1fc82f2d972dc"
+    },
+    {
+      "id": "grounded-integer-conflict-b",
+      "family": "grounded-boundary",
+      "pair": "grounded-integer-conflict",
+      "pairRole": "b",
+      "inputSha256": "d0be52a0f0772f4e25ab0ec3c82bf1acb717033558358f0c8da8cbd510d68949"
+    },
+    {
+      "id": "grounded-string-conflict-a",
+      "family": "grounded-boundary",
+      "pair": "grounded-string-conflict",
+      "pairRole": "a",
+      "inputSha256": "3b222f0637a8e58ff4b618fad8a766f81f78f6b715e4226d75c1da25f90f6ba9"
+    },
+    {
+      "id": "grounded-string-conflict-b",
+      "family": "grounded-boundary",
+      "pair": "grounded-string-conflict",
+      "pairRole": "b",
+      "inputSha256": "022461ccf59c84c2eb9428dcf438c1c54a69ad1a5bffc2f6b90d8229b8bcf339"
+    },
+    {
+      "id": "grounded-matching-record-a",
+      "family": "grounded-boundary",
+      "pair": "grounded-matching-record",
+      "pairRole": "a",
+      "inputSha256": "e9d525f099c1a9c7a425dc3fbadad3ad768e6cd0a4e104d417a8ec94a4b0b0a5"
+    },
+    {
+      "id": "grounded-matching-record-b",
+      "family": "grounded-boundary",
+      "pair": "grounded-matching-record",
+      "pairRole": "b",
+      "inputSha256": "fe19ef65a184d43ce62734ee801b76d03bfefa445eda17bbafcbf034b7bdc15b"
+    }
+  ],
+  "rows": [
+    {
+      "model": "smol135-q4",
+      "decoder": "unconstrained",
+      "configuration": "short24",
+      "family": "typed-boundary",
+      "planned": 16,
+      "plannedPairs": 8,
+      "minCorrect": 0,
+      "minFormatValid": 0,
+      "minSchemaValid": 0,
+      "minFullyCorrectPairs": 0
+    },
+    {
+      "model": "smol135-q4",
+      "decoder": "unconstrained",
+      "configuration": "short24",
+      "family": "policy-boundary",
+      "planned": 16,
+      "plannedPairs": 8,
+      "minCorrect": 0,
+      "minFormatValid": 0,
+      "minSchemaValid": 0,
+      "minFullyCorrectPairs": 0
+    },
+    {
+      "model": "smol135-q4",
+      "decoder": "unconstrained",
+      "configuration": "short24",
+      "family": "grounded-boundary",
+      "planned": 16,
+      "plannedPairs": 8,
+      "minCorrect": 0,
+      "minFormatValid": 0,
+      "minSchemaValid": 0,
+      "minFullyCorrectPairs": 0
+    },
+    {
+      "model": "smol135-q4",
+      "decoder": "schema",
+      "configuration": "short24",
+      "family": "typed-boundary",
+      "planned": 16,
+      "plannedPairs": 8,
+      "minCorrect": 8,
+      "minFormatValid": 16,
+      "minSchemaValid": 16,
+      "minFullyCorrectPairs": 4
+    },
+    {
+      "model": "smol135-q4",
+      "decoder": "schema",
+      "configuration": "short24",
+      "family": "policy-boundary",
+      "planned": 16,
+      "plannedPairs": 8,
+      "minCorrect": 8,
+      "minFormatValid": 16,
+      "minSchemaValid": 16,
+      "minFullyCorrectPairs": 4
+    },
+    {
+      "model": "smol135-q4",
+      "decoder": "schema",
+      "configuration": "short24",
+      "family": "grounded-boundary",
+      "planned": 16,
+      "plannedPairs": 8,
+      "minCorrect": 8,
+      "minFormatValid": 16,
+      "minSchemaValid": 16,
+      "minFullyCorrectPairs": 4
+    },
+    {
+      "model": "smol135-q4",
+      "decoder": "unconstrained",
+      "configuration": "long96",
+      "family": "typed-boundary",
+      "planned": 16,
+      "plannedPairs": 8,
+      "minCorrect": 0,
+      "minFormatValid": 0,
+      "minSchemaValid": 0,
+      "minFullyCorrectPairs": 0
+    },
+    {
+      "model": "smol135-q4",
+      "decoder": "unconstrained",
+      "configuration": "long96",
+      "family": "policy-boundary",
+      "planned": 16,
+      "plannedPairs": 8,
+      "minCorrect": 0,
+      "minFormatValid": 0,
+      "minSchemaValid": 0,
+      "minFullyCorrectPairs": 0
+    },
+    {
+      "model": "smol135-q4",
+      "decoder": "unconstrained",
+      "configuration": "long96",
+      "family": "grounded-boundary",
+      "planned": 16,
+      "plannedPairs": 8,
+      "minCorrect": 0,
+      "minFormatValid": 0,
+      "minSchemaValid": 0,
+      "minFullyCorrectPairs": 0
+    },
+    {
+      "model": "smol135-q4",
+      "decoder": "schema",
+      "configuration": "long96",
+      "family": "typed-boundary",
+      "planned": 16,
+      "plannedPairs": 8,
+      "minCorrect": 8,
+      "minFormatValid": 16,
+      "minSchemaValid": 16,
+      "minFullyCorrectPairs": 4
+    },
+    {
+      "model": "smol135-q4",
+      "decoder": "schema",
+      "configuration": "long96",
+      "family": "policy-boundary",
+      "planned": 16,
+      "plannedPairs": 8,
+      "minCorrect": 8,
+      "minFormatValid": 16,
+      "minSchemaValid": 16,
+      "minFullyCorrectPairs": 4
+    },
+    {
+      "model": "smol135-q4",
+      "decoder": "schema",
+      "configuration": "long96",
+      "family": "grounded-boundary",
+      "planned": 16,
+      "plannedPairs": 8,
+      "minCorrect": 8,
+      "minFormatValid": 16,
+      "minSchemaValid": 16,
+      "minFullyCorrectPairs": 4
+    },
+    {
+      "model": "smol360-q4",
+      "decoder": "unconstrained",
+      "configuration": "short24",
+      "family": "typed-boundary",
+      "planned": 16,
+      "plannedPairs": 8,
+      "minCorrect": 0,
+      "minFormatValid": 0,
+      "minSchemaValid": 0,
+      "minFullyCorrectPairs": 0
+    },
+    {
+      "model": "smol360-q4",
+      "decoder": "unconstrained",
+      "configuration": "short24",
+      "family": "policy-boundary",
+      "planned": 16,
+      "plannedPairs": 8,
+      "minCorrect": 0,
+      "minFormatValid": 0,
+      "minSchemaValid": 0,
+      "minFullyCorrectPairs": 0
+    },
+    {
+      "model": "smol360-q4",
+      "decoder": "unconstrained",
+      "configuration": "short24",
+      "family": "grounded-boundary",
+      "planned": 16,
+      "plannedPairs": 8,
+      "minCorrect": 0,
+      "minFormatValid": 0,
+      "minSchemaValid": 0,
+      "minFullyCorrectPairs": 0
+    },
+    {
+      "model": "smol360-q4",
+      "decoder": "schema",
+      "configuration": "short24",
+      "family": "typed-boundary",
+      "planned": 16,
+      "plannedPairs": 8,
+      "minCorrect": 8,
+      "minFormatValid": 16,
+      "minSchemaValid": 16,
+      "minFullyCorrectPairs": 4
+    },
+    {
+      "model": "smol360-q4",
+      "decoder": "schema",
+      "configuration": "short24",
+      "family": "policy-boundary",
+      "planned": 16,
+      "plannedPairs": 8,
+      "minCorrect": 8,
+      "minFormatValid": 16,
+      "minSchemaValid": 16,
+      "minFullyCorrectPairs": 4
+    },
+    {
+      "model": "smol360-q4",
+      "decoder": "schema",
+      "configuration": "short24",
+      "family": "grounded-boundary",
+      "planned": 16,
+      "plannedPairs": 8,
+      "minCorrect": 8,
+      "minFormatValid": 16,
+      "minSchemaValid": 16,
+      "minFullyCorrectPairs": 4
+    },
+    {
+      "model": "smol360-q4",
+      "decoder": "unconstrained",
+      "configuration": "long96",
+      "family": "typed-boundary",
+      "planned": 16,
+      "plannedPairs": 8,
+      "minCorrect": 0,
+      "minFormatValid": 0,
+      "minSchemaValid": 0,
+      "minFullyCorrectPairs": 0
+    },
+    {
+      "model": "smol360-q4",
+      "decoder": "unconstrained",
+      "configuration": "long96",
+      "family": "policy-boundary",
+      "planned": 16,
+      "plannedPairs": 8,
+      "minCorrect": 0,
+      "minFormatValid": 0,
+      "minSchemaValid": 0,
+      "minFullyCorrectPairs": 0
+    },
+    {
+      "model": "smol360-q4",
+      "decoder": "unconstrained",
+      "configuration": "long96",
+      "family": "grounded-boundary",
+      "planned": 16,
+      "plannedPairs": 8,
+      "minCorrect": 0,
+      "minFormatValid": 0,
+      "minSchemaValid": 0,
+      "minFullyCorrectPairs": 0
+    },
+    {
+      "model": "smol360-q4",
+      "decoder": "schema",
+      "configuration": "long96",
+      "family": "typed-boundary",
+      "planned": 16,
+      "plannedPairs": 8,
+      "minCorrect": 8,
+      "minFormatValid": 16,
+      "minSchemaValid": 16,
+      "minFullyCorrectPairs": 4
+    },
+    {
+      "model": "smol360-q4",
+      "decoder": "schema",
+      "configuration": "long96",
+      "family": "policy-boundary",
+      "planned": 16,
+      "plannedPairs": 8,
+      "minCorrect": 8,
+      "minFormatValid": 16,
+      "minSchemaValid": 16,
+      "minFullyCorrectPairs": 4
+    },
+    {
+      "model": "smol360-q4",
+      "decoder": "schema",
+      "configuration": "long96",
+      "family": "grounded-boundary",
+      "planned": 16,
+      "plannedPairs": 8,
+      "minCorrect": 8,
+      "minFormatValid": 16,
+      "minSchemaValid": 16,
+      "minFullyCorrectPairs": 4
+    }
+  ],
+  "limits": {
+    "elapsedNs": 600000000000,
+    "promptTokens": 196608,
+    "completionTokens": 23040,
+    "returnedCallProcessCpuNs": 600000000000,
+    "totalProcessCpuNs": 600000000000,
+    "processLifetimePeakRssKiB": 1048576,
+    "preparationPayloadBytes": 536870912
+  }
+}

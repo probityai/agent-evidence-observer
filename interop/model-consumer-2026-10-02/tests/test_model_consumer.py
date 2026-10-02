@@ -242,16 +242,30 @@ def fake_command(tmp_path, monkeypatch, script):
     monkeypatch.setenv("PATH", str(command.parent) + os.pathsep + os.environ["PATH"])
 
 
-def test_actual_timeout_is_retained(selected, tmp_path, monkeypatch):
+@pytest.mark.parametrize("timeout", [0.001, 0.05])
+def test_actual_timeout_is_retained(selected, tmp_path, monkeypatch, timeout):
     fake_command(
         tmp_path,
         monkeypatch,
         'import time; print("started", flush=True); time.sleep(5)',
     )
-    result = invoke(selected, tmp_path, timeout=0.05)
+    result = invoke(selected, tmp_path, timeout=timeout)
     assert result["child"]["timedOut"]
+    assert result["child"]["returncode"] is None
     assert result["launched"]
-    assert (tmp_path / "receipts" / "reader.stdout").read_text() == "started\n"
+    assert result["evidenceDecision"] == "not-verified"
+    assert result["publicationDecision"] == "hold"
+    assert result["reason"] == "installed reader timed out or refused selected evidence"
+    # The deadline includes Python startup. A killed child can legitimately
+    # produce no output; every byte it does produce must remain authenticated.
+    stdout = (tmp_path / "receipts" / "reader.stdout").read_bytes()
+    assert stdout in (b"", b"started\n")
+    for name in ("reader.stdout", "reader.stderr"):
+        raw = (tmp_path / "receipts" / name).read_bytes()
+        assert result["child"]["streams"][name] == {
+            "bytes": len(raw),
+            "sha256": sha(raw),
+        }
     assert (tmp_path / "receipts" / "launch.json").exists()
 
 

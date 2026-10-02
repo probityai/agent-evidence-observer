@@ -6,7 +6,7 @@ policy decides whether its verified report meets the host's selected quality and
 resource limits. All eight family/cap rows stay separate. Model comparison rows
 also include their model identity; no score pooling is permitted.
 
-Build `probity-model-task-reader` 0.0.3 from the exact reviewed source contract,
+Build `probity-model-task-reader` 0.0.4 from the exact reviewed source contract,
 then normally install its wheel into a clean environment:
 
 ```sh
@@ -130,3 +130,51 @@ members byte-exact; provenance binds the authenticated provider artifact. Pins
 copied from that artifact are explicit same-team examples, held outside the
 producer packet before reader launch. No new inference is performed in this
 consumer replay; capability and installation do not establish external adoption.
+
+## Normal boundary-task reader upgrade
+
+Version 0.0.4 adds only the independently selected
+`probity-local-cpu-boundary-tasks-v1` reader. The native reader source is the exact
+52a6000f source used for original run37060702246. It reads all871 compact-original
+artifact members without model weights, inference libraries or producer code
+imports. `boundary-fixture-provenance.json` binds the original provider ZIP,
+every member and the report. The existing retained ZIP is reused without
+recompacting it. Its complete preparation original and explicit omission map
+remain separately retained; this consumer does not repeat inference.
+
+The v3 host policy explicitly preserves384 attempts,24 separate
+model/decoder/cap/family rows,48 authored case identities,46 unique literal inputs
+and8 pairs in each family. Two repeated positive literal inputs remain separate
+authored cases. Every case's ID, input digest, family, pair and role is selected
+outside the packet and checked against authenticated protocol bytes before
+launch. The gate reconstructs all per-row semantic/schema/format counts,
+fully correct two-role pairs, native token and resource subtotals from the
+complete returned attempt population. Missing or duplicate calls/rows, swapped
+roles, unsupported outcomes and changed source/protocol/grammar bytes refuse.
+No quality score is pooled across models, decoders, caps or families.
+
+Evidence publication remains distinct from quality. The illustrative evidence
+policy has explicit zero quality minima. The illustrative quality policy selects
+16/16 schema-valid outputs,8/16 typed-exact cases and4/8 fully correct pairs for
+each schema row. Both models' typed rows pass; all eight policy/grounded rows
+retain separate semantic and paired failures,16 failures total. All192 schema
+outputs remain schema-valid while no policy or grounded pair is fully correct.
+These same-team example host policies were selected after inference and frozen
+before consumer replay. They are not model-success preregistrations, accepted
+outside selections or deployment criteria.
+
+Seven host resource bounds retain whole-run CPU separately from returned-call
+CPU, lifetime shared RSS separately from task memory, and472,221,945 selected
+preparation response-body bytes separately from runtime. The source protocol
+enforces its own declared preparation/build/run budgets. The provenance also
+preserves all five separately budgeted preparations,2,167,006,362 cumulative
+response-body bytes. An offline replay does not reset that cumulative cost.
+
+`run_boundary_upgrade_example.py NEW_DIRECTORY --baseline-python BASELINE_PYTHON
+--candidate-python CANDIDATE_PYTHON` retains normally installed0.0.3/0.0.4
+versions, framework absence, baseline source/policy refusal, exact48/96/192 CLI
+report bytes, all384 original results, the separate quality decision and a
+native mutation refusal. The existing v1/v2 policies and three earlier reader
+source modules remain byte-exact. The owned workflow retains wheels and raw
+command receipts; no outside maintained revision/job/pin, producer acceptance,
+real protected effect or independent custody is established.
