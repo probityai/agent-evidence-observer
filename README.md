@@ -153,3 +153,5 @@ Apache License 2.0; see `LICENSE`.
 Run the bounded native examples across all five tiers with `python examples/five_tier_demo.py ./five-tier-run`. The [native launch guide](docs/FIVE-TIER-NATIVE-RUN.md) gives installation commands, retained launch/attempt scopes and failure controls.
 
 The [native Inspect authority/effect join](docs/INSPECT-AUTHORITY-EFFECT.md) connects real ReAct tool calls to selected unsigned AAE decisions, signed local grants and actual HTTP ticket effects. Its offline reader keeps task scores, denial, pending effects and native errors separate across the full declared population.
+
+The [local CPU model profile](interop/local-model-2026-10-02/README.md) runs twelve frozen smoke questions through native Inspect to actual SmolLM2-135M-Instruct weights, with original outputs, tokens, resource scopes and an offline reader. Its strict single-letter rubric scored 0/12 in the recorded local run; retained-attempt completeness and answer quality stay separate. Actual model execution is an explicitly triggered workflow, while ordinary PR CI checks the reader's refusal contract.
