@@ -20,7 +20,7 @@ checks frozen attempts, honest retries and retained outcome mappings across reas
 tools, agents, workloads and A2A. Its demonstration is synthetic accounting;
 native benchmark runs and independent operation remain separate gates.
 
-The [AAE enforcement adapter](docs/AAE-ENFORCEMENT.md) recomputes pinned enforce-core fixtures and links a consumer-pinned local write decision to an observer record.
+The [AAE enforcement adapter](docs/AAE-ENFORCEMENT.md) recomputes pinned enforce-core fixtures and links a consumer-pinned local write decision to an observer record. The [protected AAE dispatch path](docs/AAE-PROTECTED-DISPATCH.md) now commits that decision before the local effect and verifies it against the retained grant and native history.
 
 The [Protected Action Kit](docs/PROTECTED-ACTION-KIT.md) checks a signed grant before the broker writes a file. The grant binds principal and tenant labels, tool, target, content and validity window. The [reference example](examples/protected_action_demo.py) verifies its link to the recorded write before consumer admission.
 

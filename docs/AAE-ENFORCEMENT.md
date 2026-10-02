@@ -19,3 +19,10 @@ pytest -q tests/test_aae_enforce.py tests/test_aae_binding.py
 ```
 
 Keep the fixture manifest, raw fixture bytes, replay report, consumer pins, core record, observer packet, signed link and exact code revision together when sharing a result. A successful replay says what the retained inputs establish; it does not confer authority on an unsigned issuer.
+
+## Protected dispatch join
+
+The [protected AAE dispatch profile](AAE-PROTECTED-DISPATCH.md) joins the exact
+unsigned kernel decision to the pre-effect protected authorization journal,
+completed native history and restart replay. The original post-effect link
+above remains available and does not by itself establish this prior relation.
