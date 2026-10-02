@@ -1,6 +1,7 @@
 """Synthetic byte contracts; these fixtures do not claim model execution."""
 
 import json
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -52,11 +53,14 @@ def fixture(root, *, preflight_failure=False):
         ),
     )
     if not preflight_failure:
-        for ident, cfg, case in population(p):
+        for index, (ident, cfg, case) in enumerate(population(p)):
             start = dict(
                 id=ident,
                 request=request(p, cfg, case),
-                startedAt="2026-10-02T00:00:01+00:00",
+                startedAt=(
+                    datetime(2026, 10, 2, tzinfo=timezone.utc)
+                    + timedelta(seconds=1, milliseconds=index * 2)
+                ).isoformat(),
                 promptTokensPreflight=100,
             )
             write(root / f"calls/{ident}-started.json", start)
@@ -68,10 +72,15 @@ def fixture(root, *, preflight_failure=False):
                 root / f"calls/{ident}-returned.json",
                 dict(
                     **start,
-                    finishedAt="2026-10-02T00:00:02+00:00",
+                    finishedAt=(
+                        datetime(2026, 10, 2, tzinfo=timezone.utc)
+                        + timedelta(seconds=1, milliseconds=index * 2 + 1)
+                    ).isoformat(),
                     response=response,
                     measurement=dict(
-                        elapsed_ns=5, process_cpu_ns=3, process_maxrss_kib=1000
+                        elapsed_ns=500_000,
+                        process_cpu_ns=300_000,
+                        process_maxrss_kib=1000,
                     ),
                 ),
             )
@@ -244,3 +253,47 @@ def test_late_completion_is_retained_but_held(tmp_path):
     assert report["population"]["scored"] == 48
     assert report["evidence"]["withinRunBudget"] is False
     assert report["publicationDecision"].startswith("hold")
+
+
+def test_serial_calls_cannot_overlap(tmp_path):
+    fixture(tmp_path)
+    change(
+        tmp_path,
+        "calls/short24--extract-owner-returned.json",
+        lambda v: v.update(finishedAt="2026-10-02T00:00:01.010000+00:00"),
+    )
+    with pytest.raises(ValueError, match="order/timeline"):
+        verify(tmp_path, repin(tmp_path))
+
+
+def test_serial_measurements_fit_run_envelope(tmp_path):
+    fixture(tmp_path)
+    change(tmp_path, "terminal.json", lambda v: v.update(elapsed_ns=0))
+    with pytest.raises(ValueError, match="summed serial"):
+        verify(tmp_path, repin(tmp_path))
+
+
+def test_native_error_retains_denominator_and_original_binding(tmp_path):
+    fixture(tmp_path)
+    name = "calls/short24--extract-owner"
+    start = json.loads((tmp_path / (name + "-started.json")).read_bytes())
+    (tmp_path / (name + "-returned.json")).unlink()
+    write(
+        tmp_path / (name + "-error.json"),
+        dict(
+            **start,
+            finishedAt="2026-10-02T00:00:01.001000+00:00",
+            error=dict(type="RuntimeError", message="native test failure"),
+        ),
+    )
+    change(tmp_path, "terminal.json", lambda v: v.update(status="error"))
+    report = verify(tmp_path, repin(tmp_path))
+    assert report["population"]["planned"] == 48
+    assert report["population"]["error"] == 1
+    assert report["population"]["scored"] == 47
+    assert report["publicationDecision"].startswith("hold")
+    change(
+        tmp_path, name + "-error.json", lambda v: v["request"].update(prompt="changed")
+    )
+    with pytest.raises(ValueError, match="error differs"):
+        verify(tmp_path, repin(tmp_path))

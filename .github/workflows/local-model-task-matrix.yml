@@ -28,6 +28,8 @@ jobs:
       - name: Execute all 48 frozen attempts within the original ten-minute envelope
         run: |
           timeout --signal=TERM --kill-after=5s 595s python interop/local-model-tasks-2026-10-02/task_matrix.py local-model-artifacts/run --protocol-commit 5cfd69b8315a2e4cd8dacbbf5de40db71ce8658c --weights local-model-artifacts/model.gguf --provenance local-model-artifacts/provenance.json > local-model-artifacts/run-stdout.json 2> local-model-artifacts/run-stderr.txt
+      - name: Print the produced artifact selections for later independent readers
+        run: cat local-model-artifacts/run/consumer-pins.json
       - name: Recompute from selected retained bytes in a separate reader invocation
         run: python interop/local-model-tasks-2026-10-02/task_matrix.py local-model-artifacts/run --verify --pins-file local-model-artifacts/run/consumer-pins.json > local-model-artifacts/reader.json
       - name: Print the retained population, quality and resource receipt
@@ -44,4 +46,11 @@ jobs:
           name: operational-local-cpu-matrix-${{ github.sha }}
           path: local-model-artifacts
           if-no-files-found: error
+          retention-days: 90
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: operational-local-cpu-native-packet-${{ github.sha }}
+          path: local-model-artifacts/run
+          if-no-files-found: warn
           retention-days: 90

@@ -186,6 +186,8 @@ def verify(root, pins):
         raise ValueError("invalid terminal state")
     attempts, totals, expected_calls = [], dict(prompt=0, completion=0), set()
     last_start = timestamp(d["declaredAt"])
+    previous_finished = last_start
+    measured_call_ns = 0
     for ident, cfg, case in population(p):
         start_name, return_name, error_name = [
             f"calls/{ident}-{suffix}.json"
@@ -215,7 +217,7 @@ def verify(root, pins):
                     "start outside declared population/prompt/configuration"
                 )
             if (
-                not last_start
+                not max(last_start, previous_finished)
                 <= timestamp(start["startedAt"])
                 <= timestamp(terminal["finishedAt"])
             ):
@@ -228,14 +230,14 @@ def verify(root, pins):
                 expected_calls.add(error_name)
                 error = strict_json(selected(root, error_name))
                 if (
-                    error.get("id") != ident
-                    or error.get("startedAt") != start["startedAt"]
+                    any(not exact(error.get(k), v) for k, v in start.items())
                     or not timestamp(start["startedAt"])
                     <= timestamp(error["finishedAt"])
                     <= timestamp(terminal["finishedAt"])
                     or not isinstance(error.get("error"), dict)
                 ):
                     raise ValueError("error differs from retained start")
+                previous_finished = timestamp(error["finishedAt"])
                 row.update(outcome="error", error=error["error"])
             if return_name in manifest:
                 expected_calls.add(return_name)
@@ -278,11 +280,15 @@ def verify(root, pins):
                     resources=resources,
                     **score(text, case["target"]),
                 )
+                previous_finished = timestamp(returned["finishedAt"])
+                measured_call_ns += resources["elapsed_ns"]
                 totals["prompt"] += usage["prompt_tokens"]
                 totals["completion"] += usage["completion_tokens"]
         attempts.append(row)
     if {name for name in manifest if name.startswith("calls/")} != expected_calls:
         raise ValueError("extra/orphan attempt record")
+    if measured_call_ns > terminal["elapsed_ns"]:
+        raise ValueError("summed serial call time exceeds total run time")
     complete = terminal["status"] == "complete" and all(
         x["outcome"] == "scored" for x in attempts
     )
