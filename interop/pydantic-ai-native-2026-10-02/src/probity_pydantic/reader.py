@@ -19,14 +19,16 @@ from probity_observer.ticket_service import (
 )
 
 from .contract import (
-    CASES,
+    COMMITTED_ERROR,
     CONTENT,
     ERROR,
+    EXHAUSTED_ERROR,
     LOGGER,
     PROFILE,
     PROMPT,
     RETRY,
     VERSION,
+    cases_for,
     decode,
     encode,
     expected_outcome,
@@ -117,24 +119,27 @@ def selected_packet(
         == VERSION,
         "retained framework version differs",
     )
+    plan = values["plan-before-run.json"]
+    cases = cases_for(plan["profile"])
     manifest = values["artifact-manifest.json"]
     actual = {path.name for path in (output / "artifacts").iterdir() if path.is_file()}
     expected = {
         case + suffix
-        for case in CASES
+        for case in cases
         for suffix in ("-messages.json", "-execution.json")
     }
     expected |= {
         case + "-0-http.json" for case in ("permit", "deny", "changed-arguments")
     }
     expected.add("retry-1-http.json")
+    if plan["profile"] == PROFILE:
+        expected.add("committed-effect-error-0-http.json")
     require(set(manifest) == actual == expected, "artifact population differs")
     artifacts = {name: read(output / "artifacts", name) for name in expected}
     require(
         all(sha(raw) == manifest[name] for name, raw in artifacts.items()),
         "artifact bytes differ",
     )
-    plan = values["plan-before-run.json"]
     require(
         plan["sourceManifestSha256"] == selected["sourceManifestSha256"],
         "plan source binding differs",
@@ -145,7 +150,7 @@ def selected_packet(
 def check_plan(plan: dict[str, Any], reference: datetime) -> None:
     """Refuse changed profile, scripts, invocation identities or model claims."""
     expected = {
-        "profile": PROFILE,
+        "profile": plan["profile"],
         "frameworkVersion": VERSION,
         "model": "FunctionModel scripted local function",
         "modelQuality": "not-evaluated",
@@ -156,7 +161,7 @@ def check_plan(plan: dict[str, Any], reference: datetime) -> None:
         {name: plan[name] for name in expected}, expected, "frozen plan profile differs"
     )
     require(
-        [entry["id"] for entry in plan["cases"]] == list(CASES),
+        [entry["id"] for entry in plan["cases"]] == list(cases_for(plan["profile"])),
         "frozen case population differs",
     )
     start = datetime.fromisoformat(plan["selectedTime"])
@@ -494,66 +499,150 @@ def check_return(
     return readback
 
 
+def retry_trace(trace: dict[str, Any], identity: str) -> None:
+    """Authenticate a retry attempt even when exhaustion prevents a native prompt."""
+    same(
+        trace,
+        {
+            "id": identity,
+            "arguments": {"content": CONTENT},
+            "outcome": "retry",
+            "reason": RETRY,
+        },
+        "retry dispatch trace differs",
+    )
+
+
+def check_failed_effect(
+    record: dict[str, Any],
+    entry: dict[str, Any],
+    artifacts: dict[str, bytes],
+    reference: datetime,
+) -> dict[str, Any]:
+    """Verify a committed effect whose native tool never returned successfully."""
+    identity = entry["id"] + "-0"
+    filename = identity + "-http.json"
+    result, readback = http_effect(entry, artifacts[filename], CONTENT, reference)
+    same(
+        record,
+        {
+            "id": identity,
+            "arguments": {"content": CONTENT},
+            "outcome": "committed-error",
+            "artifact": filename,
+            "result": result,
+            "reason": COMMITTED_ERROR,
+        },
+        "committed error trace differs",
+    )
+    return readback
+
+
+def check_attempt(
+    index: int,
+    record: dict[str, Any],
+    parts: list[dict[str, Any]],
+    entry: dict[str, Any],
+    artifacts: dict[str, bytes],
+    reference: datetime,
+) -> dict[str, Any] | None:
+    """Select only the frozen outcome, retaining missing native returns on failure."""
+    case = entry["id"]
+    require(
+        record["outcome"] == expected_outcome(case, index),
+        "frozen dispatch outcome differs",
+    )
+    check_call(parts[2 * index], entry, index)
+    if record["outcome"] == "error":
+        same(
+            record,
+            {
+                "id": "producer-error-0",
+                "arguments": {"content": CONTENT},
+                "outcome": "error",
+                "reason": ERROR,
+            },
+            "producer error trace differs",
+        )
+    elif record["outcome"] == "committed-error":
+        return check_failed_effect(record, entry, artifacts, reference)
+    elif record["outcome"] == "retry":
+        retry_trace(record, f"{case}-{index}")
+        if not (case == "retry-exhausted" and index == 1):
+            check_retry(parts[2 * index + 1], record, f"{case}-{index}")
+    else:
+        return check_return(
+            parts[2 * index + 1], record, entry, index, artifacts, reference
+        )
+    return None
+
+
+def check_terminal(
+    case: str, terminal: dict[str, Any], parts: list[dict[str, Any]]
+) -> None:
+    """Keep exhausted retries and post-commit failures distinct from completion."""
+    errors = {
+        "producer-error": ("RuntimeError", ERROR, "producer error terminal differs"),
+        "retry-exhausted": (
+            "UnexpectedModelBehavior",
+            EXHAUSTED_ERROR,
+            "retry exhaustion terminal differs",
+        ),
+        "committed-effect-error": (
+            "RuntimeError",
+            COMMITTED_ERROR,
+            "committed error terminal differs",
+        ),
+    }
+    if case in errors:
+        kind, message, reason = errors[case]
+        same(
+            terminal,
+            {
+                "status": "error",
+                "output": None,
+                "exception": {"type": kind, "message": message},
+            },
+            reason,
+        )
+        return
+    same(
+        terminal,
+        {"status": "complete", "output": "complete", "exception": None},
+        "native completion differs",
+    )
+    require(
+        parts[-1]["part_kind"] == "text" and parts[-1]["content"] == "complete",
+        "native final output differs",
+    )
+
+
 def verify_case(
     entry: dict[str, Any],
     artifacts: dict[str, bytes],
     plan: dict[str, Any],
     reference: datetime,
 ) -> dict[str, Any]:
-    """Recompute one declared native transcript and retain errors as errors."""
+    """Recompute execution status separately from verified retained effects."""
     case = entry["id"]
     parts = native_parts(artifacts[case + "-messages.json"], plan, reference)
     execution = decode(artifacts[case + "-execution.json"])
+    require(
+        set(execution) == {"trace", "terminal", "finalReadbackHex"},
+        "execution fields differ",
+    )
     trace = execution["trace"]
     require(len(trace) == len(entry["script"]), "native dispatch population differs")
-    expected_count = 1 if case == "producer-error" else 2 * len(trace) + 1
+    failed = case in {"producer-error", "retry-exhausted", "committed-effect-error"}
+    expected_count = 2 * len(trace) + (-1 if failed else 1)
     require(len(parts) == expected_count, "native transcript population differs")
     final_readback = entry["initial"]
     for index, record in enumerate(trace):
-        require(
-            record["outcome"] == expected_outcome(case, index),
-            "frozen dispatch outcome differs",
-        )
-        check_call(parts[2 * index], entry, index)
-        if record["outcome"] == "error":
-            same(
-                record,
-                {
-                    "id": "producer-error-0",
-                    "arguments": {"content": CONTENT},
-                    "outcome": "error",
-                    "reason": ERROR,
-                },
-                "producer error trace differs",
-            )
-        elif record["outcome"] == "retry":
-            require(case == "retry" and index == 0, "unexpected retry")
-            check_retry(parts[2 * index + 1], record, f"{case}-{index}")
-        else:
-            final_readback = check_return(
-                parts[2 * index + 1], record, entry, index, artifacts, reference
-            )
+        result = check_attempt(index, record, parts, entry, artifacts, reference)
+        if result is not None:
+            final_readback = result
     terminal = execution["terminal"]
-    if case == "producer-error":
-        same(
-            terminal,
-            {
-                "status": "error",
-                "output": None,
-                "exception": {"type": "RuntimeError", "message": ERROR},
-            },
-            "producer error terminal differs",
-        )
-    else:
-        same(
-            terminal,
-            {"status": "complete", "output": "complete", "exception": None},
-            "native completion differs",
-        )
-        require(
-            parts[-1]["part_kind"] == "text" and parts[-1]["content"] == "complete",
-            "native final output differs",
-        )
+    check_terminal(case, terminal, parts)
     same(
         decode(bytes.fromhex(execution["finalReadbackHex"])),
         final_readback,
@@ -570,7 +659,7 @@ def verify_case(
         "effectOutcome": outcome,
         "nativeRevision": final_readback["revision"],
         "toolAttempts": len(trace),
-        "retries": int(case == "retry"),
+        "retries": sum(record["outcome"] == "retry" for record in trace),
         "taskQuality": "not-evaluated",
     }
 
@@ -614,9 +703,9 @@ def verify_saved(output: Path, selected: dict[str, Any]) -> dict[str, Any]:
         require(False, "malformed bounded packet")
         raise AssertionError("unreachable") from error
     return {
-        "profile": PROFILE,
+        "profile": plan["profile"],
         "status": "verified",
-        "plannedAttempts": 5,
+        "plannedAttempts": len(cases_for(plan["profile"])),
         "records": records,
         "providerCalls": "none-scripted-FunctionModel",
         "tokenAccounting": "FunctionModel estimates-not-measured-inference",

@@ -1,0 +1,198 @@
+{
+  "controls": {
+    "hypothesis_examples": 40,
+    "native_pytest": 55,
+    "new_installed_semantic_refusals": 6,
+    "original_installed_archive_controls": 14,
+    "root_readme": "passes; 12 lint tests",
+    "ruff": "E,F,I,C901 max-complexity=5 passes"
+  },
+  "cryptography": "46.0.7",
+  "dedicated_reader_build": {
+    "build_packages": {
+      "setuptools": "84.0.0",
+      "wheel": "0.48.0"
+    },
+    "python": "3.13.15",
+    "schema_version": "probity.framework-reader-build.v1",
+    "scope": "locally built source-selected reader candidates; no native replay or host adoption inferred",
+    "source_contract_sha256": "736709d2d1b935c738110995a7b505e1a3cf2c3e99c8c52ac2fa0098ef546b3e",
+    "wheels": {
+      "agent_evidence_observer-0.0.1-py3-none-any.whl": {
+        "bytes": 120341,
+        "sha256": "86ced3404cd1e464d34e6c9a16b49585557ed15332034946aa20b792ae37b9f1"
+      },
+      "probity_langgraph_ticket_reader-0.0.1-py3-none-any.whl": {
+        "bytes": 14698,
+        "sha256": "962aaa6a3ceb496bb024097cc626f5f55d6190b874e3f96a8b484ff3072a6c16"
+      },
+      "probity_pydantic_ticket_reader-0.0.1-py3-none-any.whl": {
+        "bytes": 14792,
+        "sha256": "ab47e77fc1abb2af520f0f6cc33c9ded48a35a3f60951300763fa0b68b58216e"
+      }
+    }
+  },
+  "framework": "pydantic-ai-slim==1.68.0",
+  "implementation_commit": "3893a4536a607f85971a75b06ce87b2705978225",
+  "installed_refusal_results": [
+    {
+      "control": "exhaustion-hidden-attempt",
+      "exit_code": 1,
+      "report": {
+        "reason": "native dispatch population differs",
+        "status": "refused"
+      }
+    },
+    {
+      "control": "exhaustion-forged-complete",
+      "exit_code": 1,
+      "report": {
+        "reason": "retry exhaustion terminal differs",
+        "status": "refused"
+      }
+    },
+    {
+      "control": "committed-error-forged-complete",
+      "exit_code": 1,
+      "report": {
+        "reason": "committed error terminal differs",
+        "status": "refused"
+      }
+    },
+    {
+      "control": "committed-error-lost-result",
+      "exit_code": 1,
+      "report": {
+        "reason": "committed error trace differs",
+        "status": "refused"
+      }
+    },
+    {
+      "control": "committed-error-lost-effect",
+      "exit_code": 1,
+      "report": {
+        "reason": "final native readback differs",
+        "status": "refused"
+      }
+    },
+    {
+      "control": "committed-error-swapped-readback",
+      "exit_code": 1,
+      "report": {
+        "reason": "ticket key differs from consumer pin",
+        "status": "refused"
+      }
+    }
+  ],
+  "limits": [
+    "Scripted FunctionModel, no inference or provider call",
+    "Probity-controlled host/key/store/clock; independent effect custody absent",
+    "No process-crash, power-loss or distributed failover claim",
+    "No outside producer acceptance or recurring gate adoption"
+  ],
+  "native_execution": "installed producer wheel outside checkout; seven fresh cases; protected HTTP POST and separate GET",
+  "next": [
+    "Review and land through normal protections",
+    "Track actual main native workflow and preserve resulting artifact",
+    "Coordinate recurring host policy profile/denominator selection with existing consumer lane",
+    "Broader provider-backed tasks and independently operated effect recovery remain separate"
+  ],
+  "original_v0_packets": "unchanged archive and consumer pins; original report exactly reconstructed",
+  "packet_pins": {
+    "artifactManifestSha256": "42955c62006842d7b3fb263f9c45da827b9b39c1f2baf33c26faf2c6ed761700",
+    "evaluationTime": "2026-10-02T17:59:27.397733+00:00",
+    "planSha256": "d624fd2a159ed009f12a5394c8e54ab663129de653a954e369cac6564dd4a61b",
+    "sourceManifestSha256": "bad33e67f9f304139081a8ab4a61eb9817e0fb1703456b53e7e3280771f59a64"
+  },
+  "plan_source_revision": "3893a4536a607f85971a75b06ce87b2705978225",
+  "profile": "probity-pydantic-ai-ticket-v1",
+  "python": "3.13.15",
+  "raw_directory": "private program research/material-change-2026-10-01/_raw/restart-batch/pydantic",
+  "report": {
+    "callerIdentity": "not-established",
+    "captureCompleteness": "finite-selected-source-and-artifact-population",
+    "effectScope": "one-selected-local-ticket-per-attempt",
+    "independentCustody": "not-established",
+    "plannedAttempts": 7,
+    "priorSelection": "local-pre-run-plan-not-independent-witness",
+    "profile": "probity-pydantic-ai-ticket-v1",
+    "providerCalls": "none-scripted-FunctionModel",
+    "records": [
+      {
+        "attemptId": "permit",
+        "effectOutcome": "verified-local-ticket-update",
+        "executionStatus": "complete",
+        "nativeRevision": 1,
+        "retries": 0,
+        "taskQuality": "not-evaluated",
+        "toolAttempts": 1
+      },
+      {
+        "attemptId": "deny",
+        "effectOutcome": "not-recorded-local-row",
+        "executionStatus": "complete",
+        "nativeRevision": 0,
+        "retries": 0,
+        "taskQuality": "not-evaluated",
+        "toolAttempts": 1
+      },
+      {
+        "attemptId": "changed-arguments",
+        "effectOutcome": "not-recorded-local-row",
+        "executionStatus": "complete",
+        "nativeRevision": 0,
+        "retries": 0,
+        "taskQuality": "not-evaluated",
+        "toolAttempts": 1
+      },
+      {
+        "attemptId": "retry",
+        "effectOutcome": "verified-local-ticket-update",
+        "executionStatus": "complete",
+        "nativeRevision": 1,
+        "retries": 1,
+        "taskQuality": "not-evaluated",
+        "toolAttempts": 2
+      },
+      {
+        "attemptId": "producer-error",
+        "effectOutcome": "not-recorded-local-row",
+        "executionStatus": "error",
+        "nativeRevision": 0,
+        "retries": 0,
+        "taskQuality": "not-evaluated",
+        "toolAttempts": 1
+      },
+      {
+        "attemptId": "retry-exhausted",
+        "effectOutcome": "not-recorded-local-row",
+        "executionStatus": "error",
+        "nativeRevision": 0,
+        "retries": 2,
+        "taskQuality": "not-evaluated",
+        "toolAttempts": 2
+      },
+      {
+        "attemptId": "committed-effect-error",
+        "effectOutcome": "verified-local-ticket-update",
+        "executionStatus": "error",
+        "nativeRevision": 1,
+        "retries": 0,
+        "taskQuality": "not-evaluated",
+        "toolAttempts": 1
+      }
+    ],
+    "status": "verified",
+    "tokenAccounting": "FunctionModel estimates-not-measured-inference"
+  },
+  "retained_record_sha256": {
+    "installed-original-tests.txt": "4ba95be15aa4624c4b3a9a5b50195f7b4f87407ddb18f634e558017c46c09244",
+    "installed-v1-controls.json": "1d56cc8a0b642c60599b04c7e32f189e55bd852129e6e41109b43e813fa7897e",
+    "installed-v1-report.json": "4c26e0792c89ceecc3ec9d314f9f6179f7cb54763a6d982e827e88ab23a853c7",
+    "local-tests.txt": "0f6532f6bda4909f51a99aeeccad684b319d4d7fa247e777af738774c7f091f2",
+    "local-tests.xml": "aa652b960c791d5a27a4006765c41005a94f69894f719ec3c951349d297974f3",
+    "producer-stdout.json": "4c26e0792c89ceecc3ec9d314f9f6179f7cb54763a6d982e827e88ab23a853c7"
+  },
+  "schema_version": "probity.pydantic-failure-controls.v1",
+  "valid_installed_replay": "equal producer stdout, packet report and dedicated-reader report; framework absent from reader environment"
+}

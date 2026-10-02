@@ -10,13 +10,17 @@ from typing import Any
 from probity_observer.crypto import VerificationError, canonical, strict_loads
 
 LOGGER = logging.getLogger(__name__)
-PROFILE = "probity-pydantic-ai-ticket-v0"
+LEGACY_PROFILE = "probity-pydantic-ai-ticket-v0"
+PROFILE = "probity-pydantic-ai-ticket-v1"
 VERSION = "1.68.0"
 PROMPT = "Execute the selected ticket update."
 CONTENT = "DONE"
 RETRY = "selected transient pre-dispatch retry"
 ERROR = "selected producer failure before HTTP dispatch"
-CASES = ("permit", "deny", "changed-arguments", "retry", "producer-error")
+LEGACY_CASES = ("permit", "deny", "changed-arguments", "retry", "producer-error")
+CASES = LEGACY_CASES + ("retry-exhausted", "committed-effect-error")
+COMMITTED_ERROR = "selected producer failure after committed HTTP effect"
+EXHAUSTED_ERROR = "Tool 'dispatch_ticket' exceeded max retries count of 1"
 MAX_FILE = 2 * 1024 * 1024
 
 
@@ -88,7 +92,7 @@ def write(path: Path, raw: bytes) -> None:
 def script(case: str) -> list[str]:
     """Return the frozen native tool argument sequence for one declared case."""
     require(case in CASES, "unknown declared case")
-    if case == "retry":
+    if case in {"retry", "retry-exhausted"}:
         return [CONTENT, CONTENT]
     return ["CHANGED" if case == "changed-arguments" else CONTENT]
 
@@ -97,6 +101,16 @@ def expected_outcome(case: str, index: int) -> str:
     """Select the frozen dispatch outcome; a trace cannot choose its own branch."""
     if case == "producer-error":
         return "error"
+    if case == "retry-exhausted":
+        return "retry"
+    if case == "committed-effect-error":
+        return "committed-error"
     if case == "retry" and index == 0:
         return "retry"
     return "return"
+
+
+def cases_for(profile: str) -> tuple[str, ...]:
+    """Select a versioned population while retaining historical v0 packets."""
+    require(profile in {LEGACY_PROFILE, PROFILE}, "unknown packet profile")
+    return LEGACY_CASES if profile == LEGACY_PROFILE else CASES

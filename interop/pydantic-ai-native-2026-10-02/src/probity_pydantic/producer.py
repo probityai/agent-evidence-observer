@@ -22,8 +22,10 @@ from probity_observer.ticket_service import TicketStore, running_server
 
 from .contract import (
     CASES,
+    COMMITTED_ERROR,
     CONTENT,
     ERROR,
+    EXHAUSTED_ERROR,
     PROFILE,
     PROMPT,
     RETRY,
@@ -119,7 +121,7 @@ def capture_sources(output: Path) -> dict[str, str]:
 def prepare(
     output: Path, revision: str
 ) -> tuple[dict[str, Any], dict[str, TicketStore]]:
-    """Freeze five cases, exact grants and source bytes before any agent runs.
+    """Freeze seven cases, exact grants and source bytes before any agent runs.
 
     Parameters
     ----------
@@ -236,6 +238,13 @@ def scripted_model(name: str, sequence: list[str]) -> Any:
     return FunctionModel(local_model)
 
 
+def fail_after_commit(name: str, record: dict[str, Any]) -> None:
+    """Raise the selected tool failure only after HTTP artifacts are retained."""
+    if name == "committed-effect-error":
+        record["reason"] = COMMITTED_ERROR
+        raise RuntimeError(COMMITTED_ERROR)
+
+
 def execute(output: Path, entry: dict[str, Any], store: TicketStore) -> None:
     """Run native typed tools and retain complete message history on exceptions.
 
@@ -246,7 +255,12 @@ def execute(output: Path, entry: dict[str, Any], store: TicketStore) -> None:
     :func:`http_bytes` performs actual HTTP POST and separate GET operations.
     A selected producer failure is retained as an error, never a task success.
     """
-    from pydantic_ai import Agent, ModelRetry, capture_run_messages
+    from pydantic_ai import (
+        Agent,
+        ModelRetry,
+        UnexpectedModelBehavior,
+        capture_run_messages,
+    )
     from pydantic_ai.messages import ModelMessagesTypeAdapter
 
     name = entry["id"]
@@ -277,7 +291,7 @@ def execute(output: Path, entry: dict[str, Any], store: TicketStore) -> None:
             index = tool_calls
             tool_calls += 1
             identity = f"{name}-{index}"
-            if name == "retry" and index == 0:
+            if name == "retry-exhausted" or (name == "retry" and index == 0):
                 trace.append(
                     {
                         "id": identity,
@@ -329,11 +343,14 @@ def execute(output: Path, entry: dict[str, Any], store: TicketStore) -> None:
                 {
                     "id": identity,
                     "arguments": {"content": content},
-                    "outcome": "return",
+                    "outcome": "committed-error"
+                    if name == "committed-effect-error"
+                    else "return",
                     "artifact": filename,
                     "result": result,
                 }
             )
+            fail_after_commit(name, trace[-1])
             return result
 
         terminal = {"status": "complete", "output": None, "exception": None}
@@ -341,8 +358,16 @@ def execute(output: Path, entry: dict[str, Any], store: TicketStore) -> None:
             try:
                 result = agent.run_sync(PROMPT)
                 terminal["output"] = result.output
-            except RuntimeError as error:
-                require(str(error) == ERROR, "unexpected producer error")
+            except (RuntimeError, UnexpectedModelBehavior) as error:
+                expected = {
+                    "producer-error": (RuntimeError, ERROR),
+                    "committed-effect-error": (RuntimeError, COMMITTED_ERROR),
+                    "retry-exhausted": (UnexpectedModelBehavior, EXHAUSTED_ERROR),
+                }
+                require(
+                    name in expected and (type(error), str(error)) == expected[name],
+                    "unexpected producer error",
+                )
                 terminal = {
                     "status": "error",
                     "output": None,

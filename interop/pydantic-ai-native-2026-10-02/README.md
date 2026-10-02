@@ -6,7 +6,7 @@ existing protected HTTP ticket service. `FunctionModel` supplies scripted local
 responses: there is no provider call, model inference, task-quality score,
 independent custody, framework adoption or production deployment claim.
 
-## Five fixed cases
+## Seven fixed v1 cases
 
 | Case | Native tool behavior | HTTP/native state | Consumer classification |
 | --- | --- | --- | --- |
@@ -15,6 +15,8 @@ independent custody, framework adoption or production deployment claim.
 | changed-arguments | Native tool calls `CHANGED` against grant for `DONE` | Original content commitment retained; POST 409; GET revision 0 | Refused, no recorded local row |
 | retry | Native `ModelRetry` before dispatch, followed by `DONE` | Both calls and native retry retained; second call POST 200; GET revision 1 | One effect after one retained retry |
 | producer-error | Tool raises selected `RuntimeError` before HTTP | Original native call and exception retained; final GET revision 0 | Execution error, no task score |
+| retry-exhausted | Both typed calls raise `ModelRetry`; native retry budget is one | One native retry prompt, two retained wrapper attempts, terminal `UnexpectedModelBehavior`; GET revision 0 | Retry exhaustion, no recorded local row |
+| committed-effect-error | POST commits, then tool raises selected `RuntimeError` before returning | POST 200; separate GET revision 1; native history ends at tool call | Execution error and verified retained effect together |
 
 The producer freezes the public case population, exact ActionRequest, grant,
 issuer policy, service key, initial signed native snapshot and source manifest
@@ -56,7 +58,7 @@ python -m pytest tests -q
 probity-pydantic-run /tmp/probity-pydantic-fresh-packet --source-revision YOUR_SELECTED_COMMIT
 ```
 
-The output directory must not exist. The five-case packet is newly generated;
+The output directory must not exist. The seven-case v1 packet is newly generated;
 there is no fallback to a committed report or earlier artifact. The workflow
 runs the installed wheel outside the source directory, then installs another
 wheel into a separate environment containing only cryptography dependencies.
@@ -91,7 +93,7 @@ inference resources. Only the fixed local case population is claimed. This
 profile uses the existing restricted ASCII JSON signing contract unchanged;
 it does not introduce a Unicode authorization profile.
 
-Thirty-seven pytest cases include Hypothesis-generated native argument and actual
+Fifty-five pytest cases include Hypothesis-generated native argument and actual
 HTTP byte mutations. Other refusals include omitted retry messages/attempts,
 hidden retry traces, swapped signed readbacks, altered native return hashes,
 false successful error terminals, refusal-to-effect substitution, duplicate
@@ -103,3 +105,26 @@ Official API references:
 - https://pydantic.dev/docs/ai/api/models/function/
 - https://pydantic.dev/docs/ai/core-concepts/retries/
 - https://github.com/pydantic/pydantic-ai/tree/v1.68.0
+
+
+## Upgrade and recovery decisions
+
+The current producer emits `probity-pydantic-ai-ticket-v1` with seven fixed
+cases. The reader also reconstructs the original five-case v0 packets and
+returns their original reports exactly; the archived ZIP and original policy
+pins remain unchanged. Select both the source bytes and the intended profile
+and denominator in host policy. Rebuild and install reviewed reader wheels in a
+fresh environment before replaying the original and new refusal populations.
+See [failure controls](FAILURE-CONTROLS-2026-10-02.md) for the retained run.
+
+Retry exhaustion preserves two actual retrying tool invocations. Pydantic AI
+raises `UnexpectedModelBehavior` before appending a second native retry prompt;
+we retain the framework's original message bytes and disclose the last retry
+through the tool trace and exact exception, without inventing a message.
+
+Failure after a committed effect is an error requiring recovery assessment.
+An operator must inspect the authenticated effect before considering another
+dispatch: task failure does not erase the committed revision or authorize a
+repeat action. This reference raises after retaining the successful POST and
+separate GET, before any native tool return. It establishes local controlled
+capture, with no crash/power-loss durability or independent custody claim.
