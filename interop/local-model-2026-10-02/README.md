@@ -1,0 +1,40 @@
+# A small, actual CPU model run
+
+`probity-inspect-local-model-v1` sends twelve frozen, author-written multiple-choice smoke questions through Inspect 0.3.273 to actual SmolLM2-135M-Instruct weights on the local CPU. It uses a separately registered local ModelAPI, not Inspect's mock provider. This is a narrow integration baseline, not a benchmark estimate or evidence of model quality leadership.
+
+The profile selects Unsloth's Q4_K_M file at `9e6855bc4be717fca1ef21360a1db4b29d5c559a`, with SHA256 `ed5fa30c487b282ec156c29062f1222e5c20875a944ac98289dbd242e947f747` and size 105,454,144 bytes. The publisher links it to HuggingFaceTB/SmolLM2-135M-Instruct, whose captured revision is `12fd25f77366fa6b3b4b768ec3050bf629380bac`. Both retained model cards declare Apache-2.0. This does not independently reproduce the original training or quantization. The selected llama-cpp-python 0.3.16 source archive has SHA256 `34ed0f9bd9431af045bb63d9324ae620ad0536653740e9bb163a2e1fcb973be6`; the actual installed source, libraries, distribution metadata and MIT license are retained before execution.
+
+The model, source manifest, runtime, seed, prompts, targets, rubric, twelve planned attempts and budget are declared before loading the weights. Configuration is greedy generation, seed 42, two decode threads and two batch/prefill threads, no GPU layers, context 512 and at most 24 output tokens per call. Every question asks for a single uppercase letter. The rubric strips surrounding whitespace only; explanations, answer text, lowercase letters and extra choices fail. There are no retries or repaired answers.
+
+Original Inspect JSON, native API requests/responses, fsynced call start/return/error markers, model events, token counts, outputs and scores are retained. The offline reader requires separately selected declaration, native-log, call and source-manifest hashes, reconstructs the scores from the original outputs, checks the native declaration/runtime/configuration/solver/scorer bindings, and refuses changed or extra populations. Planned attempts without a native sample remain incomplete or unknown-start rather than disappearing from the denominator. A model or recorder failure is retained separately and never yields a success report.
+
+Measured wall time uses a monotonic clock around each adapter call. CPU time is the whole process's CPU delta across that interval, including inference worker threads; it is not isolated model CPU accounting. RSS is Linux's whole-process lifetime peak in KiB, so later samples share the earlier high-water mark. Native prompt/completion token counts come from llama.cpp's completion response and are joined to Inspect's usage. The report's token subtotal is explicitly limited to scored calls; original returned/error/incomplete call records remain available. Native framework timestamps have one-second envelope precision and finer sample/event precision; the reader accommodates that rounding without assigning nanosecond precision to them.
+
+## Run and retain
+
+Use an isolated Python environment on Linux. Install Inspect 0.3.273 and the pinned llama-cpp-python 0.3.16 source build, with explicit installed compilers and a six-minute build cap. The captured build used GCC/G++, two compile jobs and `GGML_NATIVE`, `GGML_OPENMP`, `GGML_CUDA` and `GGML_BLAS` disabled. The reference environment rejected the publisher's 0.3.19 CPU wheel because it required an absent musl loader; that refusal is retained separately from the successful local source build.
+
+Download the selected file from the immutable publisher URL and check its exact size and SHA256 before running:
+
+```text
+https://huggingface.co/unsloth/SmolLM2-135M-Instruct-GGUF/resolve/9e6855bc4be717fca1ef21360a1db4b29d5c559a/SmolLM2-135M-Instruct-Q4_K_M.gguf
+```
+
+Prepare a provenance JSON containing a `sources` mapping of retained primary artifact filenames to SHA256 hashes. Keep those original files beside the provenance JSON: the pinned original and quantized model cards, tokenizer configuration, download/source/build selections and receipts, and any earlier runtime refusal. The runner checks and copies those selected bytes into its packet. A provenance file containing hashes without the original files is refused. Each new output directory must be absent.
+
+```bash
+timeout --signal=TERM --kill-after=5s 595s python local_model.py ./local-run --weights ./model.gguf --provenance ./provenance.json
+python local_model.py ./local-run --verify --pins-file ./separately-selected-pins.json
+```
+
+The process-group timeout supplies the hard 600-second envelope; the adapter also refuses another call after its soft limit or outside its frozen twelve-case population. Use a predeclared 512 MiB total new-download budget and zero provider calls/dollars. The generated `consumer-pins.json` is a convenience for retaining selections. A reader must choose those hashes independently before using them as an acceptance boundary; accepting a producer's mutable adjacent pins does not authenticate a run.
+
+No outside operator, independent custody, production deployment, issuer identity, protected-effect admission or host adoption is established here. Quality and retained-attempt completeness remain separate results. Unit tests use synthetic native records solely to exercise the reader's refusal contract; they are not model runs.
+
+## Recorded local result and CI custody
+
+The final local source-frozen run started, completed and scored all twelve attempts in 3.788 seconds. It retained 826 native input tokens and 163 native output tokens. The exact single-letter rubric scored 0/12: several outputs included an answer plus prose, while others selected a wrong option or stopped at the token limit. This result does not support a general statement that the model cannot answer these questions. The compact receipt keeps the frozen rubric and original outputs visible.
+
+Earlier records remain separate: the 0.3.19 wheel failed to load its musl dependency; the first adapter attempt failed before a model call because its provider lacked registry metadata; completed native runs then exposed a recorder path bug and attachment-reference handling bug. A subsequent completed run used two decode threads but the backend's default batch thread count; its resource scope is recorded separately from the final run's explicitly selected two decode/two batch threads. None of those outcomes is silently converted into a successful packet or retried within a native task. Task prompts, targets, generation seed/temperature/context/token limit and grading rubric were unchanged.
+
+Ordinary PR CI runs the offline refusal contract. The separate `Selected actual local CPU model` workflow runs only on manual dispatch or pushes to `run/local-model-v1`, so merging this profile does not automatically download weights or run inference on main. Its preparation step pins the same model/source/card bytes, retains all resolved dependency wheels and caps that CI preparation at 256 MiB. Installation and source build use only those retained wheels/archive. Build and inference have separate hard deadlines; the whole job also has a twenty-minute ceiling. Native records and failure receipts upload even when a step fails. That CI record is another Probity-operated run, not an outside operator or independent custody result.

@@ -1,0 +1,302 @@
+{
+  "classification": "Probity-operated actual-weight CPU native Inspect run; not independent custody/host adoption/benchmark-quality estimate",
+  "selectedArtifactPins": {
+    "calls": {
+      "path": "calls.json",
+      "sha256": "b86b6be331d6537e463e163f761e86fad95b08c7f4b5174c90f2c8a4d1bdd653"
+    },
+    "declaration": {
+      "path": "declaration.json",
+      "sha256": "e0f5359abfc86519d1cb9b1bbe7570e8464af7a848c03ac2d39424c44c0f5d12"
+    },
+    "native": {
+      "path": "native/2026-10-02T05-44-58-00-00_probity-local-model-smoke-v1_jdiMYNPiLp7yP4X4YvioWa.json",
+      "sha256": "c51464b7ffa780201e1f134d5c93a0fc1fae452bb3b00a5681784aeb99b1c647"
+    },
+    "sources": {
+      "path": "source-manifest.json",
+      "sha256": "93748780fadcf45e3d8c3a60dab9815d3542f4efd23e68abdd121b685c61a028"
+    }
+  },
+  "model": {
+    "repo": "unsloth/SmolLM2-135M-Instruct-GGUF",
+    "revision": "9e6855bc4be717fca1ef21360a1db4b29d5c559a",
+    "sha256": "ed5fa30c487b282ec156c29062f1222e5c20875a944ac98289dbd242e947f747",
+    "bytes": 105454144
+  },
+  "configuration": {
+    "max_tokens": 24,
+    "n_ctx": 512,
+    "n_gpu_layers": 0,
+    "n_threads": 2,
+    "n_threads_batch": 2,
+    "repeat_penalty": 1.0,
+    "seed": 42,
+    "temperature": 0.0,
+    "top_k": 0,
+    "top_p": 1.0
+  },
+  "result": {
+    "attempts": [
+      {
+        "id": "add",
+        "outcome": "scored",
+        "output": "A. 4\n\nThe answer is A.",
+        "quality": 0,
+        "resources": {
+          "elapsed_ns": 294262320,
+          "process_cpu_ns": 561020696,
+          "process_maxrss_kib": 276008
+        },
+        "tokens": {
+          "completion_tokens": 11,
+          "prompt_tokens": 65,
+          "total_tokens": 76
+        }
+      },
+      {
+        "id": "subtract",
+        "outcome": "scored",
+        "output": "To find the answer, we need to subtract 3 from 9. \n\n9 - 3 = 6\n",
+        "quality": 0,
+        "resources": {
+          "elapsed_ns": 310664082,
+          "process_cpu_ns": 556882187,
+          "process_maxrss_kib": 278312
+        },
+        "tokens": {
+          "completion_tokens": 24,
+          "prompt_tokens": 65,
+          "total_tokens": 89
+        }
+      },
+      {
+        "id": "multiply",
+        "outcome": "scored",
+        "output": "To find the answer to the multiple-choice question, we need to break down the problem into manageable parts.\n\n",
+        "quality": 0,
+        "resources": {
+          "elapsed_ns": 282017311,
+          "process_cpu_ns": 489651446,
+          "process_maxrss_kib": 278440
+        },
+        "tokens": {
+          "completion_tokens": 24,
+          "prompt_tokens": 66,
+          "total_tokens": 90
+        }
+      },
+      {
+        "id": "divide",
+        "outcome": "scored",
+        "output": "To find the answer to the multiple-choice question, we need to determine the correct answer.\n\nLet's break",
+        "quality": 0,
+        "resources": {
+          "elapsed_ns": 299270228,
+          "process_cpu_ns": 530090911,
+          "process_maxrss_kib": 278440
+        },
+        "tokens": {
+          "completion_tokens": 24,
+          "prompt_tokens": 67,
+          "total_tokens": 91
+        }
+      },
+      {
+        "id": "sequence",
+        "outcome": "scored",
+        "output": "B. 11",
+        "quality": 0,
+        "resources": {
+          "elapsed_ns": 153564156,
+          "process_cpu_ns": 292984740,
+          "process_maxrss_kib": 278440
+        },
+        "tokens": {
+          "completion_tokens": 5,
+          "prompt_tokens": 77,
+          "total_tokens": 82
+        }
+      },
+      {
+        "id": "order",
+        "outcome": "scored",
+        "output": "B. 2",
+        "quality": 0,
+        "resources": {
+          "elapsed_ns": 108426333,
+          "process_cpu_ns": 200621019,
+          "process_maxrss_kib": 278568
+        },
+        "tokens": {
+          "completion_tokens": 4,
+          "prompt_tokens": 62,
+          "total_tokens": 66
+        }
+      },
+      {
+        "id": "logic",
+        "outcome": "scored",
+        "output": "B. Luna is a fish",
+        "quality": 0,
+        "resources": {
+          "elapsed_ns": 199753958,
+          "process_cpu_ns": 372961845,
+          "process_maxrss_kib": 278568
+        },
+        "tokens": {
+          "completion_tokens": 6,
+          "prompt_tokens": 78,
+          "total_tokens": 84
+        }
+      },
+      {
+        "id": "negation",
+        "outcome": "scored",
+        "output": "A. 2",
+        "quality": 0,
+        "resources": {
+          "elapsed_ns": 139969260,
+          "process_cpu_ns": 274499029,
+          "process_maxrss_kib": 278568
+        },
+        "tokens": {
+          "completion_tokens": 4,
+          "prompt_tokens": 64,
+          "total_tokens": 68
+        }
+      },
+      {
+        "id": "time",
+        "outcome": "scored",
+        "output": "A. 60\n\nThe answer is A.",
+        "quality": 0,
+        "resources": {
+          "elapsed_ns": 244208227,
+          "process_cpu_ns": 451932849,
+          "process_maxrss_kib": 278568
+        },
+        "tokens": {
+          "completion_tokens": 12,
+          "prompt_tokens": 70,
+          "total_tokens": 82
+        }
+      },
+      {
+        "id": "reading",
+        "outcome": "scored",
+        "output": "A. Red",
+        "quality": 0,
+        "resources": {
+          "elapsed_ns": 131779358,
+          "process_cpu_ns": 251386138,
+          "process_maxrss_kib": 278696
+        },
+        "tokens": {
+          "completion_tokens": 3,
+          "prompt_tokens": 69,
+          "total_tokens": 72
+        }
+      },
+      {
+        "id": "comparison",
+        "outcome": "scored",
+        "output": "A. 2\nB. 4\nC. 3\nD. 5\n\nLet's break",
+        "quality": 0,
+        "resources": {
+          "elapsed_ns": 374550501,
+          "process_cpu_ns": 671855830,
+          "process_maxrss_kib": 278824
+        },
+        "tokens": {
+          "completion_tokens": 24,
+          "prompt_tokens": 73,
+          "total_tokens": 97
+        }
+      },
+      {
+        "id": "relation",
+        "outcome": "scored",
+        "output": "A. Tom\n\nExplanation: The shortest person is Tom, who is 3 inches shorter than Ana.",
+        "quality": 0,
+        "resources": {
+          "elapsed_ns": 312720405,
+          "process_cpu_ns": 564091252,
+          "process_maxrss_kib": 278824
+        },
+        "tokens": {
+          "completion_tokens": 22,
+          "prompt_tokens": 70,
+          "total_tokens": 92
+        }
+      }
+    ],
+    "effects": "not-established",
+    "evidence": "complete-retained-local-attempts",
+    "independentCustody": "not-established",
+    "modelIdentityAuthority": "selected-file-digest; original-to-quantized derivation not independently reproduced",
+    "nativeTokens": {
+      "input": 826,
+      "output": 163,
+      "scope": "scored-call-only; errors and incomplete calls are excluded from this subtotal"
+    },
+    "population": {
+      "errors": 0,
+      "incomplete": 0,
+      "modelCallsStarted": 12,
+      "nativeAttemptsStarted": 12,
+      "planned": 12,
+      "scored": 12,
+      "started": 12,
+      "unknownStart": 0
+    },
+    "profile": "probity-inspect-local-model-v1",
+    "providerCost": "zero-local-CPU-no-provider-call",
+    "quality": {
+      "correct": 0,
+      "declared": 12,
+      "interpretation": "author-written smoke tasks; not a benchmark estimate",
+      "scored": 12
+    },
+    "runElapsedSeconds": 3.787911729999905
+  },
+  "priorRecords": [
+    {
+      "record": "official0.3.19wheel",
+      "stage": "runtime-import",
+      "status": "refused-missing-musl",
+      "modelCalls": 0
+    },
+    {
+      "record": "run001",
+      "stage": "native-harness-registration",
+      "status": "refused-before-modelcall",
+      "modelCalls": 0
+    },
+    {
+      "record": "run002",
+      "stage": "post-inference-recorder",
+      "status": "native12completed; recorder-absolute-relative-path-failure",
+      "modelCalls": 12
+    },
+    {
+      "record": "run003",
+      "stage": "post-inference-reader",
+      "status": "native12completed; reader-attachment-reference-failure",
+      "modelCalls": 12
+    },
+    {
+      "record": "run004",
+      "stage": "resource-selection",
+      "status": "native12complete0of12; generationthreads2,batchthreadsbackenddefault; replaced by explicitly declared bounded batch/decode selection",
+      "modelCalls": 12
+    },
+    {
+      "record": "run005",
+      "stage": "bounded-hardware-repeat",
+      "status": "12nativeattempts/scored0of12 with2decode/2batch; finalreaderadded typed calltimeline and split native/model startcounts before run006",
+      "modelCalls": 12
+    }
+  ],
+  "rawRecordRetention": "Full local packet retained separately; compact receipt is not a substitute for its selected original native/runtime bytes. The explicitly triggered CI workflow retains its own full packet as an artifact."
+}
