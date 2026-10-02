@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "probity-pydantic-reference"
+version = "0.0.1"
+description = "Finite Pydantic AI typed-tool to authorized HTTP effect reference"
+requires-python = ">=3.12"
+dependencies = ["agent-evidence-observer==0.0.1"]
+
+[project.optional-dependencies]
+producer = ["pydantic-ai-slim==1.68.0"]
+test = ["pytest==9.1.1", "hypothesis==6.168.3"]
+
+[project.scripts]
+probity-pydantic-run = "probity_pydantic.producer:main"
+probity-pydantic-read = "probity_pydantic.reader:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

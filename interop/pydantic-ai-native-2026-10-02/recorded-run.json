@@ -1,0 +1,100 @@
+{
+  "classification": "Probity-operated actual-framework integration with deterministic local FunctionModel",
+  "source": "installed wheels from working tree on recorded Observer base",
+  "observerBase": "bec8e5082d82e99aa0238d8488d511373437bd1b",
+  "tests": {
+    "pytestCasesPassed": 37,
+    "hypothesisGeneratedExamples": 40,
+    "ruff": [
+      "E",
+      "F",
+      "I",
+      "C901"
+    ],
+    "maximumCyclomaticComplexity": 5,
+    "warning": "Pydantic AI emits one get_event_loop deprecation warning; no errors"
+  },
+  "installedProducerAndSeparateFrameworkFreeReader": "fresh reports equal; no pydantic_ai installed in reader environment",
+  "selectedPins": {
+    "artifactManifestSha256": "147de845fe0b41e6e2d89b318f61080fcd8fa8eb810ac6f9bde831c4a952d5e7",
+    "evaluationTime": "2026-10-02T11:43:13.289410+00:00",
+    "planSha256": "9a41110008cf69076dc1ce9113bde459e3878824ca929e45fd093f4fb7b3ec5b",
+    "sourceManifestSha256": "532679d8eed03d4f57983be629fb6a30d44c6fba65127281cd4e93417bbf1324"
+  },
+  "selectedPinsScope": "same-operator demonstration selection; not independent policy selection or witnessed prior commitment",
+  "report": {
+    "callerIdentity": "not-established",
+    "captureCompleteness": "finite-selected-source-and-artifact-population",
+    "effectScope": "one-selected-local-ticket-per-attempt",
+    "independentCustody": "not-established",
+    "plannedAttempts": 5,
+    "priorSelection": "local-pre-run-plan-not-independent-witness",
+    "profile": "probity-pydantic-ai-ticket-v0",
+    "providerCalls": "none-scripted-FunctionModel",
+    "records": [
+      {
+        "attemptId": "permit",
+        "effectOutcome": "verified-local-ticket-update",
+        "executionStatus": "complete",
+        "nativeRevision": 1,
+        "retries": 0,
+        "taskQuality": "not-evaluated",
+        "toolAttempts": 1
+      },
+      {
+        "attemptId": "deny",
+        "effectOutcome": "not-recorded-local-row",
+        "executionStatus": "complete",
+        "nativeRevision": 0,
+        "retries": 0,
+        "taskQuality": "not-evaluated",
+        "toolAttempts": 1
+      },
+      {
+        "attemptId": "changed-arguments",
+        "effectOutcome": "not-recorded-local-row",
+        "executionStatus": "complete",
+        "nativeRevision": 0,
+        "retries": 0,
+        "taskQuality": "not-evaluated",
+        "toolAttempts": 1
+      },
+      {
+        "attemptId": "retry",
+        "effectOutcome": "verified-local-ticket-update",
+        "executionStatus": "complete",
+        "nativeRevision": 1,
+        "retries": 1,
+        "taskQuality": "not-evaluated",
+        "toolAttempts": 2
+      },
+      {
+        "attemptId": "producer-error",
+        "effectOutcome": "not-recorded-local-row",
+        "executionStatus": "error",
+        "nativeRevision": 0,
+        "retries": 0,
+        "taskQuality": "not-evaluated",
+        "toolAttempts": 1
+      }
+    ],
+    "status": "verified",
+    "tokenAccounting": "FunctionModel estimates-not-measured-inference"
+  },
+  "artifactManifest": {
+    "changed-arguments-0-http.json": "9a15061c2d4658db58715d03ed90be0007276194bda9da264e086be28a870dc8",
+    "changed-arguments-execution.json": "1a4b70223bed8bf67ba99301e350233b905c5a7e6d3d6bf8262452311c5001dd",
+    "changed-arguments-messages.json": "4dc18bc9ffa6e9099012e308bfcf4687d67fda7fe45c5893a43790d7eea08034",
+    "deny-0-http.json": "e72cace2dc488f81b062b589dab5b40609183a47e4184aa64f8a5477379ac3c5",
+    "deny-execution.json": "549b0d0900afb7f80e7aafb3313a2e82204e56778eda89035740040c05fd534d",
+    "deny-messages.json": "1835ee3b1fd807b6f5f60edcbe69ae4a7d0a03ccf0fba576958dee9e05c8710e",
+    "permit-0-http.json": "a4adc0e69dbdde8ee436b037e9e4aa97e87558fe8663781e677a1d4e176ad548",
+    "permit-execution.json": "bed8111bb5d785187bab83c78fdc4c7d5a4f8d7c19cc6b0952fc7345643b713c",
+    "permit-messages.json": "c82a8cc8ef7373ac3141b58f8a1adaafa0c2af787d17452a043581428340bd9b",
+    "producer-error-execution.json": "e7443ec76993b9b8ebaf892b201f59a15d3c9427353a6faa96a22d5bcca102ee",
+    "producer-error-messages.json": "60c2693aab5822f4b8490ddaefd51f81565de9d18415d3f8854502e579ed1079",
+    "retry-1-http.json": "912a68a37c0fc4ca1975c7c25a94f88ca68b6d33321a975a2c322ce718619baa",
+    "retry-execution.json": "e125ecf86848dfee1e467e59f519733a50b90148a5e68b98372ad993110924b1",
+    "retry-messages.json": "5d025ac731034715273375862f72f7e74d1f3cd793fb71d93b5d533b4ad2b606"
+  }
+}

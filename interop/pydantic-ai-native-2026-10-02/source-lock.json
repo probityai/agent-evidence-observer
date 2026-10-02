@@ -1,0 +1,20 @@
+{
+  "profile": "probity-pydantic-ai-ticket-v0",
+  "observerBase": "bec8e5082d82e99aa0238d8488d511373437bd1b",
+  "frameworkDistribution": "pydantic-ai-slim",
+  "frameworkVersion": "1.68.0",
+  "frameworkSources": {
+    "distribution/METADATA": "10176918137a08e06cf43c54beb62c3b22a2f90ad13ee77e6f8d112e08bb78a3",
+    "distribution/licenses/LICENSE": "bc0e89738f36944c8106e1947c3d69631f9c33b8f1bcb60ec4f89d677d2dfcf4",
+    "distribution/versions.json": "7de9b8105d372dded1fb782d94fd039a28b11facf710428bd808a4cd1b33508f",
+    "pydantic_ai/_agent_graph.py": "5c584822640313f3e82c0a981c728914e5565c17a034aa8ee91f93df7432571a",
+    "pydantic_ai/agent/__init__.py": "bb8eb58cd404f9e0a4eb1cd0c1a261e879dab0954f71681eb30b86f5ba971c96",
+    "pydantic_ai/messages.py": "73c26171cf4b3dda389bb83278a69a74fc9bf55cb5ab84ccd2bc431ebbbe6bf6",
+    "pydantic_ai/models/function.py": "423e4308b66ff6bc06cc2f1ca4a55fde7e442bf7680d69530c8fbfa2449d8dab"
+  },
+  "requirementsSha256": "ecdfcb9ebd6ffd9c0800a1b2d10b6601d564c287887ba7cac43d8ccdafd41962",
+  "readerRequirementsSha256": "0abca9241eae25539b0f0d6768b9a1c4f3de61d1b8d89f7e3b4235c4fe3d14c2",
+  "nativeSerialization": "ModelMessagesTypeAdapter.dump_json original bytes retained unchanged",
+  "dependencySelection": "exact versions and SHA-256 hashes in requirements locks; local Observer/adapter wheels installed --no-deps",
+  "scope": "same-operator deterministic native framework reference, no inference, task-quality benchmark, outside custody or adoption"
+}

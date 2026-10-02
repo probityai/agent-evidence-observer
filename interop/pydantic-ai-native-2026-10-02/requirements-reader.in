@@ -1,0 +1,2 @@
+# Offline reader has no Pydantic AI or provider dependency.
+cryptography==46.0.7
