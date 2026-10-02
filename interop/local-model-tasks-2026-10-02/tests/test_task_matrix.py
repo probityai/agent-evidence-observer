@@ -297,3 +297,20 @@ def test_native_error_retains_denominator_and_original_binding(tmp_path):
     )
     with pytest.raises(ValueError, match="error differs"):
         verify(tmp_path, repin(tmp_path))
+
+
+@pytest.mark.parametrize(
+    "field,value", [("n_gpu_layers", False), ("n_threads", 2.0), ("n_ctx", 512.0)]
+)
+def test_runtime_numbers_require_declared_types(tmp_path, field, value):
+    fixture(tmp_path)
+    change(tmp_path, "declaration.json", lambda v: v["runtime"].update({field: value}))
+    with pytest.raises(ValueError, match="declaration differs"):
+        verify(tmp_path, repin(tmp_path))
+
+
+def test_population_size_requires_integer_type(tmp_path):
+    fixture(tmp_path)
+    change(tmp_path, "declaration.json", lambda v: v.update(planned=48.0))
+    with pytest.raises(ValueError, match="declaration differs"):
+        verify(tmp_path, repin(tmp_path))

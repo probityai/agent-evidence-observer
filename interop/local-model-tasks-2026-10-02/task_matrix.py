@@ -171,8 +171,10 @@ def verify(root, pins):
         or d.get("protocolCommit") != prereg.get("commit")
         or d["protocolCommit"] != PROTOCOL_COMMIT
         or prereg.get("sha256") != PROTOCOL_SHA256
-        or any(d.get("runtime", {}).get(k) != v for k, v in p["runtime"].items())
-        or d.get("planned") != 48
+        or any(
+            not exact(d.get("runtime", {}).get(k), v) for k, v in p["runtime"].items()
+        )
+        or not exact(d.get("planned"), 48)
         or d.get("runnerSha256") != manifest["sources/task_matrix.py"]
     ):
         raise ValueError("declaration differs from selected source/protocol/runtime")

@@ -61,7 +61,7 @@
     }
   },
   "readerAudit": {
-    "sourceSHA256": "598fb49f48f38f147a475ed840c48be32e4fd28bdd0c7928fab23ccffc97942a",
+    "sourceSHA256": "1ced4b0875d56ee33e1bc8749c44669aa44ce87036ad0bbbdfc798cdffa5cee2",
     "originalReportSHA256": "a776bca8e277be66f8e7b5338248d8895e94467840ec314483238ea168133cc4",
     "hardenedReaderEqualsOriginalReport": true,
     "validation": "separate selected-byte replay using the hardened offline reader; native execution remains at ab84161; independent same-team reviewer reproduced exact result"
