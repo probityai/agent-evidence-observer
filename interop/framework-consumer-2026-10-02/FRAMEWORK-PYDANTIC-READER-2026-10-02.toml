@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools==84.0.0", "wheel==0.48.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "probity-pydantic-ticket-reader"
+version = "0.0.1"
+description = "Offline reader for the finite Pydantic AI protected-ticket profile"
+requires-python = ">=3.12"
+dependencies = ["agent-evidence-observer==0.0.1"]
+license = "MIT"
+license-files = ["LICENSE"]
+
+[project.scripts]
+probity-pydantic-read = "probity_pydantic.reader:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]

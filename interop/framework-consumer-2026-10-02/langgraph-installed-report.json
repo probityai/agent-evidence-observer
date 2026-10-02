@@ -1,0 +1,78 @@
+{
+  "profile": "probity-langgraph-aae-ticket-v0",
+  "status": "verified",
+  "plannedAttempts": 6,
+  "records": [
+    {
+      "attemptId": "permit",
+      "status": "complete",
+      "taskOutcome": "controlled-scenario-matched",
+      "kernelVerdict": "PERMIT",
+      "effectOutcome": "verified-local-ticket-update",
+      "httpCalls": 1,
+      "nativeRevision": 1,
+      "elapsedNs": 38035837
+    },
+    {
+      "attemptId": "deny",
+      "status": "complete",
+      "taskOutcome": "controlled-scenario-matched",
+      "kernelVerdict": "DENY",
+      "effectOutcome": "refused-no-local-row",
+      "httpCalls": 1,
+      "nativeRevision": 0,
+      "elapsedNs": 8097786
+    },
+    {
+      "attemptId": "altered-argument",
+      "status": "complete",
+      "taskOutcome": "controlled-scenario-matched",
+      "kernelVerdict": "PERMIT",
+      "effectOutcome": "refused-no-local-row",
+      "httpCalls": 1,
+      "nativeRevision": 0,
+      "elapsedNs": 8200754
+    },
+    {
+      "attemptId": "interrupt-before",
+      "status": "complete",
+      "taskOutcome": "controlled-scenario-matched",
+      "kernelVerdict": "PERMIT",
+      "effectOutcome": "verified-local-ticket-update",
+      "httpCalls": 1,
+      "nativeRevision": 1,
+      "elapsedNs": 17827758
+    },
+    {
+      "attemptId": "resume-after-effect",
+      "status": "complete",
+      "taskOutcome": "controlled-scenario-matched",
+      "kernelVerdict": "PERMIT",
+      "effectOutcome": "verified-local-ticket-update",
+      "httpCalls": 2,
+      "nativeRevision": 1,
+      "elapsedNs": 24158325
+    },
+    {
+      "attemptId": "pending-intent",
+      "status": "complete",
+      "taskOutcome": "controlled-scenario-matched",
+      "kernelVerdict": "PERMIT",
+      "effectOutcome": "incomplete-no-automatic-replay",
+      "httpCalls": 1,
+      "nativeRevision": 0,
+      "elapsedNs": 92383010
+    }
+  ],
+  "providerCalls": 0,
+  "inputTokens": 0,
+  "outputTokens": 0,
+  "taskScope": "deterministic-real-framework-integration-control",
+  "checkpointScope": "in-memory-same-process-native-snapshots",
+  "effectScope": "selected-loopback-service-local-SQLite-row",
+  "independentCustody": "not-established",
+  "issuerAuthentication": "not-established",
+  "exactlyOnce": "not-established",
+  "priorSelection": "author-local-plan-consumer-must-select-pins",
+  "peakMemoryBytes": null
+}
