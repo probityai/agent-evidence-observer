@@ -1,0 +1,11 @@
+[package]
+name = "probity-host-byte-gate"
+version = "0.0.1"
+edition = "2021"
+publish = false
+[dependencies]
+jcs-admit = "=0.1.1"
+dsse = "=0.1.1"
+serde_json = "=1.0.145"
+hex = "=0.4.3"
+sha2 = "=0.10.9"
