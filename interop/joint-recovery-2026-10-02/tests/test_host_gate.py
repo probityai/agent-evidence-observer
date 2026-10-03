@@ -29,7 +29,7 @@ def selected_files(tmp_path: Path, report: dict[str, Any]) -> tuple[Path, Path, 
     prefix = tmp_path / "installed-reader"
     (prefix / "bin").mkdir(parents=True)
     (prefix / "bin/python").symlink_to(Path(sys.executable).resolve())
-    (prefix / "pyvenv.cfg").write_text("home = " + str(Path(sys.executable).resolve().parent) + "\n")
+    (prefix / "pyvenv.cfg").write_text("home = " + str(Path(sys.executable).resolve().parent) + "\ninclude-system-site-packages = false\n")
     site = prefix / f"lib/python{sys.version_info.major}.{sys.version_info.minor}/site-packages"
     site.mkdir(parents=True)
     reader = prefix / "bin/probity-read-joint-recovery"

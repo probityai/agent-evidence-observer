@@ -81,6 +81,51 @@ disposition as well as aggregate counters. The host OS and Python standard
 library remain local custody assumptions. Independent custody,
 maintainer acceptance and a recurring outside gate remain separate outcomes.
 
+## Installed reader upgrade and isolation
+
+Reader 0.0.2 preserves the 0.0.1 console commands, profile and canonical report.
+Its packaged host gate now requires exactly one disabled system-site setting
+in `pyvenv.cfg`, rejects a bin-directory configuration override, and invokes the
+selected environment's Python with `-I`. The packet cannot supply installation
+selection. Either supported reader version still needs a complete outside
+manifest; accepting its version name alone grants no publication permission.
+
+Installation selection opens regular files without blocking on a FIFO, bounds
+individual files to 64 MiB, total selected bytes to 512 MiB, files to 4,096,
+all entries to 8,192 and directory depth to 32. It never traverses directory
+links; the ordinary `lib64 -> lib` alias is selected once. Metadata and launcher
+contents use bounded reads after the complete inventory is checked. Unreadable
+trees and excessive or special members refuse before reader execution. Selected
+file links bind their resolved bytes; concurrent filesystem replacement and the
+host standard library remain local custody assumptions.
+
+The workflow checks out original reader sources at
+`7047248e5eb3d58804bd14de1c4e7c3d41ccffb2`, builds both normal wheels, installs
+the original in a clean framework-free environment and performs an ordinary
+upgrade. The original and candidate reader stdout must match byte for byte.
+The old host installation selection must refuse before launch after upgrade;
+a separately refreshed candidate selection must publish the same bounded
+report, including every native recovery refusal. The full source hashes,
+wheels, locked dependency wheels, installation manifests, process streams and
+host receipts are retained. This is a same-operator compatibility exercise;
+outside recurring use and independent custody remain separate outcomes.
+
+For an existing authenticated packet, prepare the hash-selected reader wheels
+and run the explicit installed upgrade outside the packet directory:
+
+```bash
+python -m pip download --require-hashes --only-binary=:all: \
+  -r requirements-reader.lock --dest /outside-git/reader-dependencies
+python verify_upgrade.py \
+  --baseline /selected-original/interop/joint-recovery-2026-10-02 \
+  --packet /outside-git/original --output /outside-git/upgrade-receipts \
+  --dependency-wheels /outside-git/reader-dependencies
+```
+
+The selected-original checkout and packet pins are host-held inputs. The
+demonstration copies the producer's packet pins and records that shared custody.
+It does not qualify an independently selected external consumer.
+
 The tests execute a fresh complete native population, then explicitly reselect
 mutated bytes to exercise semantic refusals rather than merely detect changed
 hashes. Hypothesis checks clock transitions; nested passing/failing test classes
