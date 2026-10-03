@@ -1,0 +1,29 @@
+# Prospective native tool arguments and abstention
+
+This is a new, finite authored study. It preserves the previous 384-call and 128-call populations and scores. Sixteen identities in eight pairs change one input field each: write permission, inspect permission, missing key, argument type, ambiguous matches, unknown tool, exhausted write quota, and stale evidence. Every pair includes a permitted request and an explicit abstention. Both existing SmolLM2 models run both 24/96 token caps and both grammar treatments: 128 planned calls.
+
+Both treatments receive exactly the same prompt and required response shape. The control allows a tool string and generic JSON argument values. The treatment uses the same global three-tool catalog and nullable general argument types for every case. Grammars contain no case-specific target enum or constant. Correctness requires the entire typed answer; booleans, floats and strings cannot stand in for integers. A length-finished response keeps parsed format/schema scores but fails strict correctness even if parseable. No cap, case, score or budget is retuned after inference. Tool-shaped output grants no actual effect permission; no tools execute.
+
+`protocol.json` freezes tasks, targets, order, generic schemas/grammars, source closure and budgets before inference. A subsequent commit-bearing `task_matrix.py` selects that registration. An externally selected `execution-selection.json` digest then selects the wrapper's reviewed Git source and byte hash before launch. This avoids a commit/hash self-reference. Root and an independent peer review the frozen source and offline controls before any actual dispatch. Preparation and synthetic controls establish no model result.
+
+## Selected reuse and resources
+
+The original preparation artifact is `11264080809`, run `37094901561`, source `62f5d0c6fbd785259db2d5c8076dd844b53a0593`. Its compressed original is 465,478,943 bytes, SHA256 `7ed25dea35cdca4df3275990b3d70ca47f391490c8ffb5225396df7bc573d03f`; Actions expiry is January 1, 2027 at 03:57:19 UTC. Reuse verifies all 66 selected files (477,404,572 unpacked bytes), including original weights, locked dependency wheels, original receipts, native library bytes, metadata and licenses. Ubuntu 24.04, CPython 3.12, Linux x86_64 and the selected CPU instructions are required. No runtime is rebuilt. The host-selected interpreter, virtual-environment configuration and filesystem ancestors are trusted. Before native child startup, its site is checked against the receipt, original runtime and importable dependency-wheel members. Unselected .pth/sitecustomize/usercustomize startup hooks refuse even if a local receipt is resigned; selected wheel startup code remains selected code. Every runtime/dependency bytecode cache refuses before startup; standard installer/pip caches and host standard-library code remain trusted. Selected profile/reader code also requires an empty cache population and rejects unselected module, package and extension aliases, and bootstraps execute selected source bytes directly. Python -B prevents writes and is not assumed to disable cached-code reads. Clean installation uses --no-compile and actual installed source entry invocation through Python -I -B.
+
+A verified already-present archive charges zero new response bytes. A fresh Actions archive retrieval charges all 465,478,943 bytes, including its retained model payloads. It is a real transfer, separately recorded from the historical original preparation. There are no new Hugging Face/PyPI origin downloads, provider calls, provider dollars, warmup calls or retries. The archive envelope is 512 MiB/180 seconds, with 30-second socket operations; offline installation is 335 seconds. Unpacked payload and installation disk are separate from the compressed response budget, with a 2 GiB retained-disk limit.
+
+The native child has 600 seconds wall and CPU, 1 GiB Linux peak RSS, 65,536 prompt tokens and 7,680 completion tokens. An external observer measures the selected child from spawn through reap using `wait4`, including source checks, both model loads, all attempted calls and child-terminal serialization. It sends TERM at 595 seconds and KILL at 600. CPU/RSS checks occur at call boundaries and are assessed again from full child totals. Interrupted or failed work remains in the 128 denominator; incomplete packets can refuse reconstruction. Source reconstruction occurs after reap; actual installed model-free replay is a separate consumer stage with its own process receipt.
+
+## Offline verification
+
+From the repository root:
+
+```sh
+python -B -m pytest interop/local-model-tool-arguments-2026-10-03/tests -q
+python -m ruff check --select C901 --config 'lint.mccabe.max-complexity=5' interop/local-model-tool-arguments-2026-10-03/*.py
+python -I -B interop/local-model-tool-arguments-2026-10-03/verify_installation.py . installed-tool-argument-controls
+```
+
+The installed controls build a deterministic, dependency-free reader wheel from selected Git blobs and really install it in a clean environment. Their new call/usage/resource observations are disclosed synthetic fixtures; selected prior native custody bytes remain original. Controls preserve a literal repeated report, a strict quality hold, 127 unstarted attempts after an authored stop, changed-original refusal and a real hostile Python configuration/CWD launch. Packet code never runs. The installed reader does not dispatch inference.
+
+Complete scoped evidence permits publication while strict quality admission remains separate. All eight cells must have 16 correct answers and eight correct pairs for the default quality gate. A host can use `--evidence-only` to preserve a complete quality hold with exit zero; the quality decision remains held. Same-operator observations, replay and CI integration establish no outside acceptance, recurring adoption, independent inference custody, general benchmark or effect custody.

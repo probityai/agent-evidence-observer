@@ -1,0 +1,13 @@
+Looking in links: model-vocabulary-artifacts/downloads
+Processing ./model-vocabulary-artifacts/downloads/llama_cpp_python-0.3.16.tar.gz
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Building wheels for collected packages: llama_cpp_python
+  Building wheel for llama_cpp_python (pyproject.toml): started
+  Building wheel for llama_cpp_python (pyproject.toml): still running...
+  Building wheel for llama_cpp_python (pyproject.toml): finished with status 'done'
+  Created wheel for llama_cpp_python: filename=llama_cpp_python-0.3.16-cp312-cp312-linux_x86_64.whl size=4518472 sha256=c581c031b072fc53ab09ac6e416526a5745ab704bcd52a8b1327ee8cb52d5eb7
+  Stored in directory: /home/runner/.cache/pip/wheels/1e/8f/d4/68af224ae8cd1de0e9b15a1f5887215f655e168029987e237f
+Successfully built llama_cpp_python
+Installing collected packages: llama_cpp_python
+Successfully installed llama_cpp_python-0.3.16
