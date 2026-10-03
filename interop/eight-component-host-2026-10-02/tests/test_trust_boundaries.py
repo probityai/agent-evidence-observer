@@ -42,7 +42,7 @@ def retire_unsafe_fixture(path: Path) -> None:
     info = path.lstat()
     description = {"name": path.name, "mode": info.st_mode,
                    "link": os.readlink(path) if path.is_symlink() else None}
-    path.with_name(path.name + ".fixture.json").write_text(json.dumps(description))
+    path.with_name("fixture-" + path.name + ".json").write_text(json.dumps(description))
     if stat.S_ISDIR(info.st_mode):
         path.rmdir()
     else:
