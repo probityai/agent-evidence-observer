@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools==80.9.0", "wheel==0.45.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "probity-haystack-reference"
+version = "0.0.1"
+requires-python = ">=3.12"
+dependencies = ["agent-evidence-observer==0.0.1"]
+
+[project.optional-dependencies]
+producer = ["haystack-ai==3.3.0"]
+test = ["pytest>=8,<10"]
+
+[project.scripts]
+agent-evidence-read-haystack = "probity_haystack.reader:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["probity_haystack*"]
