@@ -17,8 +17,17 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m pip install pytest==9.1.1
+      - run: python -m pip install pytest==9.1.1 'setuptools>=68' wheel
       - run: python -m pytest interop/local-model-vocabulary-2026-10-02/tests -q
+      - name: Build, install and repeat the offline consumer controls
+        run: python interop/local-model-vocabulary-2026-10-02/verify_installation.py . installed-reader-controls
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: installed-vocabulary-reader-controls-${{ github.sha }}
+          path: installed-reader-controls
+          if-no-files-found: error
+          retention-days: 90
   actual-cpu:
     if: github.event_name == 'workflow_dispatch'
     needs: offline-controls
