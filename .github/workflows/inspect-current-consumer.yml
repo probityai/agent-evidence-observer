@@ -1,0 +1,108 @@
+name: Current Inspect installed consumer
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['interop/inspect-current-host-2026-10-03/**', '.github/workflows/inspect-current-consumer.yml']
+  pull_request:
+    branches: [main]
+    paths: ['interop/inspect-current-host-2026-10-03/**', '.github/workflows/inspect-current-consumer.yml']
+  merge_group:
+    types: [checks_requested]
+
+permissions:
+  contents: read
+
+jobs:
+  current-installed-consumer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - name: Check out the owned consumer selected by this event
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          path: owned-consumer
+          persist-credentials: false
+      - name: Check out the immutable existing Observer reader
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: probityai/agent-evidence-observer
+          ref: 62f5d0c6fbd785259db2d5c8076dd844b53a0593
+          path: existing-reader
+          persist-credentials: false
+      - name: Check out the actual supported current Inspect release
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: UKGovernmentBEIS/inspect_ai
+          ref: 93f7182cf2ce9be22724b05e499cd1358d7ed41d
+          fetch-depth: 0
+          path: current-inspect
+          persist-credentials: false
+      - name: Configure the selected runtime
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12.14'
+      - name: Install the declared build and workflow tools
+        run: |
+          python -m pip install uv==0.12.19
+          uv venv --python python3.12 "$RUNNER_TEMP/builder"
+          uv pip install --python "$RUNNER_TEMP/builder/bin/python" setuptools==81.0.0 wheel==0.46.3 pytest==8.3.3 cryptography==46.0.7 cffi==2.1.1 pycparser==3.0
+      - name: Build and normally install both separately selected reader wheels
+        env:
+          SOURCE_DATE_EPOCH: '946684800'
+        run: |
+          mkdir -p "$RUNNER_TEMP/observer-build"
+          cp existing-reader/pyproject.toml existing-reader/LICENSE "$RUNNER_TEMP/observer-build/"
+          cp -a existing-reader/src "$RUNNER_TEMP/observer-build/src"
+          cp -a owned-consumer/interop/inspect-current-host-2026-10-03 "$RUNNER_TEMP/current-reader-build"
+          uv build --no-build-isolation --python "$RUNNER_TEMP/builder/bin/python" --wheel --out-dir "$RUNNER_TEMP/wheels" "$RUNNER_TEMP/observer-build"
+          uv build --no-build-isolation --python "$RUNNER_TEMP/builder/bin/python" --wheel --out-dir "$RUNNER_TEMP/wheels" "$RUNNER_TEMP/current-reader-build"
+          uv venv --python python3.12 "$RUNNER_TEMP/reader-env"
+          uv pip install --python "$RUNNER_TEMP/reader-env/bin/python" cryptography==46.0.7 cffi==2.1.1 pycparser==3.0
+          uv pip install --python "$RUNNER_TEMP/reader-env/bin/python" pytest==8.3.3
+          uv pip install --python "$RUNNER_TEMP/reader-env/bin/python" --no-deps "$RUNNER_TEMP/wheels/agent_evidence_observer-0.0.1-py3-none-any.whl" "$RUNNER_TEMP/wheels/probity_inspect_current_reader-0.0.1-py3-none-any.whl"
+          uv pip install --python "$RUNNER_TEMP/builder/bin/python" --no-deps "$RUNNER_TEMP/wheels/agent_evidence_observer-0.0.1-py3-none-any.whl" "$RUNNER_TEMP/wheels/probity_inspect_current_reader-0.0.1-py3-none-any.whl"
+      - name: Install actual current native host from its immutable dependency lock
+        working-directory: current-inspect
+        run: |
+          uv sync --frozen --no-default-groups --no-install-project --python python3.12
+          uv pip install --python .venv/bin/python setuptools==81.0.0 wheel==0.46.3 setuptools-scm==9.2.2
+          uv pip install --python .venv/bin/python cryptography==46.0.7 cffi==2.1.1 pycparser==3.0
+          uv pip install --python .venv/bin/python --no-deps --no-build-isolation .
+          uv pip install --python .venv/bin/python --no-deps "$RUNNER_TEMP/wheels/agent_evidence_observer-0.0.1-py3-none-any.whl" "$RUNNER_TEMP/wheels/probity_inspect_current_reader-0.0.1-py3-none-any.whl"
+      - name: Verify loader, population, installation and failure controls
+        env:
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+        run: |
+          "$RUNNER_TEMP/builder/bin/python" -B -m pytest -q -c /dev/null owned-consumer/interop/inspect-current-host-2026-10-03/test_bootstrap.py --junitxml="$RUNNER_TEMP/inspect-bootstrap-controls.xml"
+      - name: Run the declared current host and repeated isolated consumer
+        env:
+          SELECTED_OWNED_COMMIT: ${{ github.sha }}
+        run: |
+          python owned-consumer/interop/inspect-current-host-2026-10-03/bootstrap.py \
+            --candidate "$GITHUB_WORKSPACE/owned-consumer" --candidate-sha "$SELECTED_OWNED_COMMIT" \
+            --host "$GITHUB_WORKSPACE/current-inspect" --reader-source "$GITHUB_WORKSPACE/existing-reader" \
+            --producer-python "$GITHUB_WORKSPACE/current-inspect/.venv/bin/python" \
+            --reader-python "$RUNNER_TEMP/reader-env/bin/python" \
+            --observer-wheel "$RUNNER_TEMP/wheels/agent_evidence_observer-0.0.1-py3-none-any.whl" \
+            --adapter-wheel "$RUNNER_TEMP/wheels/probity_inspect_current_reader-0.0.1-py3-none-any.whl" \
+            --retained "$RUNNER_TEMP/inspect-current-retained"
+      - name: Test native semantics against fresh current originals
+        env:
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
+          INSPECT_CURRENT_PACKET: ${{ runner.temp }}/inspect-current-retained/packet
+        run: |
+          "$RUNNER_TEMP/reader-env/bin/python" -I -B -m pytest -q -c /dev/null --import-mode=importlib owned-consumer/interop/inspect-current-host-2026-10-03/test_native_packet.py --junitxml="$RUNNER_TEMP/inspect-native-controls.xml"
+      - name: Retain originals, pre-run selection, installed wheels and refusals
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: inspect-current-installed-consumer
+          path: |
+            ${{ runner.temp }}/inspect-current-retained/
+            ${{ runner.temp }}/wheels/
+            ${{ runner.temp }}/inspect-bootstrap-controls.xml
+            ${{ runner.temp }}/inspect-native-controls.xml
+          if-no-files-found: error
+          retention-days: 90
