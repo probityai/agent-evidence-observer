@@ -11,6 +11,7 @@ DISTRIBUTIONS = (
     ("probity-smolagents-reference", "probity_smolagents/"),
     ("agent-evidence-observer", "probity_observer/"),
 )
+SOURCE_SUFFIXES = (".py", ".yaml", ".yml", ".json")
 
 
 def sdk_selection() -> dict[str, Any]:
@@ -34,17 +35,29 @@ def installed_files(distribution: str, prefix: str) -> dict[str, Path]:
     result: dict[str, Path] = {}
     for member in installed.files or []:
         name = str(member)
-        if name.startswith(prefix) and name.endswith((".py", ".yaml", ".yml", ".json")):
+        if name.startswith(prefix) and name.endswith(SOURCE_SUFFIXES):
             path = Path(installed.locate_file(member))
             require(path.is_file() and not path.is_symlink(), "installed source is not regular")
             result[name] = path
     require(bool(result), "installed source population is empty")
     # Distribution metadata may omit caches; scan the actual selected package.
     roots = {path.parents[len(name.split("/")) - 2] for name, path in result.items()}
+    require(len(roots) == 1, "installed package root differs")
+    root = next(iter(roots))
+    physical = list(root.rglob("*"))
     require(
-        all(not list(root.rglob("*.pyc")) for root in roots),
+        not root.is_symlink() and all(not path.is_symlink() for path in physical),
+        "installed source is not regular",
+    )
+    require(
+        not any(path.suffix in {".pyc", ".so", ".pyd"} for path in physical),
         "unselected installed bytecode",
     )
+    physical_names = [
+        prefix + path.relative_to(root).as_posix()
+        for path in physical if path.is_file() and path.name.endswith(SOURCE_SUFFIXES)
+    ]
+    exact(sorted(physical_names), sorted(result), "unlisted installed source")
     return result
 
 

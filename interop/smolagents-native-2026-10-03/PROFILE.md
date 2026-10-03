@@ -1,6 +1,6 @@
 # Selected native contract
 
-The immutable SDK source is huggingface/smolagents at c30b115286e000e98711fae5e85993547b73d826, version 1.27.0.dev0. The packaged selection enumerates every Python and prompt YAML file in that SDK Git tree. The producer authenticates the complete installed population before importing the SDK, refuses pre-existing package bytecode and retains the selected SDK, broker and profile bytes.
+The immutable SDK source is huggingface/smolagents at c30b115286e000e98711fae5e85993547b73d826, version 1.27.0.dev0. The packaged selection enumerates every Python and prompt YAML file in that SDK Git tree. The producer authenticates the complete installed population before importing the SDK, refuses unlisted physical source, symbolic links, bytecode and compiled module overrides, and retains the selected SDK, broker and profile bytes.
 
 The native population is:
 
@@ -23,7 +23,6 @@ The reader authenticates the original artifact selection, host-selected issuer/o
 
 The host policy is explicitly selected outside the packet, with its SHA-256 supplied at the CLI. The framework-free reader uses its installed broker/profile source and packaged primary SDK hashes as source trust anchors. A rewritten source manifest cannot authorize different SDK bytes. Tests reselect changed native records to reach semantic checks beyond the original-artifact hash check.
 
-The SDK's base dependency declaration omits PyYAML although agents.py imports it unconditionally; the runner selects PyYAML explicitly. Dependency packages, installation metadata and the interpreter remain trusted. Resolved dependency versions and hashes are retained and then checked in after initial native CI qualification. Action timing only establishes finalized native closure; no duration or performance claim is made.
+The SDK's base dependency declaration omits PyYAML although agents.py imports it unconditionally; the runner selects PyYAML explicitly. Dependency packages, installation metadata and the interpreter remain trusted. Resolved dependency versions and hashes are retained and checked in from native CI qualification. Action timing only establishes finalized native closure; no duration or performance claim is made.
 
 Witness scope is PEER. This finite owned run does not establish provider inference, independent effect custody, producer acceptance or recurring outside adoption. Existing signed broker limits and doesNotAssert fields remain in force.
-

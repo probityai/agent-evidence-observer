@@ -304,7 +304,7 @@ class TestInstalledSource:
             assert "probity_smolagents/sdk-source-selection.json" in source.expected_sources()
 
     class TestFailingCases:
-        @pytest.mark.parametrize("mode", ("bytecode", "extra", "bytes", "symlink"))
+        @pytest.mark.parametrize("mode", ("bytecode", "extra", "unlisted-extra", "extension", "bytes", "symlink"))
         def test_refuses_unselected_installed_source(self, tmp_path, monkeypatch, caplog, mode):
             selection = source.sdk_selection()["files"]
             members = list(selection)
@@ -320,6 +320,10 @@ class TestInstalledSource:
             if mode == "extra":
                 members.append("smolagents/unselected.py")
                 (tmp_path / members[-1]).write_text("changed = True\n")
+            if mode == "unlisted-extra":
+                (package / "prompts" / "__init__.py").write_text("changed = True\n")
+            if mode == "extension":
+                (package / "agents.pyd").write_bytes(b"unselected compiled module")
             if mode == "bytes":
                 (package / "prompts" / "toolcalling_agent.yaml").write_text("changed: true\n")
             if mode == "symlink":
@@ -340,6 +344,8 @@ class TestInstalledSource:
             reason = {
                 "bytecode": "unselected installed bytecode",
                 "extra": "installed SDK source population differs",
+                "unlisted-extra": "unlisted installed source",
+                "extension": "unselected installed bytecode",
                 "bytes": "installed SDK source bytes differ",
                 "symlink": "installed source is not regular",
             }[mode]
