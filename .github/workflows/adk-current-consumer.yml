@@ -76,6 +76,7 @@ jobs:
           path: |
             interop/adk-current-consumer-2026-10-03/fresh-current-run/
             interop/adk-current-consumer-2026-10-03/*-results.xml
+            ${{ runner.temp }}/adk-wheels/
           if-no-files-found: error
           retention-days: 90
 
@@ -114,6 +115,11 @@ jobs:
           mkdir -p "$GITHUB_WORKSPACE/selected-adk/contributing/samples/plugins/plugin_report_publication"
           cp "$profile/upstream-sample/publish_reference.py" "$profile/upstream-sample/README.md" "$GITHUB_WORKSPACE/selected-adk/contributing/samples/plugins/plugin_report_publication/"
           cp "$profile/upstream-sample/test_report_publication_sample.py" "$GITHUB_WORKSPACE/selected-adk/tests/unittests/plugins/"
+      - name: Generate the missing upstream dependency lock without changing tox
+        working-directory: selected-adk
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/adk-tox/bin/uv" lock 2>&1 | tee "$RUNNER_TEMP/full-lock-${{ matrix.tox }}.log"
       - name: Run the unchanged full upstream tox environment
         working-directory: selected-adk
         run: |
@@ -126,6 +132,8 @@ jobs:
           name: adk-full-tox-${{ matrix.tox }}
           path: |
             ${{ runner.temp }}/full-tox-${{ matrix.tox }}.log
+            ${{ runner.temp }}/full-lock-${{ matrix.tox }}.log
+            selected-adk/uv.lock
             selected-adk/.tox/${{ matrix.tox }}/log/
           if-no-files-found: warn
           retention-days: 90
