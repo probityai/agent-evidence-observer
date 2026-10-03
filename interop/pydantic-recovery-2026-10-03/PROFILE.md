@@ -11,7 +11,10 @@ against the signed history head.
 
 A fresh second worker checks the separately supplied host selection. It joins
 the prior authenticated HTTP effect, original typed call and current signed GET
-to the exact grant, policy, service key and selected clock. Only this admission
+to the exact grant, policy, service key and selected clock. The original signed
+POST receipt must equal the live signed state, including its effect time, event
+count and event head. The parent selects a separate native store readback and
+joins it to target startup and the worker's live GET. Only this admission
 creates an accepted host receipt. Only that receipt can enter native
 `DeferredToolResults` under the original tool-call ID. Recovery uses no POST.
 The grant was spent on the original dispatch. Its current validity gates result
@@ -65,6 +68,11 @@ Reader launch clears Python search-path overrides and disables user-site imports
 A hostile inherited `PYTHONPATH` control must leave its execution marker absent.
 Repeated reads must produce the same structured report. The host can publish a
 complete refusal population. This does not grant permission for a denied action.
+The decision binds the complete report, selected pins, policy and actual reader
+stdout by SHA-256. The repeat control compares original stdout bytes and the
+recorded launch environment. Wheel builds need a new output directory and exactly
+the two named distributions. An existing output directory refuses before build
+or install.
 
 ## Reproduce
 
@@ -88,13 +96,21 @@ a changed helper. Workflow output retains these receipts. A new packet path is
 mandatory. Existing results never get overwritten.
 
 The controlled model is native `FunctionModel`, with zero external provider
-calls and no measured inference quality. The first run ends at the native
+calls and no measured inference quality. The provider count derives from the
+selected local model implementation, rather than an independent network counter.
+Native model request counts come from actual Agent usage. Worker and target
+counts come from checked process records. The first run ends at the native
 deferral boundary. This profile does not make arbitrary interrupted Python
 instructions resumable and does not alter the earlier seven-case Pydantic
 exception/exhaustion profile. Historical dispatch uses a declared fixed clock.
 Recovery selects the actual host UTC time after the second target starts.
 The exact-expiry case alone uses the grant's UTC boundary as an explicit fixture.
-The reader checks the declared clock source and rejects a time before history.
+The reader checks the declared clock source, UTC second precision and rejects a
+time before history. Runtime admission checks actual UTC and exposes no clock
+override. It rechecks expiry before native result input and immediately before
+the prepared Agent runs. Offline reconstruction uses a separate function and the retained
+admission and injection instants. It does not use a candidate clock to authorize
+a new runtime release.
 This retained time establishes this measured run, not present-day freshness.
 The issuer, target, filesystem, retained source, reader and host policy have one
 operator. Service keys do not establish independent custody or caller identity.

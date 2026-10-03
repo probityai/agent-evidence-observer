@@ -30,7 +30,7 @@ from probity_pydantic_recovery.common import (
     sha,
     write,
 )
-from probity_pydantic_recovery.gate import admit
+from probity_pydantic_recovery.gate import reconstruct_admission
 
 
 def freeze(root: Path, selected: dict[str, Any], destination: Path) -> None:
@@ -158,6 +158,9 @@ def recovery_case(root: Path, case: dict[str, Any], process: dict[str, Any]) -> 
     verified = historical(root, case)
     selected_head(root, case, process)
     current, recovery = load(root / "current-host-selection.json"), load(root / "recovery.json")
+    parent_current = load(root / "parent-current-readback.json")
+    require(current["liveSha256"] == sha(canonical(parent_current)), "parent-current-selection-binding")
+    require(parent_current == process["targets"][1]["startup"].get("initial"), "parent-current-startup-binding")
     require(type(recovery["pid"]) is int and recovery["pid"] == process["workers"][1]["pid"], "recovery-worker-pid")
     require(type(recovery["recoveryPosts"]) is int and recovery["recoveryPosts"] == 0, "recovery-must-not-dispatch")
     target_requests(root, case, process)
@@ -171,6 +174,7 @@ def recovery_case(root: Path, case: dict[str, Any], process: dict[str, Any]) -> 
         require(case["id"] == "permit", "denied-case-must-not-resume")
         require(load(root / "accepted-host-receipt.json") == expected and expected["dispatchPermitted"] is False, "accepted-host-receipt-binding")
         require(recovery["status"] == "completed" and recovery["releasedResult"] is True, "resume-terminal")
+        require(parent_current == recovery["live"], "parent-current-recovery-binding")
         resumed(root, case, expected, recovery)
     final_readback(root, case)
     return {"id": case["id"], "priorEffect": verified, "firstExecution": "hard-exit-74", "recovery": recovery["status"], "releasedResult": recovery["releasedResult"], "recoveryPosts": 0, "nativeModelRequests": recovery["nativeModelRequests"]}
@@ -232,7 +236,7 @@ def decision(root: Path, case: dict[str, Any], current: dict[str, Any], recovery
         require(current["targetReady"] is True, "current-target-not-ready")
         require((root / "prior-http.json").is_file(), "historical-http-journal-missing")
         from datetime import datetime
-        return admit(case, read(root / "recovery-history.json"), load(root / "prior-http.json"), recovery["live"], current, evaluated_at=datetime.fromisoformat(recovery["evaluatedAt"]))
+        return reconstruct_admission(case, read(root / "recovery-history.json"), load(root / "prior-http.json"), recovery["live"], current, evaluated_at=datetime.fromisoformat(recovery["evaluatedAt"]))
     except VerificationError as error:
         require(recovery.get("reason") == str(error), "refusal-reason-binding")
         require(case["id"] in RECOVERY_REFUSALS and str(error) == RECOVERY_REFUSALS[case["id"]], "declared-refusal-reason")

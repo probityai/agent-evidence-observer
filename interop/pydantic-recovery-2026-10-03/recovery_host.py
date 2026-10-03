@@ -63,7 +63,7 @@ def decide(report: dict[str, Any], policy: dict[str, Any]) -> dict[str, Any]:
     require([row["releasedResult"] for row in report["records"]] == [True] + [False] * (len(CASES) - 1), "publication-result-dispositions")
     require(sum(row["releasedResult"] for row in report["records"]) == policy["releasedResults"] == 1, "publication-result-count")
     require(sum(row["recoveryPosts"] for row in report["records"]) == policy["recoveryPosts"] == 0, "publication-effect-count")
-    return {"decision": "publish-scoped-recovery-report", "dispatchDecision": "no-additional-dispatch-authorized", "releasedResults": 1, "withheldResults": len(CASES) - 1, "recoveryPosts": 0}
+    return {"decision": "publish-scoped-recovery-report", "dispatchDecision": "no-additional-dispatch-authorized", "releasedResults": 1, "withheldResults": len(CASES) - 1, "recoveryPosts": 0, "reportSha256": sha(canonical(report)), "policySha256": sha(canonical(policy)), "pinsSha256": policy["pinsSha256"]}
 
 
 def gate(packet: Path, pins: Path, policy_file: Path, policy_sha256: str, executable: Path, output: Path) -> dict[str, Any]:
@@ -82,7 +82,7 @@ def gate(packet: Path, pins: Path, policy_file: Path, policy_sha256: str, execut
     write(output / "reader-process.json", {"argv": command, "returncode": result.returncode, "environment": environment})
     require(result.returncode == 0, "installed-reader-refused")
     report = strict_loads(result.stdout.rstrip(b"\n"))
-    receipt = decide(report, policy)
+    receipt = {**decide(report, policy), "policyFileSha256": policy_sha256, "readerStdoutSha256": sha(result.stdout)}
     write(output / "host-decision.json", receipt)
     return receipt
 

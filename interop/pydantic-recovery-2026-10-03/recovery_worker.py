@@ -68,7 +68,7 @@ def first(case: dict[str, Any], endpoint: str, root: Path) -> None:
     os._exit(74)
 
 
-def prepare_continuation(case: dict[str, Any], history: bytes, accepted: dict[str, Any]) -> tuple[Any, Any, datetime]:
+def prepare_continuation(case: dict[str, Any], history: bytes, accepted: dict[str, Any]) -> tuple[Any, Any, Any, datetime]:
     """Recheck actual UTC immediately before constructing native result input."""
     from pydantic_ai import DeferredToolResults
     from pydantic_ai.messages import ModelMessagesTypeAdapter
@@ -77,13 +77,16 @@ def prepare_continuation(case: dict[str, Any], history: bytes, accepted: dict[st
     injected_at = datetime.now(UTC).replace(microsecond=0)
     verify_grant(case["grant"], ActionRequest(**case["request"]), GrantPolicy(**case["policy"]), now=injected_at)
     results = DeferredToolResults(calls={accepted["toolCallId"]: accepted["result"]})
-    return native, results, injected_at
+    agent = agent_for(case, resume=True)
+    injected_at = datetime.now(UTC).replace(microsecond=0)
+    verify_grant(case["grant"], ActionRequest(**case["request"]), GrantPolicy(**case["policy"]), now=injected_at)
+    return agent, native, results, injected_at
 
 
-def continuation(case: dict[str, Any], prepared: tuple[Any, Any, datetime], root: Path) -> dict[str, Any]:
+def continuation(case: dict[str, Any], prepared: tuple[Any, Any, Any, datetime], root: Path) -> dict[str, Any]:
     """Run the new native Agent only after the result input passed admission."""
-    native, results, injected_at = prepared
-    result = agent_for(case, resume=True).run_sync(message_history=native, deferred_tool_results=results)
+    agent, native, results, injected_at = prepared
+    result = agent.run_sync(message_history=native, deferred_tool_results=results)
     write(root / "resumed-history.json", result.all_messages_json(), raw=True)
     require(result.output == "complete", "native-continuation-output")
     return {"status": "completed", "output": result.output, "providerCalls": 0, "nativeModelRequests": result.usage().requests, "nativeResultInjectedAt": injected_at.isoformat()}
@@ -92,7 +95,7 @@ def continuation(case: dict[str, Any], prepared: tuple[Any, Any, datetime], root
 def recover(case: dict[str, Any], endpoint: str, root: Path, current: dict[str, Any]) -> None:
     """Authenticate the host's selected evidence before native continuation."""
     live = None
-    evaluated_at = datetime.now(UTC).replace(microsecond=0)
+    evaluated_at = datetime.now(UTC).replace(microsecond=0).isoformat()
     try:
         require(current["targetReady"] is True, "current-target-not-ready")
         require((root / "prior-http.json").is_file(), "historical-http-journal-missing")
@@ -100,15 +103,15 @@ def recover(case: dict[str, Any], endpoint: str, root: Path, current: dict[str, 
         require(status == 200, "current-get-failed")
         live = strict_loads(raw)
         history = read(root / "recovery-history.json")
-        evaluated_at = datetime.now(UTC).replace(microsecond=0)
-        accepted = admit(case, history, load(root / "prior-http.json"), live, current, evaluated_at=evaluated_at)
+        accepted = admit(case, history, load(root / "prior-http.json"), live, current)
+        evaluated_at = accepted["evaluatedAt"]
         prepared = prepare_continuation(case, history, accepted)
     except VerificationError as error:
-        write(root / "recovery.json", {"pid": os.getpid(), "evaluatedAt": evaluated_at.isoformat(), "status": "refused", "reason": str(error), "live": live, "releasedResult": False, "recoveryPosts": 0, "nativeModelRequests": 0})
+        write(root / "recovery.json", {"pid": os.getpid(), "evaluatedAt": evaluated_at, "status": "refused", "reason": str(error), "live": live, "releasedResult": False, "recoveryPosts": 0, "nativeModelRequests": 0})
         return
     completed = continuation(case, prepared, root)
     write(root / "accepted-host-receipt.json", accepted)
-    write(root / "recovery.json", {"pid": os.getpid(), "evaluatedAt": evaluated_at.isoformat(), **completed, "live": live, "releasedResult": True, "recoveryPosts": 0})
+    write(root / "recovery.json", {"pid": os.getpid(), "evaluatedAt": evaluated_at, **completed, "live": live, "releasedResult": True, "recoveryPosts": 0})
 
 
 def main() -> None:

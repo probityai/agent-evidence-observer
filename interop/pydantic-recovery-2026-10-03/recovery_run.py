@@ -126,7 +126,7 @@ def change_target(case: dict[str, Any], store: TicketStore, private: Path, retai
     return retained
 
 
-def current_selection(case: dict[str, Any], root: Path, ready: dict[str, Any]) -> dict[str, Any]:
+def current_selection(case: dict[str, Any], root: Path, ready: dict[str, Any], live: dict[str, Any] | None) -> dict[str, Any]:
     """Select recovery time and exact live target receipt outside native workers."""
     history = (root / "history.json").read_bytes()
     if case["id"] == "changed-arguments":
@@ -139,7 +139,9 @@ def current_selection(case: dict[str, Any], root: Path, ready: dict[str, Any]) -
         grant["signature"] = "0" * len(grant["signature"])
     clock = case["grant"]["expiresAt"].replace("Z", "+00:00") if case["id"] == "expired" else datetime.now(UTC).replace(microsecond=0).isoformat()
     source = "fixture-exact-expiry" if case["id"] == "expired" else "host-system-utc"
-    return {"historySha256": sha(history), "grant": grant, "serviceKey": case["serviceKey"], "policy": case["policy"], "liveSha256": sha(canonical(ready.get("initial"))), "clockTime": clock, "clockSource": source, "targetReady": ready.get("status") != "refused"}
+    require(ready.get("initial") == live, "parent-live-startup-join")
+    write(root / "parent-current-readback.json", live)
+    return {"historySha256": sha(history), "grant": grant, "serviceKey": case["serviceKey"], "policy": case["policy"], "liveSha256": sha(canonical(live)), "clockTime": clock, "clockSource": source, "targetReady": ready.get("status") != "refused"}
 
 
 def execute(root: Path, private: Path, case: dict[str, Any], store: TicketStore) -> None:
@@ -155,7 +157,8 @@ def execute(root: Path, private: Path, case: dict[str, Any], store: TicketStore)
     required_head = change_target(case, store, private, prior["receipt"])
     write(root / "required-target-head.json", required_head)
     process, command, ready = target(private, store, required_head, "second", None, case["id"] == "target-key")
-    current = current_selection(case, root, ready)
+    live = None if ready.get("status") == "refused" else store.readback()
+    current = current_selection(case, root, ready, live)
     selected = private / "current-host-selection.json"
     write(selected, current)
     second = worker(case, root, ready.get("url", "refused-target"), "second", selected)

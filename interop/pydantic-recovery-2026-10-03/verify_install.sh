@@ -2,9 +2,18 @@
 # Run from this profile after creating fresh-run in the selected native environment.
 set -euo pipefail
 native_python=$1
+if test -e wheels; then
+    echo "fresh-wheel-directory-required" >&2
+    exit 78
+fi
+mkdir -m 0700 wheels
 reader_root=$(mktemp -d)
 trap 'rm -rf "$reader_root"' EXIT
 "$native_python" -m pip wheel --no-deps --no-build-isolation --wheel-dir wheels ../.. .
+"$native_python" - <<'PY'
+from pathlib import Path
+assert {path.name for path in Path("wheels").iterdir()} == {"agent_evidence_observer-0.0.1-py3-none-any.whl", "probity_pydantic_recovery_reader-0.0.1-py3-none-any.whl"}, "unexpected-built-wheel-population"
+PY
 sha256sum wheels/*.whl > wheels-sha256.txt
 "$native_python" -m venv "$reader_root/venv"
 "$reader_root/venv/bin/python" -m pip install --require-hashes --only-binary=:all: -r requirements-reader.lock --report reader-install-report.json
@@ -40,7 +49,13 @@ finally:
     else:
         os.environ["PYTHONPATH"] = old_pythonpath
 assert not marker.exists()
-write(Path("host-receipts/hostile-pythonpath-control.json"), {"unselectedModuleExecuted": False, "readerEnvironmentClearsPythonPath": True, "reportEqual": first == second})
+first_stdout = Path("host-receipts/reader.stdout").read_bytes()
+second_stdout = Path("host-repeat/reader.stdout").read_bytes()
+first_environment = strict_loads(Path("host-receipts/reader-process.json").read_bytes())["environment"]
+second_environment = strict_loads(Path("host-repeat/reader-process.json").read_bytes())["environment"]
+assert all("PYTHONPATH" not in environment and "PYTHONHOME" not in environment for environment in (first_environment, second_environment))
+assert first_stdout == second_stdout
+write(Path("host-receipts/hostile-pythonpath-control.json"), {"unselectedModuleExecuted": marker.exists(), "readerEnvironmentClearsPythonPath": "PYTHONPATH" not in second_environment, "reportEqual": first_stdout == second_stdout, "originalStdoutSha256": sha(first_stdout), "repeatStdoutSha256": sha(second_stdout)})
 assert first == second
 assert strict_loads(Path("fresh-report.json").read_bytes().rstrip(b"\n")) == strict_loads(Path("host-receipts/reader.stdout").read_bytes().rstrip(b"\n"))
 assert strict_loads(Path("host-repeat/reader.stdout").read_bytes().rstrip(b"\n")) == strict_loads(Path("host-receipts/reader.stdout").read_bytes().rstrip(b"\n"))

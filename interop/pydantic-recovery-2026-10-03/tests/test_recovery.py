@@ -272,7 +272,7 @@ def test_reselected_boolean_process_identity_refuses(native: Path, tmp_path: Pat
 @pytest.mark.parametrize("mutation", ["recreated-store", "event-head", "event-count"])
 def test_signed_live_state_must_equal_the_historical_receipt(native: Path, tmp_path: Path, mutation: str) -> None:
     """Even the correct service signer cannot substitute another effect history."""
-    from probity_pydantic_recovery.gate import admit
+    from probity_pydantic_recovery.gate import reconstruct_admission
 
     now = datetime.now(UTC).replace(microsecond=0)
     case, store = selection(tmp_path, "join-control", "permit", now)
@@ -285,9 +285,9 @@ def test_signed_live_state_must_equal_the_historical_receipt(native: Path, tmp_p
     assert live["effectId"] == old["effectId"]
     history = (native / "permit/history.json").read_bytes()
     current = {"historySha256": sha(history), "grant": case["grant"], "serviceKey": case["serviceKey"], "policy": case["policy"], "liveSha256": sha(canonical(live)), "clockTime": clock.isoformat(), "clockSource": "host-system-utc", "targetReady": True}
-    assert admit(case, history, prior, old, {**current, "liveSha256": sha(canonical(old))}, evaluated_at=clock)["dispatchPermitted"] is False
+    assert reconstruct_admission(case, history, prior, old, {**current, "liveSha256": sha(canonical(old))}, evaluated_at=clock)["dispatchPermitted"] is False
     with pytest.raises(VerificationError, match="ticket current state differs from retained completion"):
-        admit(case, history, prior, live, current, evaluated_at=clock)
+        reconstruct_admission(case, history, prior, live, current, evaluated_at=clock)
 
 
 def substituted_live_state(store: TicketStore, root: Path, candidate: dict, old: dict, clock: datetime, mutation: str) -> dict:
@@ -324,14 +324,14 @@ def test_same_worker_and_reader_error_cannot_replace_a_declared_case_reason(nati
     data = load(path)
     data["reason"] = "unrelated gate failure"
     path.write_bytes(canonical(data))
-    original = reader.admit
+    original = reader.reconstruct_admission
 
     def unrelated(case: dict, *args: object, **kwargs: object) -> dict:
         if case["id"] == "revoked":
             raise VerificationError("unrelated gate failure")
         return original(case, *args, **kwargs)
 
-    monkeypatch.setattr(reader, "admit", unrelated)
+    monkeypatch.setattr(reader, "reconstruct_admission", unrelated)
     with pytest.raises(VerificationError, match="declared-refusal-reason"):
         verify_saved(root, reselect(root))
 
@@ -382,9 +382,11 @@ def test_real_runtime_expiry_refuses_a_stale_positive_selection(native: Path, tm
     time.sleep(max(0, (deadline - datetime.now(UTC)).total_seconds()) + 0.03)
     with pytest.raises(VerificationError, match="grant is not valid at the reference time"):
         admit(case, history, prior, live, current)
+    with pytest.raises(TypeError, match="evaluated_at"):
+        admit(case, history, prior, live, current, evaluated_at=now)
 
 
-@pytest.mark.parametrize("mutation", ["source", "before-history", "injection-expiry"])
+@pytest.mark.parametrize("mutation", ["source", "before-history", "injection-expiry", "offset", "subsecond"])
 def test_reselected_recovery_clock_relations_refuse(native: Path, tmp_path: Path, mutation: str) -> None:
     root = tmp_path / "packet"
     shutil.copytree(native, root)
@@ -395,6 +397,10 @@ def test_reselected_recovery_clock_relations_refuse(native: Path, tmp_path: Path
         data["clockSource"] = "candidate-clock"
     elif mutation == "before-history":
         data["clockTime"] = (datetime.fromisoformat(case["historicalTime"]) - timedelta(seconds=1)).isoformat()
+    elif mutation == "offset":
+        data["clockTime"] = data["clockTime"].replace("+00:00", "+01:00")
+    elif mutation == "subsecond":
+        data["clockTime"] = datetime.fromisoformat(data["clockTime"]).replace(microsecond=1).isoformat()
     else:
         data["nativeResultInjectedAt"] = case["grant"]["expiresAt"].replace("Z", "+00:00")
     path.write_bytes(canonical(data))
@@ -422,7 +428,7 @@ def test_expiry_between_admission_and_native_injection_writes_a_refusal(native: 
         def now(cls, zone: object) -> datetime:
             nonlocal calls
             calls += 1
-            return selected if calls < 3 else expiry
+            return selected if calls < 2 else expiry
 
     monkeypatch.setattr(recovery_worker, "datetime", AdvancingClock)
     monkeypatch.setattr(recovery_worker, "exchange", lambda *args: (200, canonical(live)))
@@ -430,4 +436,61 @@ def test_expiry_between_admission_and_native_injection_writes_a_refusal(native: 
     report = load(root / "recovery.json")
     assert report["status"] == "refused" and report["reason"] == "grant is not valid at the reference time"
     assert report["releasedResult"] is False and report["nativeModelRequests"] == report["recoveryPosts"] == 0
+    assert not (root / "accepted-host-receipt.json").exists() and not (root / "resumed-history.json").exists()
+
+
+@pytest.mark.parametrize("mutation", ["parent-state", "malformed-hex"])
+def test_reselected_parent_evidence_and_malformed_http_refuse(native: Path, tmp_path: Path, mutation: str) -> None:
+    root = tmp_path / "packet"
+    shutil.copytree(native, root)
+    name = "parent-current-readback.json" if mutation == "parent-state" else "prior-http.json"
+    path = root / "permit" / name
+    data = load(path)
+    if mutation == "parent-state":
+        data["revision"] = 2
+    else:
+        data["postResponseHex"] = "not-hexadecimal"
+    path.write_bytes(canonical(data))
+    reason = "parent-current-selection-binding" if mutation == "parent-state" else "malformed-selected-packet"
+    with pytest.raises(VerificationError, match=reason):
+        verify_saved(root, reselect(root))
+
+
+def test_expiry_during_native_setup_refuses_before_any_model_request(native: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A setup delay cannot carry an old admission across the final run guard."""
+    import recovery_worker
+
+    case = load(native / "permit/case.json")
+    current = load(native / "permit/current-host-selection.json")
+    live = load(native / "permit/recovery.json")["live"]
+    root = tmp_path / "setup-interval"
+    root.mkdir()
+    for name in ("prior-http.json", "recovery-history.json"):
+        shutil.copyfile(native / "permit" / name, root / name)
+    expired = False
+    selected = datetime.fromisoformat(current["clockTime"])
+    expiry = datetime.fromisoformat(case["grant"]["expiresAt"])
+
+    class SetupClock:
+        @classmethod
+        def now(cls, zone: object) -> datetime:
+            return expiry if expired else selected
+
+    class NoRequests:
+        def run_sync(self, **kwargs: object) -> None:
+            raise AssertionError("expired setup entered native model requests")
+
+    def slow_setup(*args: object, **kwargs: object) -> NoRequests:
+        nonlocal expired
+        expired = True
+        return NoRequests()
+
+    monkeypatch.setattr(recovery_worker, "datetime", SetupClock)
+    monkeypatch.setattr(recovery_worker, "agent_for", slow_setup)
+    monkeypatch.setattr(recovery_worker, "exchange", lambda *args: (200, canonical(live)))
+    recovery_worker.recover(case, "retained-native-get-control", root, current)
+    report = load(root / "recovery.json")
+    assert report["reason"] == "grant is not valid at the reference time"
+    assert report["status"] == "refused" and report["releasedResult"] is False
+    assert report["nativeModelRequests"] == report["recoveryPosts"] == 0
     assert not (root / "accepted-host-receipt.json").exists() and not (root / "resumed-history.json").exists()

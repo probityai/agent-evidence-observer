@@ -20,7 +20,17 @@ def effect(case: dict[str, Any], packet: dict[str, Any]) -> dict[str, Any]:
     return verify_ticket_result(receipt, readback, ActionRequest(**case["request"]), GrantPolicy(**case["policy"]), case["serviceKey"], case["grant"], now=datetime.fromisoformat(case["historicalTime"]))
 
 
-def admit(case: dict[str, Any], history: bytes, prior: dict[str, Any], live: dict[str, Any], current: dict[str, Any], *, evaluated_at: datetime | None = None) -> dict[str, Any]:
+def admit(case: dict[str, Any], history: bytes, prior: dict[str, Any], live: dict[str, Any], current: dict[str, Any]) -> dict[str, Any]:
+    """Admit a runtime release using this process's actual UTC clock only."""
+    return _admission_at(case, history, prior, live, current, datetime.now(UTC).replace(microsecond=0))
+
+
+def reconstruct_admission(case: dict[str, Any], history: bytes, prior: dict[str, Any], live: dict[str, Any], current: dict[str, Any], *, evaluated_at: datetime) -> dict[str, Any]:
+    """Reconstruct a retained decision without granting a new runtime release."""
+    return _admission_at(case, history, prior, live, current, evaluated_at)
+
+
+def _admission_at(case: dict[str, Any], history: bytes, prior: dict[str, Any], live: dict[str, Any], current: dict[str, Any], actual: datetime) -> dict[str, Any]:
     """Require current host selection before constructing deferred results.
 
     A spent dispatch grant never creates permission for another POST. This
@@ -34,7 +44,7 @@ def admit(case: dict[str, Any], history: bytes, prior: dict[str, Any], live: dic
     require(current["serviceKey"] == case["serviceKey"] and current["policy"] == case["policy"], "current-key-policy-binding")
     require(current["liveSha256"] == sha(canonical(live)), "current-live-binding")
     selected_at = datetime.fromisoformat(current["clockTime"])
-    actual = datetime.now(UTC).replace(microsecond=0) if evaluated_at is None else evaluated_at
+    require(selected_at.tzinfo is not None and selected_at.utcoffset().total_seconds() == 0 and selected_at.microsecond == 0, "current-selection-clock-utc-seconds")
     require(actual.tzinfo is not None and actual.utcoffset().total_seconds() == 0, "current-runtime-clock-utc")
     expected_clock = "fixture-exact-expiry" if case["id"] == "expired" else "host-system-utc"
     require(current["clockSource"] == expected_clock, "current-clock-source")
