@@ -89,6 +89,9 @@ in `pyvenv.cfg`, rejects a bin-directory configuration override, and invokes the
 selected environment's Python with `-I`. The packet cannot supply installation
 selection. Either supported reader version still needs a complete outside
 manifest; accepting its version name alone grants no publication permission.
+Normal pip direct launchers and its exact three-line shell trampoline for long
+or space-containing paths are recognized as installation data. The trampoline
+must name the selected environment's Python; the gate never executes the shell.
 
 Installation selection opens regular files without blocking on a FIFO, bounds
 individual files to 64 MiB, total selected bytes to 512 MiB, files to 4,096,

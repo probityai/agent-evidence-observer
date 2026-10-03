@@ -159,6 +159,27 @@ def installed_versions(site: Path) -> dict[str, str]:
     return versions
 
 
+def launcher_interpreter(raw: bytes) -> Path:
+    """Read normal pip direct or long-path trampoline headers as data only.
+
+    The shell wrapper is never executed: :func:`execute` selects Python with
+    ``-I`` explicitly. Its complete bytes still belong to the outside-selected
+    installation closure. Only pip's literal three-line wrapper is accepted.
+    """
+    lines = raw.splitlines()
+    require(bool(lines) and lines[0].startswith(b"#!"), "reader-installed-shebang")
+    executable = lines[0][2:]
+    if executable == b"/bin/sh":
+        require(len(lines) >= 3 and lines[2] == b"' '''", "reader-installed-shebang")
+        start, end = b"'''exec' ", b' "$0" "$@"'
+        require(lines[1].startswith(start) and lines[1].endswith(end), "reader-installed-shebang")
+        executable = lines[1][len(start):-len(end)]
+        if executable.startswith(b'"'):
+            require(executable.endswith(b'"'), "reader-installed-shebang")
+            executable = executable[1:-1]
+    return Path(executable.decode("utf-8"))
+
+
 def reader_closure(reader: Path) -> dict[str, Any]:
     """Select normal installed package files and interpreter before execution.
 
@@ -187,11 +208,7 @@ def reader_closure(reader: Path) -> dict[str, Any]:
     packages = installed_versions(sites[0])
     require(packages.get("probity-joint-recovery-reader") in {"0.0.1", "0.0.2"} and packages.get("agent-evidence-observer") == "0.0.1", "reader-installed-versions")
     interpreter = prefix / "bin/python"
-    raw = selected_contents(reader)[0]
-    require(bool(raw), "reader-installed-shebang")
-    line = raw.splitlines()[0]
-    require(line.startswith(b"#!"), "reader-installed-shebang")
-    selected = Path(line[2:].decode("utf-8"))
+    selected = launcher_interpreter(selected_contents(reader)[0])
     require(selected.parent.resolve(strict=True) == prefix / "bin" and selected.resolve(strict=True) == interpreter.resolve(strict=True), "reader-installed-shebang")
     return {"prefix": str(prefix), "reader": str(reader), "shebangInterpreter": str(selected), "interpreter": str(interpreter.resolve(strict=True)), "interpreterSha256": file_digest(interpreter), "packages": packages, "files": inventory}
 

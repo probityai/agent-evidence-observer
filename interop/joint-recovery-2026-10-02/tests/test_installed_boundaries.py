@@ -38,6 +38,18 @@ class TestInstalledSelection:
     """Installation bytes are necessary alongside explicit runtime isolation."""
 
     class TestPassingCases:
+        @pytest.mark.parametrize("quoted", [False, True])
+        def test_normal_pip_trampoline_selects_same_interpreter(self, tmp_path, quoted):
+            _, _, _, _, reader = selected(tmp_path)
+            interpreter = reader.parent / "python"
+            executable = str(interpreter)
+            if quoted:
+                executable = '"' + executable + '"'
+            reader.write_text("#!/bin/sh\n'''exec' " + executable + ' "$0" "$@"\n' + "' '''\nprint('fixture')\n")
+            closure = host.reader_closure(reader)
+            assert closure["shebangInterpreter"] == str(interpreter)
+            assert closure["files"][str(reader.relative_to(reader.parent.parent))]["sha256"] == hashlib.sha256(reader.read_bytes()).hexdigest()
+
         def test_standard_library_alias_is_selected_once(self, tmp_path: Path):
             _, _, _, _, reader = selected(tmp_path)
             prefix = reader.parent.parent
@@ -65,6 +77,22 @@ class TestInstalledSelection:
             assert host.installation_inventory(tmp_path)["member"]["size"] == 3
 
     class TestFailingCases:
+        @pytest.mark.parametrize("header", [
+            b"", b"#!/bin/sh\n", b"#!/bin/sh\nexec python\n' '''\n",
+            b"#!/bin/sh\n'''exec' /usr/bin/python \"$0\" \"$@\"\nwrong\n",
+            b"#!/bin/sh\n'''exec' /usr/bin/python \"$0\" \"$@\"; echo extra\n' '''\n",
+            b"#!/bin/sh\n'''exec' \"/usr/bin/python \"$0\" \"$@\"\n' '''\n",
+        ])
+        def test_malformed_trampoline_is_refused(self, header):
+            with pytest.raises(ValueError, match="^reader-installed-shebang$"):
+                host.launcher_interpreter(header)
+
+        def test_external_trampoline_interpreter_is_refused(self, tmp_path):
+            _, _, _, _, reader = selected(tmp_path)
+            reader.write_text("#!/bin/sh\n'''exec' " + sys.executable + ' "$0" "$@"\n' + "' '''\n")
+            with pytest.raises(ValueError, match="^reader-installed-shebang$"):
+                host.reader_closure(reader)
+
         @pytest.mark.parametrize("config", [
             "", "include-system-site-packages = true\n",
             "include-system-site-packages = false\ninclude-system-site-packages = true\n",
