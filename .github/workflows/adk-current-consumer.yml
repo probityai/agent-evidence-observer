@@ -1,0 +1,139 @@
+name: Current ADK installed publication consumer
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['interop/adk-current-consumer-2026-10-03/**', '.github/workflows/adk-current-consumer.yml']
+  pull_request:
+    branches: [main]
+    paths: ['interop/adk-current-consumer-2026-10-03/**', '.github/workflows/adk-current-consumer.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  current-native-consumer:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      SOURCE_DATE_EPOCH: '946684800'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: probityai/agent-evidence-observer
+          ref: c774e0711e4a30c31cdfb184c1e4495a249fbdd0
+          path: selected-reference
+          persist-credentials: false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: probityai/agent-evidence-observer
+          ref: 4a50e61471355611121a578f3a4c22daa931d419
+          path: selected-observer
+          persist-credentials: false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: google/adk-python
+          ref: e94c2e726a269e0f04e2e4b202f5c131c80c20de
+          path: selected-adk
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.13.15'
+      - name: Build original reader wheels and normally install selected current SDK
+        run: |
+          set -euo pipefail
+          profile="$GITHUB_WORKSPACE/interop/adk-current-consumer-2026-10-03"
+          python -m venv "$RUNNER_TEMP/adk-producer"
+          "$RUNNER_TEMP/adk-producer/bin/python" -m pip install --no-compile --require-hashes -r "$profile/requirements.lock" -r "$profile/build.lock"
+          "$RUNNER_TEMP/adk-producer/bin/python" -m pip wheel --no-deps --no-build-isolation "$GITHUB_WORKSPACE/selected-observer" "$GITHUB_WORKSPACE/selected-reference/interop/adk-ticket-2026-10-02" --wheel-dir "$RUNNER_TEMP/adk-wheels"
+          "$RUNNER_TEMP/adk-producer/bin/python" -m pip install --no-compile --no-deps "$RUNNER_TEMP/adk-wheels/agent_evidence_observer-0.0.1-py3-none-any.whl" "$RUNNER_TEMP/adk-wheels/probity_adk_reference-0.0.1-py3-none-any.whl"
+          "$RUNNER_TEMP/adk-producer/bin/python" -m pip install --no-compile --no-deps --no-build-isolation --force-reinstall "$GITHUB_WORKSPACE/selected-adk"
+          python -m venv "$RUNNER_TEMP/adk-reader"
+          "$RUNNER_TEMP/adk-reader/bin/python" -m pip install --no-compile --require-hashes -r "$profile/requirements-reader.lock"
+          "$RUNNER_TEMP/adk-reader/bin/python" -m pip install --no-compile --no-deps "$RUNNER_TEMP/adk-wheels/agent_evidence_observer-0.0.1-py3-none-any.whl" "$RUNNER_TEMP/adk-wheels/probity_adk_reference-0.0.1-py3-none-any.whl"
+      - name: Verify trusted host controls and actual current native population
+        run: |
+          set -euo pipefail
+          profile="$GITHUB_WORKSPACE/interop/adk-current-consumer-2026-10-03"
+          ADK_CURRENT_READER_PYTHON="$RUNNER_TEMP/adk-reader/bin/python" PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 "$RUNNER_TEMP/adk-producer/bin/python" -I -B -m pytest -c /dev/null "$profile/test_bootstrap.py" "$profile/test_publish_reference.py" -q --junitxml="$profile/bootstrap-results.xml"
+          "$RUNNER_TEMP/adk-producer/bin/python" -I -B "$profile/bootstrap.py" --producer "$RUNNER_TEMP/adk-producer/bin/python" --reader "$RUNNER_TEMP/adk-reader/bin/python" --wheels "$RUNNER_TEMP/adk-wheels" --sdk-checkout "$GITHUB_WORKSPACE/selected-adk" --output "$profile/fresh-current-run"
+      - name: Check original native semantics in the framework-free reader
+        run: |
+          set -euo pipefail
+          profile="$GITHUB_WORKSPACE/interop/adk-current-consumer-2026-10-03"
+          "$RUNNER_TEMP/adk-reader/bin/python" -m pip install --no-compile --require-hashes -r "$profile/requirements-test-reader.lock"
+          ADK_CURRENT_RETAINED_PACKET="$profile/fresh-current-run/packet" PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 "$RUNNER_TEMP/adk-reader/bin/python" -I -B -m pytest -c /dev/null "$profile/test_native_current.py" -q --junitxml="$profile/native-results.xml"
+      - name: Retain actual source, raw native bytes, installation and gate receipts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: current-adk-installed-consumer
+          path: |
+            interop/adk-current-consumer-2026-10-03/fresh-current-run/
+            interop/adk-current-consumer-2026-10-03/*-results.xml
+            ${{ runner.temp }}/adk-wheels/
+          if-no-files-found: error
+          retention-days: 90
+
+  upstream-full-tox:
+    name: Upstream full tox (${{ matrix.tox }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {python: '3.10', tox: py310}
+          - {python: '3.11', tox: py311}
+          - {python: '3.12', tox: py312}
+          - {python: '3.13', tox: py313}
+          - {python: '3.14', tox: py314}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: google/adk-python
+          ref: e94c2e726a269e0f04e2e4b202f5c131c80c20de
+          path: selected-adk
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install selected tox tooling and add the exact focused sample
+        run: |
+          set -euo pipefail
+          profile="$GITHUB_WORKSPACE/interop/adk-current-consumer-2026-10-03"
+          python -m venv "$RUNNER_TEMP/adk-tox"
+          "$RUNNER_TEMP/adk-tox/bin/python" -m pip install --require-hashes -r "$profile/tox-tools.lock"
+          mkdir -p "$GITHUB_WORKSPACE/selected-adk/contributing/samples/plugins/plugin_report_publication"
+          cp "$profile/upstream-sample/publish_reference.py" "$profile/upstream-sample/README.md" "$GITHUB_WORKSPACE/selected-adk/contributing/samples/plugins/plugin_report_publication/"
+          cp "$profile/upstream-sample/test_report_publication_sample.py" "$GITHUB_WORKSPACE/selected-adk/tests/unittests/plugins/"
+      - name: Generate the missing upstream dependency lock without changing tox
+        working-directory: selected-adk
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/adk-tox/bin/uv" lock 2>&1 | tee "$RUNNER_TEMP/full-lock-${{ matrix.tox }}.log"
+      - name: Run the unchanged full upstream tox environment
+        working-directory: selected-adk
+        run: |
+          set -euo pipefail
+          "$RUNNER_TEMP/adk-tox/bin/tox" -e "${{ matrix.tox }}" 2>&1 | tee "$RUNNER_TEMP/full-tox-${{ matrix.tox }}.log"
+      - name: Retain the full supported-version tox attempt
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: adk-full-tox-${{ matrix.tox }}
+          path: |
+            ${{ runner.temp }}/full-tox-${{ matrix.tox }}.log
+            ${{ runner.temp }}/full-lock-${{ matrix.tox }}.log
+            selected-adk/uv.lock
+            selected-adk/.tox/${{ matrix.tox }}/log/
+          if-no-files-found: warn
+          retention-days: 90
