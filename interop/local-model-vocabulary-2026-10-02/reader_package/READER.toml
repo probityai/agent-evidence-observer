@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "probity-policy-vocabulary-reader"
+version = "0.1.0"
+description = "Offline reader and separate quality decision for frozen policy vocabulary evidence"
+requires-python = ">=3.12"
+dependencies = []
+license = {text = "Apache-2.0"}
+
+[project.scripts]
+probity-policy-vocabulary-reader = "probity_policy_vocabulary_reader.cli:main"
+
+[tool.setuptools]
+packages = ["probity_policy_vocabulary_reader"]
+
+[tool.setuptools.package-data]
+probity_policy_vocabulary_reader = ["protocol.json"]
