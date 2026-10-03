@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import os
 import shutil
 from pathlib import Path
 
@@ -168,3 +169,58 @@ def test_preparation_failure_removes_private_keys(tmp_path: Path, monkeypatch: p
         run(root, "test-source")
     assert not (tmp_path / "failed-packet-private").exists()
     assert not recovery_run.ACTIVE
+
+
+def test_replaced_candidate_cannot_change_consumed_bytes(native: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Replacing a checked path cannot change the authenticated private copy."""
+    from probity_pydantic_recovery import reader
+
+    root = tmp_path / "packet"
+    shutil.copytree(native, root)
+    selected = load(root / "consumer-pins.json")
+    target = root / "permit/recovery.json"
+    original_read = reader.read
+
+    def replace_after_read(path: Path) -> bytes:
+        raw = original_read(path)
+        if path == target:
+            changed = load(target)
+            changed["status"] = "refused"
+            target.write_bytes(canonical(changed))
+        return raw
+
+    monkeypatch.setattr(reader, "read", replace_after_read)
+    report = verify_saved(root, selected)
+    assert report["records"][0]["recovery"] == "completed"
+    assert load(target)["status"] == "refused"
+
+
+@pytest.mark.parametrize("kind", ["directory", "symlink", "fifo"])
+def test_regular_file_open_refuses_other_types(tmp_path: Path, kind: str) -> None:
+    """No-follow and nonblocking open refuse links and special files."""
+    from probity_pydantic_recovery.common import read
+
+    path = tmp_path / "candidate"
+    if kind == "directory":
+        path.mkdir()
+    elif kind == "symlink":
+        target = tmp_path / "outside"
+        target.write_bytes(b"selected bytes")
+        path.symlink_to(target)
+    else:
+        os.mkfifo(path)
+    with pytest.raises(VerificationError):
+        read(path)
+
+
+@pytest.mark.parametrize("index", [2, 3])
+def test_reselected_native_message_kind_refuses(native: Path, tmp_path: Path, index: int) -> None:
+    """Native tool returns and final output need their real message kinds."""
+    root = tmp_path / "packet"
+    shutil.copytree(native, root)
+    path = root / "permit/resumed-history.json"
+    history = json.loads(path.read_bytes())
+    history[index]["kind"] = "wrong-native-message-kind"
+    path.write_bytes(json.dumps(history, separators=(",", ":")).encode())
+    with pytest.raises(VerificationError, match="native-continuation-message-kinds"):
+        verify_saved(root, reselect(root))

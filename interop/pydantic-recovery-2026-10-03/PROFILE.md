@@ -46,6 +46,11 @@ code. It opens SQLite in immutable read-only mode with query-only, untrusted
 schema and a finite instruction limit. Required final signed readbacks preserve
 the exact effect body. Revocation is the sole declared final state change.
 
+The reader authenticates each bounded byte buffer and copies that same buffer
+into a private directory before reconstruction. Later replacement of a candidate
+path cannot change the consumed copy. File open refuses final symlinks, directories
+and special files. The private copy remains under the selected host's custody.
+
 The installed reader is a separate distribution,
 `probity-pydantic-recovery-reader==0.0.1`. Its host gate selects external packet
 pins, the entire isolated installation, its interpreter and publication policy

@@ -5,6 +5,7 @@ import hashlib
 import json
 import math
 import os
+import stat
 from pathlib import Path
 from typing import Any
 
@@ -28,10 +29,17 @@ def sha(raw: bytes) -> str:
 
 
 def read(path: Path) -> bytes:
-    """Read one bounded regular file without following a symlink."""
-    require(path.is_file() and not path.is_symlink(), "missing-or-linked-file")
-    with path.open("rb") as handle:
-        raw = handle.read(MAX_FILE + 1)
+    """Open one bounded regular file without following its final symlink."""
+    try:
+        descriptor = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+    except OSError as error:
+        raise VerificationError("missing-or-linked-file") from error
+    try:
+        require(stat.S_ISREG(os.fstat(descriptor).st_mode), "nonregular-file")
+        with os.fdopen(descriptor, "rb", closefd=False) as handle:
+            raw = handle.read(MAX_FILE + 1)
+    finally:
+        os.close(descriptor)
     require(len(raw) <= MAX_FILE, "file-bound")
     return raw
 

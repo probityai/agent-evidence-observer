@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import sqlite3
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -25,8 +26,36 @@ from probity_pydantic_recovery.common import (
     read,
     require,
     sha,
+    write,
 )
 from probity_pydantic_recovery.gate import admit
+
+
+def freeze(root: Path, selected: dict[str, Any], destination: Path) -> None:
+    """Authenticate and copy each consumed buffer before semantic reconstruction."""
+    require(root.is_dir() and not root.is_symlink(), "packet-directory")
+    require(not any(path.is_symlink() for path in root.rglob("*")), "packet-symlink")
+    raw = read(root / "artifact-manifest.json")
+    require(sha(raw) == selected["artifactManifestSha256"], "selected-manifest")
+    manifest = strict_loads(raw)
+    require(type(manifest) is dict and len(manifest) < 3000, "file-population-bound")
+    actual = {str(path.relative_to(root)) for path in root.rglob("*") if path.is_file()}
+    require(actual - {"artifact-manifest.json", "consumer-pins.json", "report.json"} == set(manifest), "artifact-population")
+    write(destination / "artifact-manifest.json", raw, raw=True)
+    copy_selected(root, destination, manifest)
+
+
+def copy_selected(root: Path, destination: Path, manifest: dict[str, str]) -> None:
+    """Hash and copy the same bounded bytes, never reopen a checked candidate."""
+    total = 0
+    for name, digest in manifest.items():
+        path = Path(name)
+        require(not path.is_absolute() and ".." not in path.parts, "artifact-path")
+        raw = read(root / path)
+        total += len(raw)
+        require(total < 128 * 1024 * 1024, "packet-byte-bound")
+        require(sha(raw) == digest, "artifact-hash")
+        write(destination / path, raw, raw=True)
 
 
 def population(root: Path, selected: dict[str, Any]) -> dict[str, Any]:
@@ -100,6 +129,7 @@ def resumed(root: Path, case: dict[str, Any], accepted: dict[str, Any], recovery
     initial = messages(read(root / "history.json"))
     history = messages(read(root / "resumed-history.json"))
     require(len(history) == 4 and history[:2] == initial, "native-continuation-history")
+    require(history[2]["kind"] == "request" and history[3]["kind"] == "response", "native-continuation-message-kinds")
     part = history[2]["parts"]
     require(len(part) == 1 and part[0]["part_kind"] == "tool-return", "native-result-population")
     require(part[0]["tool_name"] == "dispatch_ticket" and part[0]["tool_call_id"] == accepted["toolCallId"] and part[0]["content"] == accepted["result"], "native-result-binding")
@@ -196,9 +226,12 @@ def reconstruct(root: Path, selected: dict[str, Any]) -> dict[str, Any]:
 
 
 def verify_saved(root: Path, selected: dict[str, Any]) -> dict[str, Any]:
-    """Convert malformed candidate representations to one bounded refusal."""
+    """Reconstruct only the private copy of externally authenticated buffers."""
     try:
-        return reconstruct(root, selected)
+        with tempfile.TemporaryDirectory(prefix="probity-recovery-reader-") as directory:
+            frozen = Path(directory)
+            freeze(root, selected, frozen)
+            return reconstruct(frozen, selected)
     except (KeyError, TypeError, IndexError, AttributeError, sqlite3.Error, RecursionError) as error:
         raise VerificationError("malformed-selected-packet") from error
 
