@@ -611,6 +611,8 @@ def run(root, weights, provenance, commit):
     full_commit = subprocess.check_output(
         ["git", "rev-parse", f"{commit}^{{commit}}"], text=True
     ).strip()
+    if full_commit != PROTOCOL_COMMIT:
+        raise ValueError("selected preregistration commit identity differs")
     frozen = subprocess.check_output(["git", "show", f"{full_commit}:{PROTOCOL_PATH}"])
     if frozen != raw:
         raise ValueError("selected preregistration commit differs from protocol bytes")

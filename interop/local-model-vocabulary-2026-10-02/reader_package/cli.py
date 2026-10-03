@@ -19,6 +19,33 @@ def threshold(raw: str) -> int:
 
 def assess(report: dict, minimum_correct: int, minimum_pairs: int) -> dict:
     """Preserve the verified report; host thresholds do not change its scores."""
+    if (
+        type(minimum_correct) is not int
+        or not 0 <= minimum_correct <= 16
+        or type(minimum_pairs) is not int
+        or not 0 <= minimum_pairs <= 8
+    ):
+        raise ValueError("host thresholds exceed the declared row population")
+    p = task_matrix.protocol(
+        Path(task_matrix.__file__).with_name("protocol.json").read_bytes()
+    )
+    expected = {
+        (cfg["model"], cfg["id"], family)
+        for cfg in task_matrix.configurations(p)
+        for family in {case["family"] for case in p["cases"]}
+    }
+    rows = report["quality"]
+    identities = [(row["model"], row["configuration"], row["family"]) for row in rows]
+    if len(identities) != len(expected) or set(identities) != expected:
+        raise ValueError("quality row population differs from frozen profile")
+    for row in rows:
+        if (
+            type(row["correct"]) is not int
+            or not 0 <= row["correct"] <= 16
+            or type(row["fullyCorrectPairs"]) is not int
+            or not 0 <= row["fullyCorrectPairs"] <= 8
+        ):
+            raise ValueError("quality counts must be finite declared integers")
     evidence_ok = report["publicationDecision"] == "publish-scoped-report"
     failures = [
         {
@@ -28,7 +55,7 @@ def assess(report: dict, minimum_correct: int, minimum_pairs: int) -> dict:
             "correct": row["correct"],
             "fullyCorrectPairs": row["fullyCorrectPairs"],
         }
-        for row in report["quality"]
+        for row in rows
         if row["correct"] < minimum_correct or row["fullyCorrectPairs"] < minimum_pairs
     ]
     return {
@@ -74,6 +101,7 @@ def main() -> int:
         result = assess(
             report, args.minimum_correct_per_row, args.minimum_pairs_per_row
         )
+        rendered = json.dumps(result, indent=2, allow_nan=False)
     except (OSError, ValueError, TypeError, KeyError, RecursionError) as exc:
         print(
             json.dumps(
@@ -86,7 +114,7 @@ def main() -> int:
             )
         )
         return 1
-    print(json.dumps(result, indent=2, allow_nan=False))
+    print(rendered)
     accepted = (
         result["evidenceDecision"] == "accept-scoped-evidence"
         if args.evidence_only

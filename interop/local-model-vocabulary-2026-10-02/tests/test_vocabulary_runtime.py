@@ -13,10 +13,18 @@ from task_matrix import (
     population,
     protocol,
     request,
+    run,
     score,
     verify,
     write,
 )
+
+
+def test_wrong_preregistration_commit_refuses_before_any_run_state(tmp_path):
+    output = tmp_path / "run"
+    with pytest.raises(ValueError, match="commit identity differs"):
+        run(output, tmp_path / "weights", tmp_path / "provenance", "HEAD")
+    assert not output.exists()
 
 
 def fixture(root, *, preflight_failure=False):
