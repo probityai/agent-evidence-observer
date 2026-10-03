@@ -1,0 +1,46 @@
+{
+  "schema": "probity-vocabulary-installed-native-consumer-v1",
+  "wheelSHA256": "dd583f46e66a6cda396efa142248e52c9792c8062a65aea754184e22c22f17be",
+  "wheelBytes": 35389,
+  "pinsSHA256": "3e5202f6c03733f5572bae0d44982e0b80183a5a5673abeb0cd54d1351cb54c2",
+  "strictExitCode": 1,
+  "evidenceOnlyExitCode": 0,
+  "evidenceDecision": "accept-scoped-evidence",
+  "qualityDecision": "hold-quality",
+  "consumerDecision": "hold-quality",
+  "qualityFailureRows": 8,
+  "repeatExact": true,
+  "originalStdoutStderrRepeatExact": true,
+  "expectedReportExact": true,
+  "installedDistributions": [
+    "pip",
+    "probity-policy-vocabulary-reader"
+  ],
+  "corruptionControls": [
+    {
+      "case": "changed-response",
+      "exitCode": 1,
+      "consumerDecision": "hold-evidence",
+      "error": {
+        "message": "original retained bytes changed",
+        "type": "ValueError"
+      }
+    },
+    {
+      "case": "resigned-helper",
+      "exitCode": 1,
+      "consumerDecision": "hold-evidence",
+      "error": {
+        "message": "retained schema helper differs from selected protocol",
+        "type": "ValueError"
+      }
+    }
+  ],
+  "hostileLaunchControl": {
+    "ignoredPythonPathHomeUserBaseAndCWD": true,
+    "hostileMarkerAbsent": true,
+    "consumerExact": true,
+    "scope": "selected hostile Python configuration only; protected host interpreter and installed environment remain trusted"
+  },
+  "scope": "same operator installed offline replay and mutation controls; no new inference, effects, outside acceptance/adoption or independent custody"
+}
