@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools==81.0.0", "wheel==0.46.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "probity-control-arena-reader"
+version = "0.0.2"
+description = "Framework-free selected ControlArena echo/submit native-log publication reader"
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest>=8,<9", "hypothesis>=6,<7"]
+
+[project.scripts]
+probity-read-control-arena = "probity_control_arena_reader:main"
+
+[tool.setuptools]
+py-modules = ["probity_control_arena_reader"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.pyright]
+typeCheckingMode = "strict"
+include = ["probity_control_arena_reader.py", "select_policy.py", "run_selected_host.py"]
