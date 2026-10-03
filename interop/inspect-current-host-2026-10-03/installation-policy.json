@@ -1,6 +1,6 @@
 {
-  "adapter_sha256": "9f0b6239b1277d26cdb6b357bcdad78def734d0d2b426d7f93e89dd5178b209f",
-  "adapter_wheel_sha256": "d02651ac1c6f85f71966b05a074d9ac5c34927b37549aa6a68132dce3b290b11",
+  "adapter_sha256": "906e844ac709d8508dddce36c5dd0f451357852e135e1f5bbaee4ca821c14c5a",
+  "adapter_wheel_sha256": "a608bf025e32ea95be4ef6cbc76741ff0225b8dc5ab02d2fec268d6da8bb8972",
   "bootstrap_sha256": "668dca4a3b1bde25cf0592294bacf2807ad73b12247a8e2d544e664da6eb7ab2",
   "build": {
     "setuptools": "81.0.0",
@@ -12,7 +12,7 @@
     "_legacy/evaluation_contract.py": "2477f069f52e14545b8525c1b40cbe8deceb381cc036d6204d2069feaa54c221",
     "_legacy/inspect_contract.py": "9a075a3e08fd48d20ddfc36f16a88277fd5a8075bf51288108697ed250022fb9",
     "_legacy/inspect_execution.py": "a9919ba209f7507144cb657678b460ef54790021bc6df5c115b1ee7750dc5c50",
-    "adapter.py": "9f0b6239b1277d26cdb6b357bcdad78def734d0d2b426d7f93e89dd5178b209f"
+    "adapter.py": "906e844ac709d8508dddce36c5dd0f451357852e135e1f5bbaee4ca821c14c5a"
   },
   "inspect_source": "93f7182cf2ce9be22724b05e499cd1358d7ed41d",
   "legacy": {

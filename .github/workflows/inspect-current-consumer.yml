@@ -75,7 +75,7 @@ jobs:
         env:
           PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
         run: |
-          "$RUNNER_TEMP/builder/bin/python" -B -m pytest -q -c /dev/null owned-consumer/interop/inspect-current-host-2026-10-03/test_bootstrap.py --junitxml="$RUNNER_TEMP/inspect-bootstrap-controls.xml"
+          "$RUNNER_TEMP/builder/bin/python" -B -m pytest -q -c /dev/null -p no:cacheprovider owned-consumer/interop/inspect-current-host-2026-10-03/test_bootstrap.py --junitxml="$RUNNER_TEMP/inspect-bootstrap-controls.xml"
       - name: Run the declared current host and repeated isolated consumer
         env:
           SELECTED_OWNED_COMMIT: ${{ github.sha }}
@@ -93,7 +93,7 @@ jobs:
           PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'
           INSPECT_CURRENT_PACKET: ${{ runner.temp }}/inspect-current-retained/packet
         run: |
-          "$RUNNER_TEMP/reader-env/bin/python" -I -B -m pytest -q -c /dev/null --import-mode=importlib owned-consumer/interop/inspect-current-host-2026-10-03/test_native_packet.py --junitxml="$RUNNER_TEMP/inspect-native-controls.xml"
+          "$RUNNER_TEMP/reader-env/bin/python" -I -B -m pytest -q -c /dev/null -p no:cacheprovider --import-mode=importlib owned-consumer/interop/inspect-current-host-2026-10-03/test_native_packet.py --junitxml="$RUNNER_TEMP/inspect-native-controls.xml"
       - name: Retain originals, pre-run selection, installed wheels and refusals
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02

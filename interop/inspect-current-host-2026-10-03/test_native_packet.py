@@ -140,3 +140,20 @@ def test_success_with_no_sample_never_becomes_completion(packet):
 
     with pytest.raises(ValueError, match="execution_success_missing_sample"):
         reconstruct(packet, change)
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "double",
+        "foreign/double",
+        "probity_inspect_current/other",
+        "probity_inspect_current/double/extra",
+    ],
+)
+def test_reselected_native_registry_names_remain_exact(packet, name):
+    def change(log):
+        log["plan"]["steps"][0]["params"]["tools"][0][0]["name"] = name
+
+    with pytest.raises(ValueError, match="current_registry_names"):
+        reconstruct(packet, change)

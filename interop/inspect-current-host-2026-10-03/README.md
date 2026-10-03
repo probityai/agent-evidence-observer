@@ -19,7 +19,16 @@ refuses unselected package bytecode caches, and launches isolated children with
 The three shared grammar files retain their original immutable bytes. Their
 digests are checked before their retained buffers are compiled. The new adapter
 uses a separate namespace with literal `probity-inspect-execution-v2` and 0.3.276
-selectors; the original files continue to declare v1 and 0.3.273. Full adapter
+selectors; the original files continue to declare v1 and 0.3.273. Inspect's
+extension registry records the installed package prefix in native plan tool
+specifications. The v2 adapter accepts exactly `probity_inspect_current/double`,
+`probity_inspect_current/read_ticket` and `probity_inspect_current/write_ticket`
+for their declared cases, checks the original native-byte pin first, then
+projects only those plan names in a parser copy into the unchanged shared
+grammar. Retained native bytes and runtime call names stay intact; unqualified,
+foreign or unknown plan names are refused. This literal registry projection is
+part of the new selected profile, not a change to the original v1 reader.
+Full adapter
 source and version mapping are added to retained configuration source. Eight
 legacy selected task/solver/tool/mock/rubric source files are unchanged across
 0.3.273 to 0.3.276; the pre-run full native source population also selects the

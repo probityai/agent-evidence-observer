@@ -17,10 +17,11 @@ import json
 from pathlib import Path
 import sys
 from types import ModuleType
-from typing import Any
+from typing import Any, cast
 
 VERSION = "probity-inspect-execution-v2"
 INSPECT_VERSION = "0.3.276"
+TOOL_NAMESPACE = "probity_inspect_current/"
 LEGACY = {
     "evaluation_contract.py": "2477f069f52e14545b8525c1b40cbe8deceb381cc036d6204d2069feaa54c221",
     "inspect_contract.py": "9a075a3e08fd48d20ddfc36f16a88277fd5a8075bf51288108697ed250022fb9",
@@ -78,6 +79,59 @@ def _modules(root: Path, authenticated: dict[str, bytes]) -> dict[str, ModuleTyp
     return modules
 
 
+def registry_projection(
+    engine: ModuleType, log: dict[str, Any], case: dict[str, Any]
+) -> dict[str, Any]:
+    """Project exact installed extension registry names into shared grammar.
+
+    The original bytes remain the retained evidence. Only the literal declared
+    plan tool names change in this parser copy; runtime call names stay intact.
+    """
+    expected = (
+        ["read_ticket", "write_ticket"] if case["tier"] == "workloads" else ["double"]
+    )
+    canonical = [
+        {"type": "tool", "name": TOOL_NAMESPACE + name, "params": {}}
+        for name in expected
+    ]
+    plain = [{"type": "tool", "name": name, "params": {}} for name in expected]
+    steps = log.get("plan", {}).get("steps", [])
+    engine.require(
+        type(steps) is list and len(steps) == (2 if case["tier"] == "tools" else 1),
+        "current_registry_plan",
+    )
+    params = cast(dict[str, Any], steps[0]).get("params", {})
+    selected = [canonical] if case["tier"] == "tools" else canonical
+    engine.require(params.get("tools") == selected, "current_registry_names")
+    params["tools"] = [plain] if case["tier"] == "tools" else plain
+    return log
+
+
+def install_registry_parser(engine: ModuleType) -> None:
+    """Bind original native pins before applying the literal parser projection."""
+    original_sample = engine._sample
+
+    def sample(
+        native: bytes,
+        case: dict[str, Any],
+        declared: dict[str, Any],
+        binding: dict[str, Any],
+    ) -> Any:
+        """Check original native bytes before parsing namespaced plan specs."""
+        engine.object_keys(
+            binding, {"sha256", "run_id", "eval_id"}, "execution_binding"
+        )
+        engine.require(
+            engine.digest(native) == binding["sha256"], "execution_native_pin"
+        )
+        parsed = registry_projection(engine, engine.decode(native), case)
+        normalized = engine.encode(parsed)
+        parser_binding = {**binding, "sha256": engine.digest(normalized)}
+        return original_sample(normalized, case, declared, parser_binding)
+
+    engine.__dict__["_sample"] = sample
+
+
 def load_engine() -> ModuleType:
     """Authenticate sources and create the literal v2 engine namespace.
 
@@ -95,6 +149,7 @@ def load_engine() -> ModuleType:
         raise ValueError("legacy_version_boundary")
     engine.__dict__["VERSION"] = VERSION
     engine.__dict__["INSPECT_VERSION"] = INSPECT_VERSION
+    install_registry_parser(engine)
     original_sources = engine.sources
 
     def sources(framework: Any, declared: dict[str, Any]) -> dict[str, bytes]:
@@ -107,6 +162,8 @@ def load_engine() -> ModuleType:
             "inspect_version": INSPECT_VERSION,
             "legacy_engine_sha256": LEGACY,
             "grammar": "unchanged-bounded-mock-only",
+            "native_registry_namespace": TOOL_NAMESPACE,
+            "registry_projection": "only-literal-selected-plan-tool-names; original-bytes-pinned-first",
         }
         selected["configuration.json"] = engine.encode(config)
         return selected

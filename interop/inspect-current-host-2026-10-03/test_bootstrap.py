@@ -280,3 +280,57 @@ def test_external_declaration_mismatch_refused_before_native_decode(tmp_path):
         adapter.verify(
             adapter.load_engine(), {"declaration": frozen, "pins": {}}, tmp_path
         )
+
+
+@pytest.mark.parametrize(
+    "tier,names",
+    [
+        ("tools", ["double"]),
+        ("agents", ["double"]),
+        ("workloads", ["read_ticket", "write_ticket"]),
+    ],
+)
+def test_literal_extension_registry_names_project_without_runtime_changes(tier, names):
+    specs = [
+        {"type": "tool", "name": adapter.TOOL_NAMESPACE + name, "params": {}}
+        for name in names
+    ]
+    steps = [{"params": {"tools": [specs] if tier == "tools" else specs}}]
+    if tier == "tools":
+        steps.append({"params": {}})
+    log = {"plan": {"steps": steps}, "samples": [{"events": [{"function": names[0]}]}]}
+    result = adapter.registry_projection(adapter.load_engine(), log, {"tier": tier})
+    assert result["samples"] == [{"events": [{"function": names[0]}]}]
+    assert "probity_inspect_current/" not in str(result["plan"])
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "double",
+        "another_package/double",
+        "probity_inspect_current/other",
+        "probity_inspect_current/double/extra",
+    ],
+)
+def test_unknown_unqualified_or_foreign_registry_name_refused(name):
+    log = {
+        "plan": {
+            "steps": [
+                {"params": {"tools": [[{"type": "tool", "name": name, "params": {}}]]}},
+                {"params": {}},
+            ]
+        }
+    }
+    with pytest.raises(ValueError, match="current_registry_names"):
+        adapter.registry_projection(adapter.load_engine(), log, {"tier": "tools"})
+
+
+def test_original_native_digest_checked_before_registry_projection():
+    with pytest.raises(ValueError, match="execution_native_pin"):
+        adapter.load_engine()._sample(
+            b"not-json",
+            {"tier": "tools"},
+            {},
+            {"sha256": "0" * 64, "run_id": "r", "eval_id": "e"},
+        )
