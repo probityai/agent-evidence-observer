@@ -42,9 +42,10 @@ def _terminal(directory: Path, policy: dict[str, Any]) -> None:
     exact_fields(authorization, {"request", "policy", "grant", "referenceTime"}, "authorization record fields differ")
     require(authorization["request"] == policy["request"], "host action selection differs")
     require(authorization["policy"] == {"issuer_key": policy["issuerKey"], "max_validity_seconds": 120}, "host issuer selection differs")
-    verify_authorized_packet(load(directory / "packet.json"), directory / "history.jsonl", authorization["grant"],
-                             ActionRequest(**policy["request"]), GrantPolicy(policy["issuerKey"], 120),
-                             policy["observerKey"], policy["witnessKey"], now=datetime.fromisoformat(authorization["referenceTime"]),
+    verify_authorized_packet(grant=authorization["grant"], expected_request=ActionRequest(**policy["request"]),
+                             policy=GrantPolicy(policy["issuerKey"], 120), packet=load(directory / "packet.json"),
+                             history_path=directory / "history.jsonl", pinned_observer_key=policy["observerKey"],
+                             pinned_witness_key=policy["witnessKey"], now=datetime.fromisoformat(authorization["referenceTime"]),
                              workspace=directory / "work")
 
 

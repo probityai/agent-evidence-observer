@@ -19,6 +19,8 @@ from probity_observer.ledger import read_ledger, verify_ledger_head
 from probity_witness_operator.client import WitnessClient
 from probity_witness_operator.protocol import FORMAT, REPLY_DOMAIN, history_entries, request_bytes, sha, verify_reply
 from probity_witness_operator.store import Configuration, OperatorStore, generate_key, initialize
+from probity_witness_operator.reader import _terminal
+from probity_witness_operator.worker import _write_action
 
 
 @dataclass
@@ -73,6 +75,25 @@ def case(tmp_path: Path) -> Case:
 
 class TestOperator:
     class TestPassingCases:
+        @pytest.mark.parametrize("alter_target", [False, True])
+        def test_authorized_reader_replays_actual_worker_record(self, case: Case, monkeypatch: pytest.MonkeyPatch, alter_target: bool) -> None:
+            broker = case.broker(monkeypatch)
+            issuer_path = case.root / "issuer.key"
+            issuer_key = generate_key(issuer_path)
+            broker.begin()
+            directory = broker.history_path.parent
+            authorized = _write_action(broker, directory, {"issuerKeyPath": str(issuer_path), "issuerKey": issuer_key})
+            directory.joinpath("packet.json").write_bytes(canonical(authorized.seal()))
+            record = strict_loads(directory.joinpath("authorization.json").read_bytes())
+            selected = {"request": record["request"], "issuerKey": issuer_key,
+                        "observerKey": case.observer.public_hex, "witnessKey": case.config.witness_key}
+            if alter_target:
+                broker.workspace.joinpath("result.txt").write_bytes(b"different committed bytes")
+                with pytest.raises(VerificationError):
+                    _terminal(directory, selected)
+            else:
+                _terminal(directory, selected)
+
         def test_initialized_directory_link_is_flushed_before_ack(self, case: Case, monkeypatch: pytest.MonkeyPatch) -> None:
             import stat
             original = os.fsync
