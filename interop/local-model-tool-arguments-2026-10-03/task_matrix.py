@@ -16,7 +16,7 @@ import os
 
 PROCESS_START_WALL = time.monotonic_ns()
 PROTOCOL_SHA256 = "f62ded1a32862839da80a80f8e871ef6cda4acc8c30363367cccf6bec9e92c97"
-PROTOCOL_COMMIT = "registration-required"
+PROTOCOL_COMMIT = "db429775f139396df4028a9f4367e9bdfaa4ba17"
 ROOT = Path(__file__).parent
 INSTALLED_READER = ROOT.name == "probity_tool_arguments_reader"
 READER_MARKER = b'{"installationRole":"model-free-reader","modelDispatch":false}\n'
