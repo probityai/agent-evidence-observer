@@ -2,22 +2,67 @@
 from __future__ import annotations
 
 import argparse
-import hashlib
-import importlib.metadata
 import json
 import os
+import stat
 import subprocess
 from pathlib import Path
+from email.parser import BytesParser
 from typing import Any
 
 from joint_common import CASES, NONCLAIMS, PROFILE, child_environment, expected_authority, expected_revision, load, phases, require, same, sha, write
 from probity_observer.crypto import VerificationError
 
 
+MAX_INSTALL_FILE = 64 * 1024 * 1024
+MAX_INSTALL_BYTES = 512 * 1024 * 1024
+MAX_INSTALL_FILES = 4096
+MAX_INSTALL_ENTRIES = 8192
+MAX_INSTALL_DEPTH = 32
+
+
+def selected_contents(path: Path) -> tuple[bytes, os.stat_result]:
+    """Hash a bounded regular installation member without blocking on a FIFO.
+
+    Parameters
+    ----------
+    path : pathlib.Path
+        Host-selected file, including an explicitly selected interpreter link.
+
+    Returns
+    -------
+    tuple of bytes and os.stat_result
+        Bounded contents and opened descriptor metadata. The descriptor is
+        checked before reading; changed-size and excessive members refuse.
+
+    Raises
+    ------
+    VerificationError
+        If the member is not regular or exceeds the per-file limit. Concurrent
+        filesystem replacement remains a local OS custody assumption.
+    """
+    descriptor = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
+    try:
+        metadata = os.fstat(descriptor)
+        require(stat.S_ISREG(metadata.st_mode), "reader-install-regular-file")
+        require(metadata.st_size <= MAX_INSTALL_FILE, "reader-install-file-bound")
+        with os.fdopen(descriptor, "rb", closefd=False) as stream:
+            raw = stream.read(metadata.st_size + 1)
+        require(len(raw) == metadata.st_size, "reader-install-file-size-changed")
+    finally:
+        os.close(descriptor)
+    return raw, metadata
+
+
+def selected_file(path: Path) -> dict[str, Any]:
+    """Return mode, size and digest from bounded :func:`selected_contents`."""
+    raw, metadata = selected_contents(path)
+    return {"mode": metadata.st_mode & 0o777, "size": len(raw), "sha256": sha(raw)}
+
+
 def file_digest(path: Path) -> str:
-    """Hash selected installed bytes without loading a verification module."""
-    with path.open("rb") as stream:
-        return hashlib.file_digest(stream, "sha256").hexdigest()
+    """Return the digest from :func:`selected_file` without importing code."""
+    return selected_file(path)["sha256"]
 
 
 def installed_member(path: Path) -> dict[str, Any]:
@@ -37,11 +82,9 @@ def installed_member(path: Path) -> dict[str, Any]:
     """
     if path.is_symlink():
         target = path.resolve(strict=True)
-        result = {"type": "symlink", "link": os.readlink(path), "target": str(target)}
-        if target.is_file():
-            result["sha256"] = file_digest(target)
-        return result
-    return {"type": "file", "mode": path.stat().st_mode & 0o777, "size": path.stat().st_size, "sha256": file_digest(path)}
+        require(not target.is_dir(), "reader-install-directory-link")
+        return {"type": "symlink", "link": os.readlink(path), "target": str(target), **selected_file(target)}
+    return {"type": "file", **selected_file(path)}
 
 
 def installed_names(prefix: Path) -> list[Path]:
@@ -51,14 +94,90 @@ def installed_names(prefix: Path) -> list[Path]:
     ``.pth`` files, launchers and virtual-environment configuration. Added files
     are changes to the selected closure even if no distribution owns them.
     """
-    names = []
-    for folder, directories, files in os.walk(prefix, followlinks=False):
-        names.extend(Path(folder) / name for name in files)
-        links = [Path(folder) / name for name in directories if (Path(folder) / name).is_symlink()]
-        require(all(path.resolve(strict=True).is_relative_to(prefix) for path in links), "reader-external-directory-link")
-        names.extend(links)
-    require(len(names) <= 10_000, "reader-closure-population-limit")
+    names, pending, entries = [], [(prefix, 0)], 0
+    while pending:
+        directory, depth = pending.pop()
+        require(depth <= MAX_INSTALL_DEPTH, "reader-install-depth-bound")
+        with os.scandir(directory) as children:
+            for child in children:
+                entries += 1
+                require(entries <= MAX_INSTALL_ENTRIES, "reader-install-entry-bound")
+                path = Path(child.path)
+                if child.is_dir(follow_symlinks=False):
+                    pending.append((path, depth + 1))
+                else:
+                    require(len(names) < MAX_INSTALL_FILES, "reader-closure-population-limit")
+                    names.append(path)
     return sorted(names)
+
+
+def directory_link(path: Path, prefix: Path) -> dict[str, Any]:
+    """Select only the standard lib64-to-lib alias without duplicate reads."""
+    require(path == prefix / "lib64" and path.readlink() == Path("lib"), "reader-install-directory-link")
+    require((prefix / "lib").is_dir() and not (prefix / "lib").is_symlink(), "reader-install-library-directory")
+    return {"type": "symlink", "link": "lib", "target": str(prefix / "lib")}
+
+
+def installation_inventory(prefix: Path) -> dict[str, Any]:
+    """Select complete bounded bytes; a directory alias contributes no bytes."""
+    files, total = {}, 0
+    for path in installed_names(prefix):
+        if path.is_symlink() and path.is_dir():
+            member = directory_link(path, prefix)
+        else:
+            member = installed_member(path)
+        total += member.get("size", 0)
+        require(total <= MAX_INSTALL_BYTES, "reader-install-byte-bound")
+        files[str(path.relative_to(prefix))] = member
+    return files
+
+
+def validate_environment_config(prefix: Path) -> None:
+    """Require CPython isolation and absence of a bin-directory override.
+
+    The include-system-site-packages key must occur exactly once with value
+    false. Hashing a configuration that enables outside imports does not
+    select the complete installed environment.
+    """
+    require(not os.path.lexists(prefix / "bin/pyvenv.cfg"), "reader-config-override")
+    config = selected_contents(prefix / "pyvenv.cfg")[0].decode("utf-8")
+    settings = [value.strip().lower() for line in config.splitlines()
+                for key, separator, value in [line.partition("=")]
+                if separator and key.strip().lower() == "include-system-site-packages"]
+    require(settings == ["false"], "reader-system-packages")
+
+
+def installed_versions(site: Path) -> dict[str, str]:
+    """Parse bounded wheel metadata without importing selected packages."""
+    versions = {}
+    for path in sorted(site.glob("*.dist-info/METADATA")):
+        metadata = BytesParser().parsebytes(selected_contents(path)[0])
+        name, version = metadata.get("Name"), metadata.get("Version")
+        require(isinstance(name, str) and isinstance(version, str) and name not in versions,
+                "reader-installed-metadata")
+        versions[name] = version
+    return versions
+
+
+def launcher_interpreter(raw: bytes) -> Path:
+    """Read normal pip direct or long-path trampoline headers as data only.
+
+    The shell wrapper is never executed: :func:`execute` selects Python with
+    ``-I`` explicitly. Its complete bytes still belong to the outside-selected
+    installation closure. Only pip's literal three-line wrapper is accepted.
+    """
+    lines = raw.splitlines()
+    require(bool(lines) and lines[0].startswith(b"#!"), "reader-installed-shebang")
+    executable = lines[0][2:]
+    if executable == b"/bin/sh":
+        require(len(lines) >= 3 and lines[2] == b"' '''", "reader-installed-shebang")
+        start, end = b"'''exec' ", b' "$0" "$@"'
+        require(lines[1].startswith(start) and lines[1].endswith(end), "reader-installed-shebang")
+        executable = lines[1][len(start):-len(end)]
+        if executable.startswith(b'"'):
+            require(executable.endswith(b'"'), "reader-installed-shebang")
+            executable = executable[1:-1]
+    return Path(executable.decode("utf-8"))
 
 
 def reader_closure(reader: Path) -> dict[str, Any]:
@@ -79,18 +198,19 @@ def reader_closure(reader: Path) -> dict[str, Any]:
         and underlying standard library remain local custody assumptions.
     """
     reader = reader.absolute()
-    prefix = reader.parent.parent.resolve(strict=True)
+    prefix = reader.parent.parent.absolute()
+    require(prefix.is_dir() and not prefix.is_symlink(), "reader-environment-directory")
     require(reader.parent.name == "bin" and (prefix / "pyvenv.cfg").is_file(), "reader-normal-environment")
+    validate_environment_config(prefix)
     sites = sorted(prefix.glob("lib/python*/site-packages"))
     require(len(sites) == 1, "reader-installed-site")
-    packages = {item.metadata["Name"]: item.version for item in importlib.metadata.distributions(path=[str(sites[0])])}
-    same([packages.get("probity-joint-recovery-reader"), packages.get("agent-evidence-observer")], ["0.0.1", "0.0.1"], "reader-installed-versions")
+    inventory = installation_inventory(prefix)
+    packages = installed_versions(sites[0])
+    require(packages.get("probity-joint-recovery-reader") in {"0.0.1", "0.0.2"} and packages.get("agent-evidence-observer") == "0.0.1", "reader-installed-versions")
     interpreter = prefix / "bin/python"
-    line = reader.read_bytes().splitlines()[0]
-    require(line.startswith(b"#!"), "reader-installed-shebang")
-    selected = Path(line[2:].decode("utf-8"))
+    selected = launcher_interpreter(selected_contents(reader)[0])
     require(selected.parent.resolve(strict=True) == prefix / "bin" and selected.resolve(strict=True) == interpreter.resolve(strict=True), "reader-installed-shebang")
-    return {"prefix": str(prefix), "reader": str(reader), "shebangInterpreter": str(selected), "interpreter": str(interpreter.resolve(strict=True)), "interpreterSha256": file_digest(interpreter), "packages": packages, "files": {str(path.relative_to(prefix)): installed_member(path) for path in installed_names(prefix)}}
+    return {"prefix": str(prefix), "reader": str(reader), "shebangInterpreter": str(selected), "interpreter": str(interpreter.resolve(strict=True)), "interpreterSha256": file_digest(interpreter), "packages": packages, "files": inventory}
 
 
 def select(packet: Path, pins: Path, policy: Path, digest: str, reader: Path, output: Path) -> None:
@@ -116,7 +236,7 @@ def select(packet: Path, pins: Path, policy: Path, digest: str, reader: Path, ou
     require(sha(raw_policy) == digest, "host-policy-digest")
     selected = load(policy.parent, policy.name)
     same(sorted(selected), sorted(["profile", "pinsSha256", "plannedAttempts", "readerSha256", "readerClosure"]), "host-policy-fields")
-    same([selected["profile"], selected["pinsSha256"], selected["plannedAttempts"], selected["readerSha256"]], [PROFILE, sha(raw_pins), len(CASES), sha(reader.read_bytes())], "host-selection")
+    same([selected["profile"], selected["pinsSha256"], selected["plannedAttempts"], selected["readerSha256"]], [PROFILE, sha(raw_pins), len(CASES), file_digest(reader)], "host-selection")
     require(not reader.parent.parent.resolve(strict=True).is_relative_to(root), "reader-must-be-outside-packet")
     same(reader_closure(reader), selected["readerClosure"], "reader-installed-closure")
     load(pins.parent, pins.name)
@@ -153,7 +273,7 @@ def report_row(name: str) -> dict[str, Any]:
 
 def execute(packet: Path, reader: Path, output: Path) -> int:
     """Bound reader runtime while preserving complete stdout/stderr files."""
-    command = [str(reader.resolve(strict=True)), str(packet.resolve(strict=True)), "--pins-file", str((output / "selected-pins.json").resolve())]
+    command = [str(reader.parent / "python"), "-I", str(reader.absolute()), str(packet.resolve(strict=True)), "--pins-file", str((output / "selected-pins.json").resolve())]
     write(output / "launch.json", {"command": command, "maximumSeconds": 15, "environment": child_environment()})
     with (output / "reader.stdout").open("xb") as stdout, (output / "reader.stderr").open("xb") as stderr:
         try:
