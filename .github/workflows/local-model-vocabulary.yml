@@ -1,0 +1,81 @@
+name: Preregistered global action vocabulary intervention
+on:
+  push:
+    paths: [interop/local-model-vocabulary-2026-10-02/**, .github/workflows/local-model-vocabulary.yml]
+  pull_request:
+    paths: [interop/local-model-vocabulary-2026-10-02/**, .github/workflows/local-model-vocabulary.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-controls:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install pytest==9.1.1 'setuptools>=68' wheel
+      - run: python -m pytest interop/local-model-vocabulary-2026-10-02/tests -q
+      - name: Build, install and repeat the offline consumer controls
+        run: python interop/local-model-vocabulary-2026-10-02/verify_installation.py . installed-reader-controls
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: installed-vocabulary-reader-controls-${{ github.sha }}
+          path: installed-reader-controls
+          if-no-files-found: error
+          retention-days: 90
+  actual-cpu:
+    if: github.event_name == 'workflow_dispatch'
+    needs: offline-controls
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check selected model and dependency transfers (512 MiB total envelope)
+        run: python interop/local-model-vocabulary-2026-10-02/prepare_boundary.py model-vocabulary-artifacts
+      - name: Install retained dependencies and build the selected CPU runtime
+        run: |
+          set -euo pipefail
+          python interop/local-model-vocabulary-2026-10-02/prepare_boundary.py model-vocabulary-artifacts --verify-downloads
+          python -m pip install --no-index --no-deps --force-reinstall --require-hashes --find-links model-vocabulary-artifacts/downloads -r model-vocabulary-artifacts/requirements.txt
+          python -m pip check
+          CC=/usr/bin/gcc CXX=/usr/bin/g++ CMAKE_BUILD_PARALLEL_LEVEL=2 CMAKE_ARGS='-DGGML_NATIVE=OFF -DGGML_OPENMP=OFF -DGGML_CUDA=OFF -DGGML_BLAS=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_EXAMPLES=OFF' timeout --signal=TERM --kill-after=5s 330s python -m pip install --no-index --find-links model-vocabulary-artifacts/downloads --no-build-isolation --no-deps model-vocabulary-artifacts/downloads/llama_cpp_python-0.3.16.tar.gz > model-vocabulary-artifacts/build-gcc.log 2>&1
+          python interop/local-model-vocabulary-2026-10-02/prepare_boundary.py model-vocabulary-artifacts --finalize
+      - name: Execute all 128 frozen vocabulary attempts within the original ten-minute envelope
+        run: |
+          timeout --signal=TERM --kill-after=5s 595s python interop/local-model-vocabulary-2026-10-02/task_matrix.py model-vocabulary-artifacts/run --protocol-commit e5bc19b22fba86d1bf7d2bec7f507773099cf611 --weights model-vocabulary-artifacts --provenance model-vocabulary-artifacts/provenance.json > model-vocabulary-artifacts/run-stdout.json 2> model-vocabulary-artifacts/run-stderr.txt
+      - name: Print the produced artifact selections for later independent readers
+        run: cat model-vocabulary-artifacts/run/consumer-pins.json
+      - name: Recompute from selected retained bytes in a separate reader invocation
+        run: python interop/local-model-vocabulary-2026-10-02/task_matrix.py model-vocabulary-artifacts/run --verify --pins-file model-vocabulary-artifacts/run/consumer-pins.json > model-vocabulary-artifacts/reader.json
+      - name: Print the retained population, quality and resource receipt
+        run: |
+          python - <<'PYTHON'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("model-vocabulary-artifacts/run/report.json").read_bytes())
+          print(json.dumps({k: v for k, v in report.items() if k != "attempts"}, indent=2))
+          PYTHON
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: model-vocabulary-cpu-preparation-${{ github.sha }}
+          path: model-vocabulary-artifacts
+          if-no-files-found: error
+          retention-days: 90
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: model-vocabulary-cpu-native-packet-${{ github.sha }}
+          path: model-vocabulary-artifacts/run
+          if-no-files-found: warn
+          retention-days: 90

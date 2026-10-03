@@ -1,0 +1,19 @@
+[project]
+name = "probity-local-cpu-vocabulary"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = ["llama-cpp-python==0.3.16"]
+
+[project.optional-dependencies]
+test = ["pytest==9.1.1"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["task_matrix", "schema_contract"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

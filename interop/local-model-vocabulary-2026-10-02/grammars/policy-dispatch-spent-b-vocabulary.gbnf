@@ -1,0 +1,4 @@
+decision ::= "\"publish\"" | "\"hold\"" | "\"admit\"" | "\"reject\"" | "\"retry\"" | "\"inspect\"" | "\"dispatch\""
+decision-kv ::= "\"decision\"" space ":" space decision
+root ::= "{" space decision-kv "}" space
+space ::= " "?
