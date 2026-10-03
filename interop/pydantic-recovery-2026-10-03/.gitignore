@@ -1,0 +1,5 @@
+.venv/
+fresh-run/
+fresh-run-private/
+*.xml
+install-report.json
