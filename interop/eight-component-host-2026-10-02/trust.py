@@ -13,6 +13,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import math
 import os
 import stat
 from pathlib import Path
@@ -65,6 +66,14 @@ def unique_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
     return result
 
 
+def finite_float(value: str) -> float:
+    """Reject JSON exponent overflow as well as explicit nonfinite constants."""
+    number = float(value)
+    if not math.isfinite(number):
+        refuse("selected JSON is nonfinite")
+    return number
+
+
 def read_json(path: Path) -> dict[str, Any]:
     """Read a finite UTF-8 JSON object with duplicate and nonfinite refusal.
 
@@ -86,9 +95,9 @@ def read_json(path: Path) -> dict[str, Any]:
     """
     raw = read_regular(path, "selected JSON is not a readable regular file", limit=16 * 1024 * 1024)
     try:
-        result = json.loads(raw, object_pairs_hook=unique_object,
+        result = json.loads(raw, object_pairs_hook=unique_object, parse_float=finite_float,
                             parse_constant=lambda _: refuse("selected JSON is nonfinite"))
-    except (ValueError, UnicodeError):
+    except (ValueError, UnicodeError, RecursionError):
         refuse("selected JSON is malformed")
     if not isinstance(result, dict):
         refuse("selected JSON is not an object")

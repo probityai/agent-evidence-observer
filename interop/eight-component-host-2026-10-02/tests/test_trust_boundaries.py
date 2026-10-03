@@ -8,6 +8,7 @@ root. Native complete-chain tests remain mandatory in ``test_host_chain.py``.
 from __future__ import annotations
 
 import os
+import json
 import re
 import stat
 import sys
@@ -27,6 +28,25 @@ def assert_refusal(call: Any, reason: str, caplog: pytest.LogCaptureFixture) -> 
     with pytest.raises(trust.HostRefusal, match="^" + re.escape(reason) + "$"):
         call()
     assert "eight-component host refused: " + reason in caplog.text
+
+
+def retire_unsafe_fixture(path: Path) -> None:
+    """Retain a regular description and remove special nodes before CI upload.
+
+    Artifact upload follows symlinks and cannot archive cyclic links, sockets
+    or FIFOs safely. Their actual modes/link targets remain in this receipt and
+    their tested exact refusal remains in the retained JUnit report.
+    """
+    if not os.path.lexists(path):
+        return
+    info = path.lstat()
+    description = {"name": path.name, "mode": info.st_mode,
+                   "link": os.readlink(path) if path.is_symlink() else None}
+    path.with_name(path.name + ".fixture.json").write_text(json.dumps(description))
+    if stat.S_ISDIR(info.st_mode):
+        path.rmdir()
+    else:
+        path.unlink()
 
 
 class TestRegularFile:
@@ -69,7 +89,10 @@ class TestRegularFile:
                 target = tmp_path / "target"
                 target.write_bytes(b"selected")
                 path.symlink_to(target)
-            assert_refusal(lambda: trust.read_regular(path, "file refused"), "file refused", caplog)
+            try:
+                assert_refusal(lambda: trust.read_regular(path, "file refused"), "file refused", caplog)
+            finally:
+                retire_unsafe_fixture(path)
 
         def test_byte_budget_checked_before_read(self, tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
             path = tmp_path / "selected"
@@ -100,7 +123,10 @@ class TestRegularFile:
         def test_cyclic_path_link_refused(self, tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
             path = tmp_path / "cycle"
             path.symlink_to(path)
-            assert_refusal(lambda: trust.read_regular(path, "file refused"), "file refused", caplog)
+            try:
+                assert_refusal(lambda: trust.read_regular(path, "file refused"), "file refused", caplog)
+            finally:
+                retire_unsafe_fixture(path)
 
 
 class TestTreeClosure:
@@ -147,22 +173,32 @@ class TestTreeClosure:
                 suffix = " directory redirects"
             call = trust.source_file_names if boundary == "source" else trust.installation_file_names
             prefix = "pinned component source" if boundary == "source" else "installed package"
-            assert_refusal(lambda: call(root), prefix + suffix, caplog)
+            try:
+                assert_refusal(lambda: call(root), prefix + suffix, caplog)
+            finally:
+                retire_unsafe_fixture(path)
 
         def test_root_link_refused(self, tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
             root = tmp_path / "real"
             root.mkdir()
             alias = tmp_path / "alias"
             alias.symlink_to(root)
-            assert_refusal(lambda: trust.source_file_names(alias), "pinned component source root redirects", caplog)
+            try:
+                assert_refusal(lambda: trust.source_file_names(alias), "pinned component source root redirects", caplog)
+            finally:
+                retire_unsafe_fixture(alias)
 
         def test_missing_root_refused(self, tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
             assert_refusal(lambda: trust.installation_file_names(tmp_path / "missing"),
                            "installed package enumeration failed", caplog)
 
         def test_root_git_link_is_not_ignored(self, tmp_path: Path, caplog: pytest.LogCaptureFixture) -> None:
-            (tmp_path / ".git").symlink_to(tmp_path / "missing")
-            assert_refusal(lambda: trust.source_file_names(tmp_path), "pinned component source directory redirects", caplog)
+            path = tmp_path / ".git"
+            path.symlink_to(tmp_path / "missing")
+            try:
+                assert_refusal(lambda: trust.source_file_names(tmp_path), "pinned component source directory redirects", caplog)
+            finally:
+                retire_unsafe_fixture(path)
 
         @pytest.mark.parametrize("scope", ["root", "descendant"])
         def test_enumeration_errors_are_not_silent(
@@ -239,8 +275,31 @@ class TestHostPrelaunch:
                 pytest.fail("a child started before trust selection")
 
             monkeypatch.setattr(run_host, "run_child", unexpected_child)
-            result = run_host.execute(manifest, "0" * 64, tmp_path / "candidate", tmp_path / "output")
+            try:
+                result = run_host.execute(manifest, "0" * 64, tmp_path / "candidate", tmp_path / "output")
+            finally:
+                retire_unsafe_fixture(manifest)
             assert result["status"] == "refused"
             assert result["reason"] == "external host manifest digest differs"
             assert result["childProcesses"] == result["httpDispatchRequests"] == 0
             assert "external host manifest digest differs" in caplog.text
+
+        @pytest.mark.parametrize("raw,reason", [
+            (b'{"value":1e999}', "selected JSON is nonfinite"),
+            (b'{"nested":{"value":-1e999}}', "selected JSON is nonfinite"),
+            (b'{"value":NaN}', "selected JSON is nonfinite"),
+            (b'{"value":Infinity}', "selected JSON is nonfinite"),
+            (b'{"nested":' + b'[' * 20_000 + b'0' + b']' * 20_000 + b'}', "selected JSON is malformed"),
+        ])
+        def test_nonfinite_and_recursive_json_retains_no_child_decision(
+            self, raw: bytes, reason: str, tmp_path: Path, caplog: pytest.LogCaptureFixture,
+        ) -> None:
+            manifest = tmp_path / "manifest.json"
+            manifest.write_bytes(raw)
+            output = tmp_path / "output"
+            result = run_host.execute(manifest, trust.sha256(raw), tmp_path / "candidate", output)
+            assert result["status"] == "refused"
+            assert result["reason"] == reason
+            assert result["childProcesses"] == result["httpDispatchRequests"] == 0
+            assert trust.read_json(output / "decision.json") == result
+            assert "eight-component host refused: " + reason in caplog.text

@@ -84,6 +84,8 @@ FIFO, socket, device, directory, oversized file or failed read refuses rather
 than blocking or disappearing. JSON selections additionally permit at most
 16 MiB. The intentional interpreter invocation link is checked separately
 against its selected real binary; it creates no source/package link exemption.
+JSON exponent overflow and excessively recursive input retain an explicit
+refused decision with no child, alongside duplicate/nonfinite/malformed input.
 
 The host launcher, interpreter standard library, operating system, protected
 filesystem, native clock and SQLite durability remain trusted infrastructure.
@@ -178,6 +180,11 @@ source selection, HTTP request/response bytes, target startup/exit/recovery
 records, native SQLite state and signed heads. Native original and selection
 hashes remain distinct from later source/result/archival commits. The workflow
 retains ordinary wheels and complete public raw/test artifacts for 90 days.
+Special filesystem control nodes are tested as actual FIFOs, sockets and links.
+Tests retain their exact modes/link targets in regular fixture descriptions and
+their refusals in JUnit before removing those control nodes. Archive upload
+therefore neither follows a cyclic link nor tries to read a live special node;
+ordinary selected evidence, decisions and native original streams are retained.
 
 Private authority seed bytes remain in the external host directory and are
 explicitly omitted from public retention. Public key pins, grants and signed
