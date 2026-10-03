@@ -1,0 +1,315 @@
+{
+  "schema": "probity-global-action-vocabulary-fresh-verification-v1",
+  "verifiedAtUTC": "2026-10-03T08:17:30.574880+00:00",
+  "repository": "probityai/agent-evidence-observer",
+  "pr": 53,
+  "mergedCommit": "62f5d0c6fbd785259db2d5c8076dd844b53a0593",
+  "preregistrationCommit": "e5bc19b22fba86d1bf7d2bec7f507773099cf611",
+  "protocolSHA256": "64e0f444a457cb2e82e00dd905e4de186f7384dd95a129600c6185de454c02d2",
+  "run": {
+    "id": 37094901561,
+    "url": "https://github.com/probityai/agent-evidence-observer/actions/runs/37094901561",
+    "event": "workflow_dispatch",
+    "status": "completed",
+    "conclusion": "success",
+    "actualJob": 111122794595,
+    "offlineJob": 111122724954,
+    "finishedAtUTC": "2026-10-03T04:00:05Z",
+    "sameOperator": true,
+    "notRedispatched": true
+  },
+  "artifacts": [
+    {
+      "id": 11263931021,
+      "scope": "native original packet",
+      "bytes": 2248748,
+      "sha256": "eef05226335f9e2de6783ee797d891cbd1fe47058264e2d57eb41f1ec39131d8",
+      "downloadedAndHashed": true
+    },
+    {
+      "id": 11264080809,
+      "scope": "full preparation and native originals",
+      "bytes": 465478943,
+      "sha256": "7ed25dea35cdca4df3275990b3d70ca47f391490c8ffb5225396df7bc573d03f",
+      "downloadedAndHashed": true,
+      "payloadsAll19ExactLengthAndHashVerified": true
+    },
+    {
+      "id": 11263078894,
+      "scope": "installed reader synthetic controls and actual selected wheel",
+      "bytes": 9441817,
+      "sha256": "7d2e0c8bb0f8fd6fca81a00d20e4a40cdd5a6a83f53bf879121efa65bb453c2d",
+      "downloadedAndHashed": true
+    }
+  ],
+  "population": {
+    "scored": 128,
+    "error": 0,
+    "unsupported": 0,
+    "incomplete": 0,
+    "unknown-start": 0,
+    "planned": 128,
+    "started": 128
+  },
+  "preparation": {
+    "selectedPayloadBytes": 472221945,
+    "selectedPayloadBytesByCategory": {
+      "dependencies": 45457867,
+      "metadata": 30738,
+      "model": 376044704,
+      "source": 50688636
+    },
+    "elapsedSeconds": 8.880832050999999,
+    "complete": true,
+    "scope": "retained transfer/source selection receipts reconstructed; weights/source wheels omitted from native packet and retained in full preparation archive; not an independent transfer or inference witness"
+  },
+  "resources": {
+    "wallSeconds": 45.317547439,
+    "wholeProcessCPUSeconds": 84.910453532,
+    "processLifetimePeakRSSKiB": 557932,
+    "tokens": {
+      "prompt": 10624,
+      "completion": 1172
+    },
+    "providerCalls": 0,
+    "providerDollars": 0,
+    "retries": 0,
+    "installAndBuildStepUpperBoundSeconds": 69.0422968,
+    "buildScope": "upper bound from logged step start03:57:58.0281876UTC to next step03:59:07.0704844UTC; includes installation and finalization, not exact compiler duration",
+    "aggregateSixPreparationResponseBytes": 2639228307
+  },
+  "quality": [
+    {
+      "configuration": "short24",
+      "model": "smol135-q4",
+      "decoder": "schema",
+      "family": "policy-control",
+      "planned": 16,
+      "scored": 16,
+      "formatValid": 16,
+      "schemaValid": 16,
+      "correct": 0,
+      "plannedPairs": 8,
+      "fullyCorrectPairs": 0,
+      "promptTokens": 1328,
+      "completionTokens": 138,
+      "callElapsedNs": 3254003474,
+      "processCpuNs": 5877617962,
+      "processLifetimePeakRssKiB": 557932,
+      "resourceScope": "returned calls only; CPU is whole-process delta, RSS is lifetime peak, not task allocation"
+    },
+    {
+      "configuration": "short24",
+      "model": "smol135-q4",
+      "decoder": "schema",
+      "family": "policy-vocabulary",
+      "planned": 16,
+      "scored": 16,
+      "formatValid": 16,
+      "schemaValid": 16,
+      "correct": 2,
+      "plannedPairs": 8,
+      "fullyCorrectPairs": 0,
+      "promptTokens": 1328,
+      "completionTokens": 160,
+      "callElapsedNs": 3392850988,
+      "processCpuNs": 6115132509,
+      "processLifetimePeakRssKiB": 557932,
+      "resourceScope": "returned calls only; CPU is whole-process delta, RSS is lifetime peak, not task allocation"
+    },
+    {
+      "configuration": "long96",
+      "model": "smol135-q4",
+      "decoder": "schema",
+      "family": "policy-control",
+      "planned": 16,
+      "scored": 16,
+      "formatValid": 16,
+      "schemaValid": 16,
+      "correct": 0,
+      "plannedPairs": 8,
+      "fullyCorrectPairs": 0,
+      "promptTokens": 1328,
+      "completionTokens": 138,
+      "callElapsedNs": 3234003521,
+      "processCpuNs": 5838096661,
+      "processLifetimePeakRssKiB": 557932,
+      "resourceScope": "returned calls only; CPU is whole-process delta, RSS is lifetime peak, not task allocation"
+    },
+    {
+      "configuration": "long96",
+      "model": "smol135-q4",
+      "decoder": "schema",
+      "family": "policy-vocabulary",
+      "planned": 16,
+      "scored": 16,
+      "formatValid": 16,
+      "schemaValid": 16,
+      "correct": 2,
+      "plannedPairs": 8,
+      "fullyCorrectPairs": 0,
+      "promptTokens": 1328,
+      "completionTokens": 160,
+      "callElapsedNs": 3345352631,
+      "processCpuNs": 6032573582,
+      "processLifetimePeakRssKiB": 557932,
+      "resourceScope": "returned calls only; CPU is whole-process delta, RSS is lifetime peak, not task allocation"
+    },
+    {
+      "configuration": "short24",
+      "model": "smol360-q4",
+      "decoder": "schema",
+      "family": "policy-control",
+      "planned": 16,
+      "scored": 16,
+      "formatValid": 16,
+      "schemaValid": 16,
+      "correct": 2,
+      "plannedPairs": 8,
+      "fullyCorrectPairs": 0,
+      "promptTokens": 1328,
+      "completionTokens": 151,
+      "callElapsedNs": 7927821593,
+      "processCpuNs": 15137474454,
+      "processLifetimePeakRssKiB": 557932,
+      "resourceScope": "returned calls only; CPU is whole-process delta, RSS is lifetime peak, not task allocation"
+    },
+    {
+      "configuration": "short24",
+      "model": "smol360-q4",
+      "decoder": "schema",
+      "family": "policy-vocabulary",
+      "planned": 16,
+      "scored": 16,
+      "formatValid": 16,
+      "schemaValid": 16,
+      "correct": 7,
+      "plannedPairs": 8,
+      "fullyCorrectPairs": 1,
+      "promptTokens": 1328,
+      "completionTokens": 137,
+      "callElapsedNs": 7730355000,
+      "processCpuNs": 14862366865,
+      "processLifetimePeakRssKiB": 557932,
+      "resourceScope": "returned calls only; CPU is whole-process delta, RSS is lifetime peak, not task allocation"
+    },
+    {
+      "configuration": "long96",
+      "model": "smol360-q4",
+      "decoder": "schema",
+      "family": "policy-control",
+      "planned": 16,
+      "scored": 16,
+      "formatValid": 16,
+      "schemaValid": 16,
+      "correct": 2,
+      "plannedPairs": 8,
+      "fullyCorrectPairs": 0,
+      "promptTokens": 1328,
+      "completionTokens": 151,
+      "callElapsedNs": 7953110788,
+      "processCpuNs": 15178022558,
+      "processLifetimePeakRssKiB": 557932,
+      "resourceScope": "returned calls only; CPU is whole-process delta, RSS is lifetime peak, not task allocation"
+    },
+    {
+      "configuration": "long96",
+      "model": "smol360-q4",
+      "decoder": "schema",
+      "family": "policy-vocabulary",
+      "planned": 16,
+      "scored": 16,
+      "formatValid": 16,
+      "schemaValid": 16,
+      "correct": 7,
+      "plannedPairs": 8,
+      "fullyCorrectPairs": 1,
+      "promptTokens": 1328,
+      "completionTokens": 137,
+      "callElapsedNs": 7833989075,
+      "processCpuNs": 15045158430,
+      "processLifetimePeakRssKiB": 557932,
+      "resourceScope": "returned calls only; CPU is whole-process delta, RSS is lifetime peak, not task allocation"
+    }
+  ],
+  "selectedPacketPins": {
+    "declaration": {
+      "path": "declaration.json",
+      "sha256": "cb5f87338601bfe7d6bd28520468d4f202f5318ac951c87febadf68af6ad6ceb"
+    },
+    "manifest": {
+      "path": "manifest.json",
+      "sha256": "2520dd64a898461e5fff668ccfc89dde0b61eef2b06746f8ea5290d8ecc68dd7"
+    },
+    "protocol": {
+      "path": "protocol.json",
+      "sha256": "64e0f444a457cb2e82e00dd905e4de186f7384dd95a129600c6185de454c02d2"
+    },
+    "terminal": {
+      "path": "terminal.json",
+      "sha256": "9f21c40d9c1d5debdcd735cdfbc03297de65acb49f9117fe6a876d0fec7e0a27"
+    }
+  },
+  "freshReplay": {
+    "selectedSourceRetrievedFromExactPublicCommit": true,
+    "packetSourcesMatchedActiveFrozenReader": true,
+    "sourceReportEqualsProducerReport": true,
+    "fullArchiveReaderEqualsFreshReplay": true,
+    "newNativeCalls": 0
+  },
+  "installedReader": {
+    "version": "0.1.0",
+    "sourceContractSHA256": "4a3a47b14308f726af505ac489c9cb4c482cd48c09eacd3881c2fafe44f14ff7",
+    "wheelBytes": 35389,
+    "wheelSHA256": "dd583f46e66a6cda396efa142248e52c9792c8062a65aea754184e22c22f17be",
+    "fullWheelPopulationSourceLicenseMetadataEntrypointRECORDVerified": true,
+    "retainedRepeatWheelExact": true,
+    "cleanNoIndexNoDependenciesInstall": true,
+    "nativeEvidenceDecision": "accept-scoped-evidence",
+    "nativeQualityDecision": "hold-quality",
+    "nativeConsumerDecision": "hold-quality",
+    "failedRows": 8,
+    "strictExitCode": 1,
+    "evidenceOnlyExitCode": 0,
+    "nativeReportExactEquality": true
+  },
+  "mutationControls": [
+    {
+      "name": "raw-call-change",
+      "exitCode": 1,
+      "decision": "hold-evidence",
+      "error": {
+        "message": "original retained bytes changed",
+        "type": "ValueError"
+      },
+      "scope": "same operator offline mutation control on copy of selected actual native packet; no inference"
+    },
+    {
+      "name": "resigned-helper-change",
+      "exitCode": 1,
+      "decision": "hold-evidence",
+      "error": {
+        "message": "retained schema helper differs from selected protocol",
+        "type": "ValueError"
+      },
+      "scope": "same operator offline mutation control on copy of selected actual native packet; no inference"
+    }
+  ],
+  "limits": [
+    "finite authored publicly targeted tasks; intervention informed by previous384 study",
+    "same operator raw records and replay; independent model execution witness absent",
+    "no protected effect admission or execution",
+    "producer acceptance not established",
+    "recurring outside adoption not established",
+    "independent key/clock/store/retention custody not established",
+    "GitHub originals expire2027-01-01; durable retention outside Actions not yet established"
+  ],
+  "nextExecutableCapability": "Add a separately dispatched retained-packet job that downloads held artifact and uses installed0.1.0 reader with exact external pins, proving actual quality hold in recurring host CI without new inference.",
+  "artifactsExpireAtUTC": "2027-01-01T03:57:19Z",
+  "fullPreparationDurableRetention": {
+    "established": false,
+    "blocker": "prepared upload helper lacked Codex auth before any prepare or upload; no reservation created",
+    "downloadedFileID": "file_00000000755081f9ae87e0cbb58344a8",
+    "originalActionsArtifact": 11264080809
+  }
+}

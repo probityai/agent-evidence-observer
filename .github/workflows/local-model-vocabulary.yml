@@ -57,6 +57,12 @@ jobs:
         run: cat model-vocabulary-artifacts/run/consumer-pins.json
       - name: Recompute from selected retained bytes in a separate reader invocation
         run: python interop/local-model-vocabulary-2026-10-02/task_matrix.py model-vocabulary-artifacts/run --verify --pins-file model-vocabulary-artifacts/run/consumer-pins.json > model-vocabulary-artifacts/reader.json
+      - name: Build the selected model-free installed reader for the actual packet
+        run: |
+          python interop/local-model-vocabulary-2026-10-02/build_installed_reader.py . actual-vocabulary-reader-wheel --contract interop/local-model-vocabulary-2026-10-02/reader-source-contract.json --contract-sha256 4a3a47b14308f726af505ac489c9cb4c482cd48c09eacd3881c2fafe44f14ff7
+      - name: Preserve strict installed quality decisions and verify actual packet corruption refusals
+        run: |
+          python -I interop/local-model-vocabulary-2026-10-02/consume_native.py actual-vocabulary-reader-wheel/probity_policy_vocabulary_reader-0.1.0-py3-none-any.whl model-vocabulary-artifacts/run model-vocabulary-artifacts/run/consumer-pins.json model-vocabulary-artifacts/installed-native-consumer --expected-report model-vocabulary-artifacts/run/report.json
       - name: Print the retained population, quality and resource receipt
         run: |
           python - <<'PYTHON'
@@ -79,3 +85,42 @@ jobs:
           path: model-vocabulary-artifacts/run
           if-no-files-found: warn
           retention-days: 90
+  retained-native-reader:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install 'setuptools>=68' wheel
+      - name: Verify the source-retained original archive and unpack the selected packet
+        run: |
+          python - <<'PYTHON'
+          import hashlib
+          import zipfile
+          from pathlib import Path
+          source = Path("interop/local-model-vocabulary-2026-10-02/retained/native-37094901561.zip")
+          expected = "eef05226335f9e2de6783ee797d891cbd1fe47058264e2d57eb41f1ec39131d8"
+          if hashlib.sha256(source.read_bytes()).hexdigest() != expected:
+              raise ValueError("source-selected native archive changed")
+          with zipfile.ZipFile(source) as archive:
+              archive.extractall("retained-vocabulary-native-packet")
+          PYTHON
+      - name: Build the reviewed frozen installed reader without a model runtime
+        run: python interop/local-model-vocabulary-2026-10-02/build_installed_reader.py . retained-vocabulary-reader-wheel --contract interop/local-model-vocabulary-2026-10-02/reader-source-contract.json --contract-sha256 4a3a47b14308f726af505ac489c9cb4c482cd48c09eacd3881c2fafe44f14ff7
+      - name: Recompute the completed study and preserve all eight strict quality holds
+        run: |
+          python -I interop/local-model-vocabulary-2026-10-02/consume_native.py retained-vocabulary-reader-wheel/probity_policy_vocabulary_reader-0.1.0-py3-none-any.whl retained-vocabulary-native-packet interop/local-model-vocabulary-2026-10-02/retained/selected-pins-37094901561.json retained-vocabulary-consumer --expected-report interop/local-model-vocabulary-2026-10-02/retained/report-37094901561.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: retained-vocabulary-installed-native-consumer-${{ github.sha }}
+          path: |
+            retained-vocabulary-consumer
+            retained-vocabulary-reader-wheel
+          if-no-files-found: error
+          retention-days: 90
+

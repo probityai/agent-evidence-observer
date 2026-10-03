@@ -22,7 +22,7 @@ python interop/local-model-vocabulary-2026-10-02/task_matrix.py PACKET --verify 
 
 The reader checks retained runner bytes against its own installed source and checks the active helper against the protocol's selected helper hash. It never imports retained candidate code. It keeps format validity, schema membership and semantic correctness separate. Publication means a complete report within the declared resource limits; it does not establish effect admission, producer acceptance, recurring adoption or independent custody. The workflow's separate reader invocation is a replay using producer pins, not an independent consumer selection.
 
-No outputs have been produced by this preregistration. Prior results informed this authored intervention. This is not a representative benchmark or blinded study.
+The selected128-call study completed on October3,2026. [Actual results and installed replay](RESULTS-37094901561.md) retain its complete population, resource receipts and strict quality holds. The original native ZIP is retained in the source tree, and ordinary push/PR CI replays that completed packet through a clean model-free installed reader without new inference. Prior results informed this authored intervention. This is not a representative benchmark or blinded study.
 
 The final registration is `e5bc19b22fba86d1bf7d2bec7f507773099cf611`, with protocol SHA256 `64e0f444a457cb2e82e00dd905e4de186f7384dd95a129600c6185de454c02d2`. Earlier registrations in this branch ran no inference and are superseded. The runner refuses any other registration commit before creating run state.
 
@@ -40,3 +40,4 @@ reader-env/bin/probity-policy-vocabulary-reader PACKET --pins-file SELECTED-PINS
 The builder requires each selected source hash and exact reviewed commit, verifies all wheel members and entry points, and records the build tools. The installed package has no model dependency. Its default host quality policy requires all sixteen answers and all eight pairs correct in every model/cap/mode row. An evidence-valid packet can therefore return `hold-quality`. Hosts can select weaker thresholds explicitly without changing the retained scores. `--evidence-only` exits on evidence validity and still reports the separate quality and consumer decisions; it does not authorize a protected effect.
 
 The workflow also builds the wheel twice, installs it in a clean environment, repeats a consumer decision, and rejects a changed helper even with resigned packet pins. These installation controls use explicit synthetic fixtures and establish no model execution or outside adoption.
+
