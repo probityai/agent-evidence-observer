@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools==81.0.0", "wheel==0.46.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "probity-inspect-current-reader"
+version = "0.0.1"
+description = "Separately installed bounded Inspect 0.3.276 execution reader"
+license = "Apache-2.0"
+requires-python = ">=3.12,<3.13"
+dependencies = ["agent-evidence-observer==0.0.1"]
+
+[project.scripts]
+probity-inspect-current = "probity_inspect_current.adapter:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+probity_inspect_current = ["_legacy/*.py"]

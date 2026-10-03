@@ -1,0 +1,55 @@
+{
+  "adapter_sha256": "906e844ac709d8508dddce36c5dd0f451357852e135e1f5bbaee4ca821c14c5a",
+  "adapter_wheel_sha256": "a608bf025e32ea95be4ef6cbc76741ff0225b8dc5ab02d2fec268d6da8bb8972",
+  "bootstrap_sha256": "668dca4a3b1bde25cf0592294bacf2807ad73b12247a8e2d544e664da6eb7ab2",
+  "build": {
+    "setuptools": "81.0.0",
+    "source_date_epoch": 946684800,
+    "wheel": "0.46.3"
+  },
+  "current_modules": {
+    "__init__.py": "3d138b1a0e9201dc2890c14a92fbf366f12a5fa47a38f4db4d07d64f89b908af",
+    "_legacy/evaluation_contract.py": "2477f069f52e14545b8525c1b40cbe8deceb381cc036d6204d2069feaa54c221",
+    "_legacy/inspect_contract.py": "9a075a3e08fd48d20ddfc36f16a88277fd5a8075bf51288108697ed250022fb9",
+    "_legacy/inspect_execution.py": "a9919ba209f7507144cb657678b460ef54790021bc6df5c115b1ee7750dc5c50",
+    "adapter.py": "906e844ac709d8508dddce36c5dd0f451357852e135e1f5bbaee4ca821c14c5a"
+  },
+  "inspect_source": "93f7182cf2ce9be22724b05e499cd1358d7ed41d",
+  "legacy": {
+    "evaluation_contract.py": "2477f069f52e14545b8525c1b40cbe8deceb381cc036d6204d2069feaa54c221",
+    "inspect_contract.py": "9a075a3e08fd48d20ddfc36f16a88277fd5a8075bf51288108697ed250022fb9",
+    "inspect_execution.py": "a9919ba209f7507144cb657678b460ef54790021bc6df5c115b1ee7750dc5c50"
+  },
+  "native_selection_sha256": "8b2fdf683e985eef77ca99b540782434300c105516e809cad0c86176ff9ad8c0",
+  "observer_modules": {
+    "__init__.py": "fd35bea460843bd946ee6193b1adf5a557fbe0993dea3ca4c58b3c35df1ea4ae",
+    "aae_binding.py": "72ac29fe90b8b20549a41a1dd6a9d25ec8a945bdbbbf4b1ba4f5891e09b6b093",
+    "aae_dispatch.py": "70e6e669d24fbfd5275b25217523ea55d3da1495bb16e0834ff7a8de2a1cf6bb",
+    "aae_enforce.py": "5b79dacd2fbd873ae073af5186e606b5baa1c6c9d8e627a0387ae9fc7bb96a94",
+    "aae_ticket.py": "ac12299c5d3bd5de030937d55358031a6ba72f152571ef20c521437fabe54743",
+    "admission.py": "5b9f68dbfc59b1c088b7de9c41e81fabdf2e3a72426e8766845d0cea28b2af0f",
+    "atomic_reader.py": "acb9f0dbc4efe7099f65d309e77f14b0521e3affca2f2765de6d6dcea366b6ff",
+    "attribution.py": "9aa531cfbd99df6185c35220db157c78d1c7b97c7c99bd2e24caa3f498dd0dee",
+    "authorization.py": "35e28320cc6aa344938d9e678efa6de9b803b7b22e2431e8e918a8b57c08e4a9",
+    "broker.py": "9e36cc446dd63112bfda8555df9319345f825d74c5794ac0b037c92d235c0bd8",
+    "cli.py": "615b58fd5ea3401ca3e1ff9ebab63508a22dee6578a28890793054da72fb78d8",
+    "crypto.py": "a334d7d2776d362788ce5e8687a916a62ba1614e97c0ccb8994d2acb22bc315f",
+    "declaration.py": "71c3112fd8bbaffd4adc03af46d16a8f36c41187a36fa86231d8a8d2caf37a66",
+    "evaluation_history.py": "175467e7eac8381cc0a79c8f35efb80b406c99dbdc0b05bb5cec65afb41532c7",
+    "history.py": "e2618b8dc34f1251d9c1fa82232313a9524f8b3a38654352bf7a4d2b9ca1b267",
+    "inspect_history.py": "1d0fc978360c60f8e57cfdb8f3f7b6d07b56bfefc92b4dcdc928006222ca041c",
+    "isolation.py": "737256706038ef6c05db2860dba22af0f023e44ba1cd213ee44516c0f9fcb3c0",
+    "ledger.py": "028a41eefce7abc88f31237a0407dae6a9728394c7b10634424e53967f8b9d53",
+    "native_reader.py": "880501767490ea8c439251df18c269c331522bb406b21bd59265a622bcd494db",
+    "probe_agent.py": "3699eeb662610fea2d8403294fad3239cbecf3dfcaeb542ceb2c40abdb0897f6",
+    "protected_dispatch.py": "91c748e4e21bcbc347fdaab129785671765214758f043482f8f31af043e12b34",
+    "protected_isolation.py": "6d99ddca3f03ada6c05ff21f4796ec3b8eea7097c1119b38e53239b16e44809d",
+    "protected_probe.py": "9e89109a168837662c434f0988e6ab8d90d6dd6e472b516c27ad8b8b16f8138f",
+    "replay.py": "e156c0a2daa2eb56feae8e09339401b4fc8a641375d569ea80a4c50fd7f47261",
+    "ticket_service.py": "c6df218d6a81c21ab99ff2549b07f0691ff00e4e44b3f7520562d5c90fcdbda7",
+    "verify.py": "a787abe4189556cd3da87569eccaf6cfe6fa265662b9505f733a6742867bdcf2"
+  },
+  "observer_source": "62f5d0c6fbd785259db2d5c8076dd844b53a0593",
+  "observer_wheel_sha256": "6a291d220925d123d1b239cb198ea4cb9ed6d0e83a61d088ed4948deed4ebaa3",
+  "reader_installation": "normal wheels --no-deps, no editable install, no Inspect/provider in reader"
+}
