@@ -49,10 +49,11 @@ def _event_transition(kind: str, phase: str, revoked: bool, sequence: int) -> tu
 
 
 def _events(rows: list[tuple[int, bytes]], state: dict[str, Any], key: str,
-            request: ActionRequest, issuer_key: str) -> None:
+            request: ActionRequest, issuer_key: str) -> dict[int, dict[str, Any]]:
     """Require the entire signed history, its exact bodies and terminal phase."""
     head = "0" * 64
     phase, revoked = "ready", False
+    prefixes = {}
     for number, (sequence, raw) in enumerate(rows, 1):
         event = _native_envelope(raw, key)
         if set(event) != {"sequence", "previous", "event", "hash"} or type(event["sequence"]) is not int:
@@ -72,10 +73,12 @@ def _events(rows: list[tuple[int, bytes]], state: dict[str, Any], key: str,
             refuse("native event body differs")
         phase, revoked = _event_transition(kind, phase, revoked, number)
         head = event["hash"]
+        prefixes[number] = {"eventHead": head, "phase": phase, "revoked": revoked}
     if len(rows) != state["eventCount"] or head != state["eventHead"]:
         refuse("native history is incomplete")
     if phase != state["phase"] or revoked != state["revoked"]:
         refuse("native history terminal differs")
+    return prefixes
 
 
 def _ticket(rows: list[tuple[Any, ...]], state: dict[str, Any], request: ActionRequest) -> dict[str, Any]:
@@ -97,7 +100,7 @@ def _ticket(rows: list[tuple[Any, ...]], state: dict[str, Any], request: ActionR
             "effectId": effect, "contentSha256": request.content_sha256}
 
 
-def read_native(path: Path, payload: dict[str, Any], pins: dict[str, str]) -> tuple[dict[str, Any], dict[str, Any]]:
+def read_native(path: Path, payload: dict[str, Any], pins: dict[str, str]) -> tuple[dict[str, Any], dict[str, Any], dict[int, dict[str, Any]]]:
     """Read durable native state using a read-only SQLite transaction.
 
     A database row and its native history are read separately from the agent's
@@ -115,10 +118,10 @@ def read_native(path: Path, payload: dict[str, Any], pins: dict[str, str]) -> tu
         fields = {"request": payload["request"], "policy": payload["grantPolicy"], "serviceKey": pins["serviceKey"]}
         if state["configuration"] != digest(DOMAIN + "-configuration", fields):
             refuse("native configuration differs from selected request")
-        _events(db.execute("SELECT sequence,record FROM events ORDER BY sequence").fetchall(), state,
-                pins["serviceKey"], request, pins["issuerKey"])
+        prefixes = _events(db.execute("SELECT sequence,record FROM events ORDER BY sequence").fetchall(), state,
+                           pins["serviceKey"], request, pins["issuerKey"])
         result = _ticket(db.execute("SELECT tenant,ticket,content,revision,effect FROM tickets").fetchall(), state, request)
-    return {**result, "nativePhase": state["phase"], "nativeRevoked": state["revoked"]}, state
+    return {**result, "nativePhase": state["phase"], "nativeRevoked": state["revoked"]}, state, prefixes
 
 
 def _authorization(payload: dict[str, Any], pins: dict[str, str]) -> tuple[str, str | None]:
@@ -154,7 +157,8 @@ def _completion(payload: dict[str, Any], pins: dict[str, str], native_state: dic
     return "verified-bounded-native-completion", None
 
 
-def _completed_attempt(attempt: dict[str, Any], payload: dict[str, Any], service_key: str) -> None:
+def _completed_attempt(attempt: dict[str, Any], payload: dict[str, Any], service_key: str,
+                       native_state: dict[str, Any], prefixes: dict[int, dict[str, Any]]) -> None:
     """Authenticate a completed native return under the selected service key."""
     try:
         receipt = checked_native_receipt(attempt["receipt"], service_key)
@@ -173,9 +177,14 @@ def _completed_attempt(attempt: dict[str, Any], payload: dict[str, Any], service
                 "coverage": "one-native-ticket-row-and-service-events"}
     if any(receipt[field] != value for field, value in expected.items()):
         refuse("retained completed dispatch proof differs")
+    immutable = STATE_FIELDS - {"eventCount", "eventHead", "revoked"}
+    prefix = {field: receipt[field] for field in ("eventHead", "phase", "revoked")}
+    if (any(receipt[field] != native_state[field] for field in immutable)
+            or prefixes.get(receipt["eventCount"]) != prefix):
+        refuse("retained completed dispatch differs from observed native history")
 
 
-def _attempts(payload: dict[str, Any], service_key: str) -> None:
+def _attempts(payload: dict[str, Any]) -> None:
     """Refuse a terminal assertion that contradicts its retained dispatch return."""
     attempts = payload["attempts"]
     if not isinstance(attempts, list) or not 1 <= len(attempts) <= 2:
@@ -193,13 +202,11 @@ def _attempts(payload: dict[str, Any], service_key: str) -> None:
             refuse("retained dispatch outcome differs")
         if not completed and (not isinstance(attempt["reason"], str) or attempt["receipt"] is not None):
             refuse("retained dispatch outcome differs")
-        if completed:
-            _completed_attempt(attempt, payload, service_key)
     if payload["taskTerminal"] != attempts[-1]["returnStatus"]:
         refuse("task terminal contradicts retained dispatch return")
 
 
-def _record_schema(payload: dict[str, Any], service_key: str) -> None:
+def _record_schema(payload: dict[str, Any]) -> None:
     """Check the finite profile's exact fields before interpreting its claims."""
     fields = {"profile", "caseId", "request", "grantPolicy", "grant", "authorityEvidence", "decisionAt",
               "requestDeadline", "humanReachable", "priorFallback", "attempts", "faultInjection",
@@ -214,7 +221,7 @@ def _record_schema(payload: dict[str, Any], service_key: str) -> None:
         refuse("profile fallback contradicts retained grant")
     if payload["coverage"] != "one-local-native-ticket-and-service-events":
         refuse("profile coverage exceeds selected boundary")
-    _attempts(payload, service_key)
+    _attempts(payload)
 
 
 def read_case(path: Path, pins: dict[str, str]) -> dict[str, Any]:
@@ -244,7 +251,7 @@ def read_case(path: Path, pins: dict[str, str]) -> dict[str, Any]:
     """
     candidate = json.loads((path / "record.json").read_text(encoding="ascii"))
     payload = checked_record(candidate, pins["recordKey"], RECORD_DOMAIN)
-    _record_schema(payload, pins["serviceKey"])
+    _record_schema(payload)
     if pins["profile"] != PROFILE or payload["profile"] != PROFILE or payload["caseId"] != path.name:
         refuse("profile or case identity differs")
     if payload["grantPolicy"]["issuer_key"] != pins["issuerKey"]:
@@ -255,9 +262,12 @@ def read_case(path: Path, pins: dict[str, str]) -> dict[str, Any]:
         refuse("task terminal is unsupported")
     if payload["witnessScope"] != "PEER" or payload["custody"] != "author-operated-local":
         refuse("record custody or scope exceeds reference profile")
-    native, native_state = read_native(path / "native.sqlite", payload, pins)
+    native, native_state, prefixes = read_native(path / "native.sqlite", payload, pins)
     authority, authority_reason = _authorization(payload, pins)
     proof, proof_reason = _completion(payload, pins, native_state)
+    for attempt in payload["attempts"]:
+        if attempt["returnStatus"] == "completed":
+            _completed_attempt(attempt, payload, pins["serviceKey"], native_state, prefixes)
     publication = (native["effectObserved"] and payload["taskTerminal"] == "completed"
                    and proof == "verified-bounded-native-completion" and authority == "valid-for-approved-request-at-reference-time"
                    and not native["nativeRevoked"])

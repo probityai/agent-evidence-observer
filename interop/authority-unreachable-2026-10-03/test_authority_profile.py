@@ -193,6 +193,34 @@ class TestReader:
             assert result["independentCustody"] is False
 
     class TestFailingCases:
+        @pytest.mark.parametrize("mutation", ["content", "head", "time", "revoked-prefix"])
+        def test_signed_completed_return_must_match_native_prefix(self, signable_case, mutation, caplog):
+            root, keys, pins = signable_case
+            case_id = "effect-then-authority-revoked" if mutation == "revoked-prefix" else "approved-human-reachable"
+            _case(root, case_id, keys)
+            case = root / case_id
+            original = read_case(case, pins)
+            assert original["effectObserved"] is True
+            assert original["publicationReady"] is (mutation != "revoked-prefix")
+            payload = json.loads((case / "record.json").read_text())["payload"]
+            receipt = payload["attempts"][0]["receipt"]["payload"]
+            if mutation == "content":
+                receipt["contentDigest"] = "0" * 64
+            if mutation == "head":
+                receipt["eventHead"] = "0" * 64
+            if mutation == "time":
+                receipt["effectTime"] = "2026-10-03T12:01:00Z"
+            if mutation == "revoked-prefix":
+                current = payload["readback"]["receipt"]["payload"]
+                receipt.update(eventCount=current["eventCount"], eventHead=current["eventHead"])
+            payload["attempts"][0]["receipt"] = sign_record(receipt, keys["service"], DOMAIN)
+            (case / "record.json").write_bytes(canonical(sign_record(payload, keys["record"], RECORD_DOMAIN)))
+            reason = "retained completed dispatch differs from observed native history"
+            with caplog.at_level(logging.WARNING), pytest.raises(VerificationError) as error:
+                read_case(case, pins)
+            assert str(error.value) == reason
+            assert "authority profile refused: " + reason in caplog.messages
+
         @pytest.mark.parametrize("mutation,reason", [
             ("effect-identity", "retained completion differs from observed native state"),
             ("effect-time", "retained completion differs from observed native state"),
