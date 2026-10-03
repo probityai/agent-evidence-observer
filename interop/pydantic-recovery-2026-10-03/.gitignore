@@ -1,0 +1,13 @@
+.venv/
+fresh-run/
+fresh-run-private/
+*.xml
+install-report.json
+wheels/
+build/
+*.egg-info/
+host-receipts/
+host-repeat/
+reader-install-report.json
+fresh-report.json
+wheels-sha256.txt
