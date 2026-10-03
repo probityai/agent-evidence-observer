@@ -1,0 +1,54 @@
+name: Native smolagents installed publication consumer
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['interop/smolagents-native-2026-10-03/**', '.github/workflows/smolagents-native.yml']
+  pull_request:
+    branches: [main]
+    paths: ['interop/smolagents-native-2026-10-03/**', '.github/workflows/smolagents-native.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  native-smolagents:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Check out immutable native SDK source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: huggingface/smolagents
+          ref: c30b115286e000e98711fae5e85993547b73d826
+          path: vendor-smolagents
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.13.15'
+      - name: Install pinned verification runner
+        run: python -m pip install 'uv==0.8.22'
+      - name: Build installed consumers and check native fault controls
+        run: bash interop/smolagents-native-2026-10-03/verify_install.sh "$RUNNER_TEMP/smolagents-native" "$GITHUB_WORKSPACE/vendor-smolagents"
+      - name: Retain actual native bytes and installed consumer results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: smolagents-native-installed-consumer
+          path: |
+            ${{ runner.temp }}/smolagents-native/native/
+            ${{ runner.temp }}/smolagents-native/wheels/
+            ${{ runner.temp }}/smolagents-native/*-tests.xml
+            ${{ runner.temp }}/smolagents-native/*-report.json
+            ${{ runner.temp }}/smolagents-native/*-install.txt
+            ${{ runner.temp }}/smolagents-native/*.lock
+            ${{ runner.temp }}/smolagents-native/publication/
+            ${{ runner.temp }}/smolagents-native/*-source-sha.txt
+            ${{ runner.temp }}/smolagents-native/runtime.txt
+          if-no-files-found: error
+          retention-days: 90
+

@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "probity-smolagents-reference"
+version = "0.0.1"
+description = "Source-qualified smolagents finite publication reference"
+requires-python = ">=3.12"
+dependencies = ["agent-evidence-observer==0.0.1"]
+
+[project.scripts]
+probity-smolagents-produce = "probity_smolagents.producer:main"
+probity-smolagents-read = "probity_smolagents.reader:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["probity_smolagents*"]
+
+[tool.setuptools.package-data]
+probity_smolagents = ["sdk-source-selection.json"]
+
