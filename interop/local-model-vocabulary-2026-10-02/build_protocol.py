@@ -69,13 +69,13 @@ def build():
     p["resourceHistory"]["priorFiveAttemptBytes"] = 2167006362
     p["resourceHistory"]["scope"] = "Previous five preparations disclosed separately. This independently frozen128 preparation adds actual transferred bytes, including failures; no response retry, aggregate reset or model-cache exemption."
     seed = "probity-global-vocabulary-2026-10-02"
-    ranked = sorted(cases, key=lambda c: digest((seed + ":" + c["id"]).encode()))
-    base = [[m["id"], c["id"], "schema"] for m in p["models"] for c in p["configurations"]]
+    ranked = sorted(original, key=lambda c: digest((seed + ":" + c["id"]).encode()))
+    base = [[m["id"], c["id"], "schema", mode] for m in p["models"] for c in p["configurations"] for mode in ["control", "vocabulary"]]
     attempts = []
     for index, case in enumerate(ranked):
-        offset = index % 4
-        attempts.extend("--".join([*cfg, case["id"]]) for cfg in base[offset:] + base[:offset])
-    p["order"] = {"seed": seed, "method": "SHA256(seed+colon+case.id) ranked32case blocks; rotate four model/cap pairs by sorted-case indexmod4; each pair each position8times; no warmup, repair, examples, retries or retuning.", "base": base, "attemptIds": attempts}
+        offset = index % 8
+        attempts.extend("--".join([*cfg[:3], case["id"] + "-" + cfg[3]]) for cfg in base[offset:] + base[:offset])
+    p["order"] = {"seed": seed, "method": "SHA256(seed+colon+originalcase.id) ranked16 original-case blocks; rotate all eight model/cap/mode cells by original-case indexmod8; each cell each position twice; no warmup, repair, examples, retries or retuning.", "base": base, "attemptIds": attempts}
     assert len(cases) == 32 and len(attempts) == len(set(attempts)) == 128
     (ROOT / "protocol.json").write_bytes(encode(p))
 

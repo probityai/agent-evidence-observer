@@ -266,11 +266,18 @@ def test_fixed_order_and_budget():
     assert len(rows) == len({r[0] for r in rows}) == 128
     positions = {}
     for index, (_, cfg, case) in enumerate(rows):
-        key = (cfg["model"], cfg["id"])
-        positions.setdefault(key, [0]*4)[index % 4] += 1
+        key = (cfg["model"], cfg["id"], case["mode"])
+        positions.setdefault(key, [0]*8)[index % 8] += 1
         assert cfg["decoder"] == "schema"
         assert request(p, cfg, case)["grammarSelection"]["grammarSHA256"]
-    assert list(positions.values()) == [[8]*4]*4
+    assert list(positions.values()) == [[2]*8]*8
+    original = [c["originalCase"] for c in p["cases"][::2]]
+    ranked = sorted(original, key=lambda c: digest((p["order"]["seed"] + ":" + c["id"]).encode()))
+    expected = []
+    for index, case in enumerate(ranked):
+        base = p["order"]["base"]; offset = index % 8
+        expected.extend("--".join([*cfg[:3], case["id"] + "-" + cfg[3]]) for cfg in base[offset:] + base[:offset])
+    assert p["order"]["attemptIds"] == expected
     assert sum(cfg["max_tokens"] for _, cfg, _ in rows) == 7680
     assert p["resourceHistory"]["priorFiveAttemptBytes"] == 2167006362
 

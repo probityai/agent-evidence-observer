@@ -15,8 +15,8 @@ import time
 from datetime import UTC, datetime
 from pathlib import Path
 
-PROTOCOL_SHA256 = "672b2052f1e49106eac8234a64a9fdbb6372f1df3195cc9c959cf5d129f10ec7"
-PROTOCOL_COMMIT = "70922782fae0595218732e4756c8a5f603ad212d"  # resolved to the full hash before execution
+PROTOCOL_SHA256 = "cf9989159a13d7bbee469024d1fb7d75747487f8af930f5bcbdbc47868a6f8a2"
+PROTOCOL_COMMIT = "PREREGISTRATION_COMMIT_PENDING"  # resolved to the full hash before execution
 PROTOCOL_PATH = "interop/local-model-vocabulary-2026-10-02/protocol.json"
 
 

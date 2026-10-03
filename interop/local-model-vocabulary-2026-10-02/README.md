@@ -2,7 +2,7 @@
 
 This profile compares a broad-string JSON schema with a global action enum. Both modes use schema-constrained decoding. Every vocabulary case uses the same seven labels: `publish`, `hold`, `admit`, `reject`, `retry`, `inspect`, and `dispatch`. The grammar receives no case target.
 
-The sixteen policy cases are exact copies of the previous 384-call protocol. Each copy retains its full original object and identity. Two modes, two selected SmolLM2 models and two completion caps produce 128 attempts. A fixed SHA256 order rotates the four model/cap configurations across all 32 cases. The selected protocol, grammar bytes, compiler, helper and dependency lock are frozen before inference.
+The sixteen policy cases are exact copies of the previous 384-call protocol. Each copy retains its full original object and identity. Two modes, two selected SmolLM2 models and two completion caps produce 128 attempts. A fixed SHA256 order ranks the sixteen original case blocks and rotates all eight model/cap/mode cells. Each cell occupies each position twice. The selected protocol, grammar bytes, compiler, helper and dependency lock are frozen before inference.
 
 Preparation allows one selected transfer per payload, within 512 MiB and 180 seconds. The build allows 335 seconds. The native run allows 600 wall seconds, 600 whole-process CPU seconds, 1 GiB peak RSS, 65,536 prompt tokens and 7,680 completion tokens. Paid provider calls and spend are zero. The previous five preparations transferred 2,167,006,362 bytes; this preparation adds its actual transfer, including failures.
 
