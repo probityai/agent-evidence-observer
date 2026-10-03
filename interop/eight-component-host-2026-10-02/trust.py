@@ -142,7 +142,7 @@ def read_regular(path: Path, reason: str, *, limit: int = MAX_FILE_BYTES) -> byt
             info = os.fstat(source.fileno())
             if not stat.S_ISREG(info.st_mode) or info.st_size > limit:
                 refuse(reason)
-            raw = source.read(limit + 1)
+            raw = source.read(info.st_size + 1)
     except (OSError, RuntimeError, ValueError):
         refuse(reason)
     if len(raw) > limit or len(raw) != info.st_size:
