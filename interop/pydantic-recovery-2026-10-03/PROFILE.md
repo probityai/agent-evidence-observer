@@ -95,6 +95,21 @@ reader closure, runs the host gate twice, compares complete reports and refuses
 a changed helper. Workflow output retains these receipts. A new packet path is
 mandatory. Existing results never get overwritten.
 
+Host installation selection checks every file, including selected regular-file
+symlink targets. CPython creates `lib64 -> lib` on 64-bit Linux. The closure
+records that exact internal link and selects the canonical `lib` files once.
+Its `lib` target must be a real directory. Other directory links, dangling
+links, loops and special files refuse. Nonblocking
+descriptor open prevents a FIFO from waiting before the reader timeout. The
+installation limits are 4,096 files, 8,192 entries, depth 32, 64 MiB per file and
+512 MiB in total. Pins, policy JSON and environment config each use the bounded
+2 MiB regular-file reader. The config must contain one exact isolation setting
+with the key/value case and whitespace normalization that CPython uses.
+Comments and duplicate settings cannot select isolation. A `bin/pyvenv.cfg`
+override refuses. These limits apply before subprocess launch. Host OS
+and the selected host filesystem must prevent concurrent changes throughout
+selection and execution. Pre-launch hashes do not make live execution race-free.
+
 The controlled model is native `FunctionModel`, with zero external provider
 calls and no measured inference quality. The provider count derives from the
 selected local model implementation, rather than an independent network counter.

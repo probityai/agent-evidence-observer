@@ -3,30 +3,92 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import os
+import stat
 import subprocess
 from pathlib import Path
 from typing import Any
 
-from probity_observer.crypto import canonical, strict_loads
+from probity_observer.crypto import VerificationError, canonical, strict_loads
 
 from probity_pydantic_recovery.common import (
     CASES,
     PROFILE,
     child_environment,
-    load,
+    read,
     require,
     sha,
     write,
 )
 
+MAX_INSTALL_FILE = 64 * 1024 * 1024
+MAX_INSTALL_BYTES = 512 * 1024 * 1024
+MAX_INSTALL_FILES = 4096
+MAX_INSTALL_ENTRIES = 8192
+MAX_INSTALL_DEPTH = 32
 
-def file_hash(path: Path) -> str:
-    """Hash host-selected runtime files without loading a large extension at once."""
+
+def select_file(path: Path) -> dict[str, Any]:
+    """Hash only a bounded opened regular file, including selected symlink targets."""
+    try:
+        descriptor = os.open(path, os.O_RDONLY | os.O_NONBLOCK)
+    except OSError as error:
+        raise VerificationError("host-install-file-open") from error
     digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
+    total = 0
+    try:
+        metadata = os.fstat(descriptor)
+        require(stat.S_ISREG(metadata.st_mode), "host-install-regular-file")
+        require(metadata.st_size <= MAX_INSTALL_FILE, "host-install-file-bound")
+        with os.fdopen(descriptor, "rb", closefd=False) as stream:
+            while chunk := stream.read(min(1024 * 1024, MAX_INSTALL_FILE - total + 1)):
+                total += len(chunk)
+                require(total <= MAX_INSTALL_FILE, "host-install-file-bound")
+                digest.update(chunk)
+        require(total == metadata.st_size, "host-install-file-size-changed")
+    finally:
+        os.close(descriptor)
+    return {"sha256": digest.hexdigest(), "bytes": total}
+
+
+def installation_paths(environment: Path):
+    """Bound all entries and depth without following directory symlinks."""
+    pending = [(environment, 0)]
+    count = 0
+    while pending:
+        directory, depth = pending.pop()
+        require(depth <= MAX_INSTALL_DEPTH, "host-install-depth-bound")
+        with os.scandir(directory) as entries:
+            for entry in entries:
+                count += 1
+                require(count <= MAX_INSTALL_ENTRIES, "host-install-entry-bound")
+                if entry.is_dir(follow_symlinks=False):
+                    pending.append((Path(entry.path), depth + 1))
+                else:
+                    yield Path(entry.path)
+
+
+def validate_environment_config(environment: Path) -> None:
+    """Require the single isolation setting CPython uses, without a bin override."""
+    require(not os.path.lexists(environment / "bin/pyvenv.cfg"), "reader-config-override")
+    try:
+        config = read(environment / "pyvenv.cfg").decode("utf-8")
+    except UnicodeDecodeError as error:
+        raise VerificationError("reader-config-encoding") from error
+    settings = []
+    for line in config.splitlines():
+        key, _, value = line.partition("=")
+        if key.strip().lower() == "include-system-site-packages":
+            settings.append(value.strip().lower())
+    require(settings == ["false"], "reader-system-packages")
+
+
+def select_directory_link(path: Path, environment: Path) -> dict[str, str]:
+    """Bind CPython's required lib64-to-lib link without following it twice."""
+    require(path == environment / "lib64" and path.readlink() == Path("lib"), "host-install-directory-link")
+    library = environment / "lib"
+    require(library.is_dir() and not library.is_symlink(), "host-install-library-directory")
+    return {"symlink": "lib", "target": "lib"}
 
 
 def reader_closure(executable: Path) -> dict[str, Any]:
@@ -37,20 +99,29 @@ def reader_closure(executable: Path) -> dict[str, Any]:
     """
     executable = executable.absolute()
     environment = executable.parent.parent
+    require(environment.is_dir() and not environment.is_symlink(), "reader-environment-directory")
     require(executable.parent.name == "bin" and (environment / "pyvenv.cfg").is_file(), "reader-isolated-environment")
-    config = (environment / "pyvenv.cfg").read_text()
-    require("include-system-site-packages = false" in config.lower(), "reader-system-packages")
+    validate_environment_config(environment)
     files = {}
-    for path in sorted(environment.rglob("*")):
-        if path.is_file():
-            files[str(path.relative_to(environment))] = {"sha256": file_hash(path), "symlink": str(path.readlink()) if path.is_symlink() else None}
+    directory_links = {}
+    total = 0
+    for path in installation_paths(environment):
+        if path.is_symlink() and path.is_dir():
+            directory_links[str(path.relative_to(environment))] = select_directory_link(path, environment)
+            continue
+        require(len(files) < MAX_INSTALL_FILES, "host-install-file-population")
+        selected = select_file(path)
+        total += selected["bytes"]
+        require(total <= MAX_INSTALL_BYTES, "host-install-byte-bound")
+        files[str(path.relative_to(environment))] = {**selected, "symlink": str(path.readlink()) if path.is_symlink() else None}
     python = environment / "bin/python"
-    return {"environment": str(environment), "files": files, "interpreter": str(python.resolve()), "interpreterSha256": file_hash(python.resolve())}
+    interpreter = select_file(python.resolve())
+    return {"environment": str(environment), "files": files, "directoryLinks": directory_links, "interpreter": str(python.resolve()), "interpreterSha256": interpreter["sha256"], "interpreterBytes": interpreter["bytes"]}
 
 
 def select_policy(pins: Path, executable: Path) -> dict[str, Any]:
     """Make a concrete local host selection outside the candidate packet."""
-    return {"profile": PROFILE, "pinsSha256": sha(pins.read_bytes()), "readerSha256": file_hash(executable), "readerClosure": reader_closure(executable), "plannedAttempts": len(CASES), "releasedResults": 1, "recoveryPosts": 0}
+    return {"profile": PROFILE, "pinsSha256": sha(read(pins)), "readerSha256": select_file(executable)["sha256"], "readerClosure": reader_closure(executable), "plannedAttempts": len(CASES), "releasedResults": 1, "recoveryPosts": 0}
 
 
 def decide(report: dict[str, Any], policy: dict[str, Any]) -> dict[str, Any]:
@@ -68,12 +139,13 @@ def decide(report: dict[str, Any], policy: dict[str, Any]) -> dict[str, Any]:
 
 def gate(packet: Path, pins: Path, policy_file: Path, policy_sha256: str, executable: Path, output: Path) -> dict[str, Any]:
     """Require selected reader closure before launching an installed consumer."""
-    require(sha(policy_file.read_bytes()) == policy_sha256, "host-policy-digest")
-    policy = load(policy_file)
+    policy_raw = read(policy_file)
+    require(sha(policy_raw) == policy_sha256, "host-policy-digest")
+    policy = strict_loads(policy_raw)
     require(policy == select_policy(pins, executable), "host-reader-selection")
     output.mkdir(parents=True, exist_ok=False)
     write(output / "selected-host-policy.json", policy)
-    write(output / "selected-pins.json", pins.read_bytes(), raw=True)
+    write(output / "selected-pins.json", read(pins), raw=True)
     command = [str(executable.absolute()), str(packet.absolute()), "--pins-file", str(pins.absolute())]
     environment = reader_environment()
     result = subprocess.run(command, capture_output=True, timeout=30, env=environment, cwd=output, check=False)
