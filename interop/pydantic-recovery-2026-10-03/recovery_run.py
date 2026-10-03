@@ -36,6 +36,11 @@ from probity_pydantic_recovery.common import (
 ACTIVE: list[subprocess.Popen[bytes]] = []
 
 
+def interrupted(signum: int, frame: Any) -> None:
+    """Unwind the owned run on SIGTERM so its finally block can reap children."""
+    raise SystemExit(128 + signum)
+
+
 def cleanup() -> None:
     """Reap every owned process, including after a failed assertion."""
     for process in ACTIVE:
@@ -202,13 +207,18 @@ def run(root: Path, revision: str) -> dict[str, Any]:
     root.mkdir(parents=True, exist_ok=False)
     private = root.parent / (root.name + "-private")
     private.mkdir(mode=0o700)
+    previous = signal.signal(signal.SIGTERM, interrupted)
     try:
         prepare_and_execute(root, private, revision)
     finally:
+        signal.signal(signal.SIGTERM, signal.SIG_IGN)
         try:
             cleanup()
         finally:
-            shutil.rmtree(private)
+            try:
+                shutil.rmtree(private)
+            finally:
+                signal.signal(signal.SIGTERM, previous)
     manifest = {str(path.relative_to(root)): sha(path.read_bytes()) for path in sorted(root.rglob("*")) if path.is_file()}
     write(root / "artifact-manifest.json", manifest)
     pins = {"profile": PROFILE, "planSha256": sha((root / "plan-before-run.json").read_bytes()), "artifactManifestSha256": sha(canonical(manifest))}

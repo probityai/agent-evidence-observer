@@ -6,6 +6,7 @@ import json
 import math
 import os
 import stat
+import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -52,12 +53,17 @@ def load(path: Path) -> Any:
 
 
 def write(path: Path, value: Any, *, raw: bool = False) -> None:
-    """Create and fsync exact bytes, then fsync their parent directory."""
+    """Publish complete fsynced bytes atomically without replacing any path."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    with path.open("xb") as handle:
-        handle.write(value if raw else canonical(value))
-        handle.flush()
-        os.fsync(handle.fileno())
+    descriptor, temporary = tempfile.mkstemp(prefix=".recovery-publish-", dir=path.parent)
+    try:
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(value if raw else canonical(value))
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.link(temporary, path)
+    finally:
+        os.unlink(temporary)
     descriptor = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY)
     try:
         os.fsync(descriptor)

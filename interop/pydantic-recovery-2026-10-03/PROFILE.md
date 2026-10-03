@@ -39,7 +39,11 @@ Original native history stays separate from the selected recovery history. The
 changed-argument case retains both. Private key files exist only in the parent's
 separate host directory, never in the public packet. The parent deletes them
 after cleanup. Owned children get an explicit environment allowlist and disabled
-tracing. The original packets retain process records, native SQLite snapshots,
+tracing. SIGTERM unwinds the parent's cleanup block, reaps its owned child groups
+and removes the private key directory. SIGKILL cannot run this cleanup. Atomic
+exclusive publication makes a ready file visible only after all bytes are
+fsynced. Existing paths refuse replacement. Private files start with mode 0600
+inside mode 0700 directories. The original packets retain process records, native SQLite snapshots,
 exact HTTP bytes, selected sources, dependency selection and current host
 receipts. The offline reader imports no agent framework and executes no packet
 code. It opens SQLite in immutable read-only mode with query-only, untrusted
