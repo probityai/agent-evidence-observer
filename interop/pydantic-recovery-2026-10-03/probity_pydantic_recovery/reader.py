@@ -6,7 +6,16 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
-from recovery_common import (
+from probity_observer.authorization import ActionRequest, GrantPolicy
+from probity_observer.crypto import (
+    VerificationError,
+    canonical,
+    strict_loads,
+    verify_signature,
+)
+from probity_observer.ticket_service import DOMAIN, verify_ticket_result
+
+from probity_pydantic_recovery.common import (
     CASES,
     NONCLAIMS,
     PROFILE,
@@ -17,16 +26,7 @@ from recovery_common import (
     require,
     sha,
 )
-from recovery_gate import admit
-
-from probity_observer.authorization import ActionRequest, GrantPolicy
-from probity_observer.crypto import (
-    VerificationError,
-    canonical,
-    strict_loads,
-    verify_signature,
-)
-from probity_observer.ticket_service import DOMAIN, verify_ticket_result
+from probity_pydantic_recovery.gate import admit
 
 
 def population(root: Path, selected: dict[str, Any]) -> dict[str, Any]:

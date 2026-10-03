@@ -8,10 +8,10 @@ from typing import Any
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
-from recovery_common import load, read, require, write
-from recovery_gate import admit
-
 from probity_observer.crypto import VerificationError, canonical, strict_loads
+
+from probity_pydantic_recovery.common import load, read, require, write
+from probity_pydantic_recovery.gate import admit
 
 
 def exchange(url: str, candidate: dict[str, Any] | None = None) -> tuple[int, bytes]:
@@ -76,7 +76,7 @@ def continuation(case: dict[str, Any], history: bytes, accepted: dict[str, Any],
     result = agent_for(case, resume=True).run_sync(message_history=native, deferred_tool_results=results)
     write(root / "resumed-history.json", result.all_messages_json(), raw=True)
     require(result.output == "complete", "native-continuation-output")
-    return {"status": "completed", "output": result.output, "providerCalls": 0, "nativeModelRequests": 1}
+    return {"status": "completed", "output": result.output, "providerCalls": 0, "nativeModelRequests": result.usage().requests}
 
 
 def recover(case: dict[str, Any], endpoint: str, root: Path, current: dict[str, Any]) -> None:

@@ -8,8 +8,6 @@ from datetime import datetime
 from pathlib import Path
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-from recovery_common import load, write
-
 from probity_observer.authorization import ActionRequest, GrantPolicy
 from probity_observer.crypto import SigningKey, VerificationError
 from probity_observer.ticket_service import (
@@ -17,6 +15,8 @@ from probity_observer.ticket_service import (
     TicketStore,
     _TicketHandler,
 )
+
+from probity_pydantic_recovery.common import load, write
 
 
 class RecordedHandler(_TicketHandler):

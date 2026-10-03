@@ -4,11 +4,11 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from recovery_common import deferred, require, sha
-
 from probity_observer.authorization import ActionRequest, GrantPolicy, verify_grant
 from probity_observer.crypto import canonical, strict_loads
 from probity_observer.ticket_service import verify_ticket_result
+
+from probity_pydantic_recovery.common import deferred, require, sha
 
 
 def effect(case: dict[str, Any], packet: dict[str, Any]) -> dict[str, Any]:

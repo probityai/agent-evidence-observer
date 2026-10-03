@@ -6,11 +6,11 @@ import shutil
 from pathlib import Path
 
 import pytest
-from recovery_common import CASES, load, sha
-from recovery_reader import verify_saved
-from recovery_run import run
-
 from probity_observer.crypto import VerificationError, canonical
+
+from probity_pydantic_recovery.common import CASES, load, sha
+from probity_pydantic_recovery.reader import verify_saved
+from recovery_run import run
 
 
 @pytest.fixture(scope="session")
@@ -146,3 +146,25 @@ def mutate_final(data: dict, mutation: str) -> None:
         data["receipt"]["signature"] = "0" * 128
     else:
         data["receipt"]["payload"]["effectId"] = "0" * 64
+
+
+@pytest.mark.parametrize("raw", [b"[NaN]", b"[1e999]", b'[{"a":1,"a":2}]', b"[" * 40 + b"0" + b"]" * 40, b"[" * 2000 + b"0" + b"]" * 2000, b"[invalid]"])
+def test_native_json_boundary(raw: bytes) -> None:
+    from probity_pydantic_recovery.common import messages
+    with pytest.raises(VerificationError):
+        messages(raw)
+
+
+def test_preparation_failure_removes_private_keys(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """A source-capture failure cannot leave selected private keys behind."""
+    import recovery_run
+
+    def fail_capture(root: Path) -> dict[str, str]:
+        raise RuntimeError("controlled-source-capture-failure")
+
+    monkeypatch.setattr(recovery_run, "capture_sources", fail_capture)
+    root = tmp_path / "failed-packet"
+    with pytest.raises(RuntimeError, match="controlled-source-capture-failure"):
+        run(root, "test-source")
+    assert not (tmp_path / "failed-packet-private").exists()
+    assert not recovery_run.ACTIVE

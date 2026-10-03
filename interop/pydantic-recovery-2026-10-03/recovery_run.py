@@ -17,7 +17,11 @@ from pathlib import Path
 from typing import Any
 
 from cryptography.hazmat.primitives import serialization
-from recovery_common import (
+from probity_observer.authorization import ActionRequest, GrantPolicy, issue_grant
+from probity_observer.crypto import SigningKey, canonical
+from probity_observer.ticket_service import TicketStore
+
+from probity_pydantic_recovery.common import (
     CASES,
     NONCLAIMS,
     PROFILE,
@@ -28,10 +32,6 @@ from recovery_common import (
     sha,
     write,
 )
-
-from probity_observer.authorization import ActionRequest, GrantPolicy, issue_grant
-from probity_observer.crypto import SigningKey, canonical
-from probity_observer.ticket_service import TicketStore
 
 ACTIVE: list[subprocess.Popen[bytes]] = []
 
@@ -161,10 +161,10 @@ def execute(root: Path, private: Path, case: dict[str, Any], store: TicketStore)
 
 def capture_sources(root: Path) -> dict[str, str]:
     """Retain the selected native source and dependency closure before all cases."""
-    import pydantic_ai
-
     import probity_observer
+    import pydantic_ai
     paths = list(Path(__file__).parent.glob("recovery_*.py"))
+    paths += list((Path(__file__).parent / "probity_pydantic_recovery").glob("*.py"))
     paths += list(Path(probity_observer.__file__).parent.glob("*.py"))
     paths += list(Path(pydantic_ai.__file__).parent.rglob("*.py"))
     paths += [Path(__file__).with_name("requirements.lock")]
@@ -176,12 +176,8 @@ def capture_sources(root: Path) -> dict[str, str]:
     return result
 
 
-def run(root: Path, revision: str) -> dict[str, Any]:
-    """Run the frozen nine-case profile and its offline admission reader."""
-    from recovery_reader import verify_saved
-    root.mkdir(parents=True, exist_ok=False)
-    private = root.parent / (root.name + "-private")
-    private.mkdir(mode=0o700)
+def prepare_and_execute(root: Path, private: Path, revision: str) -> None:
+    """Freeze native sources and selections before the first protected effect."""
     require(importlib.metadata.version("pydantic-ai-slim") == "1.68.0", "framework-version")
     now = datetime.now(UTC).replace(microsecond=0)
     run_id = "pydantic-recovery-" + uuid.uuid4().hex
@@ -192,12 +188,23 @@ def run(root: Path, revision: str) -> dict[str, Any]:
         selections.append((directory, *selection(directory, run_id, name, now)))
     plan = {"profile": PROFILE, "sourceRevision": revision, "framework": "pydantic-ai-slim==1.68.0", "model": "scripted-FunctionModel", "cases": [case for _, case, _ in selections], "sources": capture_sources(root), "witnessScope": "PEER", "doesNotAssert": NONCLAIMS}
     write(root / "plan-before-run.json", plan)
+    for directory, case, store in selections:
+        execute(root / case["id"], directory, case, store)
+
+
+def run(root: Path, revision: str) -> dict[str, Any]:
+    """Clean private keys and owned processes even when preparation fails."""
+    from probity_pydantic_recovery.reader import verify_saved
+    root.mkdir(parents=True, exist_ok=False)
+    private = root.parent / (root.name + "-private")
+    private.mkdir(mode=0o700)
     try:
-        for directory, case, store in selections:
-            execute(root / case["id"], directory, case, store)
+        prepare_and_execute(root, private, revision)
     finally:
-        cleanup()
-        shutil.rmtree(private)
+        try:
+            cleanup()
+        finally:
+            shutil.rmtree(private)
     manifest = {str(path.relative_to(root)): sha(path.read_bytes()) for path in sorted(root.rglob("*")) if path.is_file()}
     write(root / "artifact-manifest.json", manifest)
     pins = {"profile": PROFILE, "planSha256": sha((root / "plan-before-run.json").read_bytes()), "artifactManifestSha256": sha(canonical(manifest))}

@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 from pathlib import Path
 from typing import Any
@@ -65,9 +66,25 @@ def unique(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
 
 def messages(raw: bytes) -> list[dict[str, Any]]:
     """Parse native message bytes without importing Pydantic AI."""
-    result = json.loads(raw, object_pairs_hook=unique, parse_constant=invalid_constant)
+    try:
+        result = json.loads(raw, object_pairs_hook=unique, parse_constant=invalid_constant)
+    except (ValueError, RecursionError) as error:
+        raise VerificationError("native-json-refused") from error
+    bounded_json(result)
     require(type(result) is list, "native-history-type")
     return result
+
+
+def bounded_json(result: Any) -> None:
+    """Bound finite native metadata without recursion or executing candidate code."""
+    pending = [(result, 0)]
+    while pending:
+        value, depth = pending.pop()
+        require(depth <= 32, "native-json-depth")
+        require(not isinstance(value, float) or math.isfinite(value), "native-nonfinite-number")
+        if isinstance(value, (dict, list)):
+            children = value.values() if isinstance(value, dict) else value
+            pending.extend((child, depth + 1) for child in children)
 
 
 def invalid_constant(value: str) -> None:
@@ -80,6 +97,8 @@ def deferred(raw: bytes, case: dict[str, Any]) -> dict[str, Any]:
     history = messages(raw)
     require(len(history) == 2, "deferred-history-population")
     require(history[0]["kind"] == "request" and history[1]["kind"] == "response", "deferred-message-kinds")
+    prompt = history[0]["parts"]
+    require(len(prompt) == 1 and prompt[0].get("part_kind") == "user-prompt" and prompt[0].get("content") == "Execute the selected ticket update.", "deferred-prompt-binding")
     require(len(history[1]["parts"]) == 1, "deferred-call-population")
     call = history[1]["parts"][0]
     expected = {"part_kind": "tool-call", "tool_name": "dispatch_ticket", "args": {"content": "DONE"}, "tool_call_id": case["id"] + "-call"}
