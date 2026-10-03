@@ -1,0 +1,33 @@
+{
+  "sources": {
+    "original-card.txt": "4f97533ad95b1b2fea15fbc075c01b94578ebdd7c8138888fa43fa3abd530dc4",
+    "quant-card.txt": "b464dc4a9ff26fea06ec45165546bbeb0c32b1a7847babcef048d5b84486ed84",
+    "tokenizer-config.json": "4ec77d44f62efeb38d7e044a1db318f6a939438425312dfa333b8382dbad98df",
+    "downloads.json": "93b89e16434655d7ca63bbf7d1caad36e8ca01d1af496dd1391417e5ece1364f",
+    "source-download.json": "512f7a53412c5ee551d4a8ee45fb8e06fbf7a35fad8a43b4b421e5a2c5476769",
+    "build-gcc.log": "4f9b02b1028bc8535709d214cb65124d990e071fc78d45331af0d755b5212b80",
+    "download-declaration.json": "00c275b24ca020556f7627cd68cf802982d02451aa7a88f24e3b2c5d16a8bd3f",
+    "dependency-lock.json": "7f2b24a65df36b66fbf23425bb03365e4af560c9c7838c6608886e70f5409a66",
+    "requirements.txt": "30b02b3f04bd6a817aa729ba09d10f07b18f16fd1b3aa6c18760dbc0c63816f3",
+    "download-accounting.json": "468308fb2a9251b7fa72cc9f4794b410ae66ec3171948da308ee45ecbd924e27",
+    "candidate-original-README.txt": "6b88794416ac9da8f254ebb0bec228967a2bdd0badf9a2853863928b25facd95",
+    "candidate-original-tokenizer_config.json": "4ec77d44f62efeb38d7e044a1db318f6a939438425312dfa333b8382dbad98df",
+    "candidate-quant-README.txt": "4a0a8e83b9c22c340aa73fd047428cc3aa89f16856dc0df2e5bf4555c05a95e8"
+  },
+  "selectedRuntime": {
+    "version": "0.3.16",
+    "sourceSHA256": "34ed0f9bd9431af045bb63d9324ae620ad0536653740e9bb163a2e1fcb973be6",
+    "buildFlags": [
+      "CC=/usr/bin/gcc",
+      "CXX=/usr/bin/g++",
+      "CMAKE_BUILD_PARALLEL_LEVEL=2",
+      "GGML_NATIVE=OFF",
+      "GGML_OPENMP=OFF",
+      "GGML_CUDA=OFF",
+      "GGML_BLAS=OFF"
+    ],
+    "buildHardSeconds": 330
+  },
+  "operator": "Probity-controlled-GitHub-Actions; same operator",
+  "priorLocalRun": "original48 operational run remains separately retained unchanged; no cache used for preparation"
+}
