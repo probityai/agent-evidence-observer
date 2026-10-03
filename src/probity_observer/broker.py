@@ -19,7 +19,8 @@ from pathlib import Path
 from typing import Any
 
 from .crypto import SigningKey, VerificationError, canonical, digest
-from .history import Witness, append_history, read_history, unresolved_intents, verify_checkpoint
+from .history import append_history, read_history, unresolved_intents, verify_checkpoint
+from .witness_port import WitnessPort
 
 LOGGER = logging.getLogger(__name__)
 
@@ -168,7 +169,7 @@ class Broker:
         history_path: Path,
         authority: dict[str, str],
         observer_key: SigningKey,
-        witness: Witness,
+        witness: WitnessPort,
     ) -> None:
         self.workspace = workspace.resolve(strict=True)
         self.history_path = history_path.resolve()
@@ -190,11 +191,10 @@ class Broker:
             raise CoverageError("workspace must be an existing directory")
         if self.history_path.is_relative_to(self.workspace):
             raise CoverageError("history must be outside the observed workspace")
-        if self.history_path == self.witness.state_path.resolve():
-            raise CoverageError("history and witness state must use different files")
-        if self.witness.state_path.resolve().is_relative_to(self.workspace):
-            raise CoverageError("witness state must be outside the observed workspace")
-        if self.witness.signing_key.public_hex == self.observer_key.public_hex:
+        boundary_error = self.witness.configuration_error(self.workspace, self.history_path)
+        if boundary_error is not None:
+            raise CoverageError(boundary_error)
+        if self.witness.public_hex == self.observer_key.public_hex:
             raise CoverageError("observer and witness must use different keys")
         if self.history_path.exists() and self.history_path.stat().st_size:
             raise CoverageError("interval history must start empty")
@@ -411,7 +411,7 @@ class Broker:
         }
 
 
-def recover_interrupted(history_path: Path, workspace: Path, witness: Witness) -> dict[str, Any]:
+def recover_interrupted(history_path: Path, workspace: Path, witness: WitnessPort) -> dict[str, Any]:
     """Witness an incomplete interval after a broker died during a write."""
     entries = read_history(history_path)
     if not entries or entries[0]["event"]["kind"] != "begin":
@@ -422,7 +422,7 @@ def recover_interrupted(history_path: Path, workspace: Path, witness: Witness) -
     if not pending:
         raise VerificationError("interrupted history has no unresolved write")
     prior_checkpoint = witness.latest_checkpoint(history_path)
-    verify_checkpoint(entries[:1], prior_checkpoint, witness.signing_key.public_hex)
+    verify_checkpoint(entries[:1], prior_checkpoint, witness.public_hex)
     try:
         recovery_root = tree_root(workspace)
         snapshot_error = None

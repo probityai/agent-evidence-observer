@@ -243,7 +243,22 @@ class LedgerWitness(Witness):
                 "signature": self.signing_key.sign(HEAD_DOMAIN, payload),
             }
 
-    def checkpoint(self, history_path: Path) -> dict[str, Any]:
+    def checkpoint(self, history_path: Path, *, max_ledger_bytes: int | None = None) -> dict[str, Any]:
+        """Append a checkpoint, optionally bounded by actual serialized log bytes.
+
+        Parameters
+        ----------
+        history_path : Path
+            Complete broker history to checkpoint.
+        max_ledger_bytes : int or None
+            Optional host-selected cap. Capacity is checked under the append
+            lock before writing; a refusal leaves the receipt log unchanged.
+
+        Returns
+        -------
+        dict
+            Signed checkpoint and durable receipt.
+        """
         with self._locked():
             entries = read_history(history_path)
             interval, authority_digest = _begin_identity(entries, self.observer_key)
@@ -283,16 +298,34 @@ class LedgerWitness(Witness):
                 "keyid": self.signing_key.public_hex,
                 "signature": self.signing_key.sign(RECEIPT_DOMAIN, body),
             }
-            with self.state_path.open("ab") as stream:
-                stream.write(canonical(receipt) + b"\n")
-                stream.flush()
-                os.fsync(stream.fileno())
-            parent = os.open(self.state_path.parent, os.O_RDONLY)
-            try:
-                os.fsync(parent)
-            finally:
-                os.close(parent)
+            self._append_receipt(canonical(receipt) + b"\n", max_ledger_bytes)
             return {**checkpoint, "ledgerReceipt": receipt}
+
+    def _append_receipt(self, raw: bytes, maximum: int | None) -> None:
+        """Flush only after checking the exact append size under the writer lock."""
+        self._check_capacity(raw, maximum)
+        with self.state_path.open("ab") as stream:
+            stream.write(raw)
+            stream.flush()
+            os.fsync(stream.fileno())
+        parent = os.open(self.state_path.parent, os.O_RDONLY)
+        try:
+            os.fsync(parent)
+        finally:
+            os.close(parent)
+
+    def _check_capacity(self, raw: bytes, maximum: int | None) -> None:
+        """Never admit a receipt whose actual bytes exceed the host's cap."""
+        if maximum is None:
+            return
+        if type(maximum) is not int or maximum < 0:
+            raise VerificationError("witness ledger capacity is invalid")
+        if self._existing_size() + len(raw) > maximum:
+            raise VerificationError("witness ledger capacity reached")
+
+    def _existing_size(self) -> int:
+        """Retain legacy fresh-log behavior while measuring an existing append."""
+        return self.state_path.stat().st_size if self.state_path.exists() else 0
 
     def latest_checkpoint(self, history_path: Path) -> dict[str, Any]:
         entries = read_history(history_path)

@@ -162,6 +162,32 @@ class Witness:
         self.state_path = state_path
         self.signing_key = signing_key
 
+    @property
+    def public_hex(self) -> str:
+        """Return the public pin without requiring access to the signer API."""
+        return self.signing_key.public_hex
+
+    def configuration_error(self, workspace: Path, history: Path) -> str | None:
+        """Keep local witness files outside the broker's writable workspace.
+
+        Parameters
+        ----------
+        workspace : Path
+            Resolved observed workspace.
+        history : Path
+            Resolved broker history path.
+
+        Returns
+        -------
+        str or None
+            Existing local configuration refusal, or no refusal.
+        """
+        if history == self.state_path.resolve():
+            return "history and witness state must use different files"
+        if self.state_path.resolve().is_relative_to(workspace):
+            return "witness state must be outside the observed workspace"
+        return None
+
     def checkpoint(self, history_path: Path) -> dict[str, Any]:
         """Sign the current head after verifying prefix consistency.
 

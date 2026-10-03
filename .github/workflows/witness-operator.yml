@@ -1,0 +1,46 @@
+name: Installed witness operator and public client
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['src/**', 'tests/**', 'interop/witness-operator-2026-10-03/**', '.github/workflows/witness-operator.yml']
+  pull_request:
+    branches: [main]
+    paths: ['src/**', 'tests/**', 'interop/witness-operator-2026-10-03/**', '.github/workflows/witness-operator.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  native-witness-operator:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12.14'
+      - name: Install selected verification runner
+        run: python -m pip install 'uv==0.8.22'
+      - name: Build separate installed operator, producer and reader
+        run: bash interop/witness-operator-2026-10-03/verify_install.sh "$RUNNER_TEMP/witness-operator"
+      - name: Retain public native histories, heads and offline reader results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: witness-operator-installed-consumer
+          path: |
+            ${{ runner.temp }}/witness-operator/native/
+            ${{ runner.temp }}/witness-operator/wheels/
+            ${{ runner.temp }}/witness-operator/*-tests.xml
+            ${{ runner.temp }}/witness-operator/*-report.json
+            ${{ runner.temp }}/witness-operator/*-install.txt
+            ${{ runner.temp }}/witness-operator/*.lock
+            ${{ runner.temp }}/witness-operator/*-sha.txt
+            ${{ runner.temp }}/witness-operator/*-runtime.txt
+            ${{ runner.temp }}/witness-operator/complexity.json
+          if-no-files-found: error
+          retention-days: 90

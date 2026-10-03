@@ -391,7 +391,7 @@ def _broker_request(
         "operation": "write-file",
     }:
         _refuse("protected action requires the minimal /work write-file broker profile")
-    keys = {broker.observer_key.public_hex, broker.witness.signing_key.public_hex}
+    keys = {broker.observer_key.public_hex, broker.witness.public_hex}
     if policy.issuer_key in keys:
         _refuse("issuer, observer, and witness keys must differ")
 
@@ -444,7 +444,7 @@ class AuthorizedBroker:
         self._grant = canonical(_grant_object(grant))
         self._authority_digest = digest("probity-authority-v0", broker.authority)
         self._observer_key = broker.observer_key.public_hex
-        self._witness_key = broker.witness.signing_key.public_hex
+        self._witness_key = broker.witness.public_hex
         self._authorization: AuthorizedAction | None = None
         self._authorized_at: datetime | None = None
         self._check_native_binding()
@@ -459,7 +459,7 @@ class AuthorizedBroker:
             _refuse("broker authority changed from its initial commitment")
         actual_keys = (
             self.broker.observer_key.public_hex,
-            self.broker.witness.signing_key.public_hex,
+            self.broker.witness.public_hex,
         )
         if actual_keys != (self._observer_key, self._witness_key):
             _refuse("broker signing keys changed after authorization configuration")
