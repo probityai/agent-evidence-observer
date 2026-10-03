@@ -72,6 +72,41 @@ def assert_no_dispatch(result: dict[str, Any], caplog: pytest.LogCaptureFixture,
     assert "eight-component run retained refusal: " + reason in caplog.text
 
 
+def prepare_unsafe_tree(root: Path, path: Path, prefix: str, mutation: str,
+                        monkeypatch: pytest.MonkeyPatch, trust: Any) -> str:
+    """Apply one actual special/empty tree or exact injected read-error control."""
+    if mutation == "fifo":
+        os.mkfifo(path)
+        return prefix + " contains a nonregular file"
+    path.mkdir()
+    if mutation == "empty-directory-budget":
+        reduce_tree_budget(prefix, monkeypatch, trust)
+        return prefix + " entries exceed budget"
+    original = os.scandir
+
+    def fail_control(folder: Any) -> Any:
+        if Path(folder) == path:
+            raise PermissionError("unreadable control subtree")
+        return original(folder)
+
+    monkeypatch.setattr(os, "scandir", fail_control)
+    return prefix + " enumeration failed"
+
+
+def reduce_tree_budget(prefix: str, monkeypatch: pytest.MonkeyPatch, trust: Any) -> None:
+    """Reduce only the selected boundary's entry budget during its actual scan."""
+    if prefix != "installed package":
+        monkeypatch.setattr(trust, "MAX_TREE_ENTRIES", 0)
+        return
+    original = trust.installation_file_names
+
+    def limited_installation(folder: Path) -> set[str]:
+        monkeypatch.setattr(trust, "MAX_TREE_ENTRIES", 0)
+        return original(folder)
+
+    monkeypatch.setattr(trust, "installation_file_names", limited_installation)
+
+
 class TestHostRun:
     """Exercise exact installation gates and native effect/recovery semantics."""
 
@@ -106,6 +141,31 @@ class TestHostRun:
             assert "general-containment" in result["doesNotAssert"]
 
     class TestFailingCases:
+        @pytest.mark.parametrize("boundary", ["source", "installed"])
+        @pytest.mark.parametrize("mutation", ["fifo", "empty-directory-budget", "enumeration-error"])
+        def test_unsafe_tree_refuses_before_a_native_child(
+            self, selected: dict[str, Any], candidate: Path, tmp_path: Path,
+            boundary: str, mutation: str, monkeypatch: pytest.MonkeyPatch,
+            caplog: pytest.LogCaptureFixture,
+        ) -> None:
+            import trust
+
+            source = Path(selected["manifest"]["sources"]) / "agent-evidence-atlas"
+            installed = Path(selected["manifest"]["packageClosures"][0]["root"])
+            root = source if boundary == "source" else installed
+            prefix = "pinned component source" if boundary == "source" else "installed package"
+            path = root / "host-unsafe-tree-control"
+            try:
+                reason = prepare_unsafe_tree(root, path, prefix, mutation, monkeypatch, trust)
+                result = run_case(selected, candidate, tmp_path / "run")
+            finally:
+                if path.is_dir():
+                    path.rmdir()
+                elif path.exists():
+                    path.unlink()
+            assert_no_dispatch(result, caplog, reason)
+            assert result["childProcesses"] == 0
+
         @pytest.mark.parametrize("scenario,revision,phase,retry_status,native_reason", [
             ("after-intent", 0, "incomplete", 409, "ticket consumer requires unrevoked bounded completion"),
             ("inside-effect-transaction", 0, "incomplete", 409, "ticket consumer requires unrevoked bounded completion"),
