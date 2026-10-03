@@ -87,7 +87,11 @@ The controlled model is native `FunctionModel`, with zero external provider
 calls and no measured inference quality. The first run ends at the native
 deferral boundary. This profile does not make arbitrary interrupted Python
 instructions resumable and does not alter the earlier seven-case Pydantic
-exception/exhaustion profile. The selected wall clock is a host fixture clock.
+exception/exhaustion profile. Historical dispatch uses a declared fixed clock.
+Recovery selects the actual host UTC time after the second target starts.
+The exact-expiry case alone uses the grant's UTC boundary as an explicit fixture.
+The reader checks the declared clock source and rejects a time before history.
+This retained time establishes this measured run, not present-day freshness.
 The issuer, target, filesystem, retained source, reader and host policy have one
 operator. Service keys do not establish independent custody or caller identity.
 Host OS and Python standard library remain local custody assumptions.

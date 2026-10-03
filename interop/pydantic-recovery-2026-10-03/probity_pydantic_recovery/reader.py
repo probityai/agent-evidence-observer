@@ -7,7 +7,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from probity_observer.authorization import ActionRequest, GrantPolicy
+from probity_observer.authorization import ActionRequest, GrantPolicy, verify_grant
 from probity_observer.crypto import (
     VerificationError,
     canonical,
@@ -20,6 +20,8 @@ from probity_pydantic_recovery.common import (
     CASES,
     NONCLAIMS,
     PROFILE,
+    RECOVERY_REFUSALS,
+    TARGET_REFUSALS,
     deferred,
     load,
     messages,
@@ -98,6 +100,11 @@ def processes(record: dict[str, Any], case: dict[str, Any]) -> list[int]:
     require(all(type(p["startup"]["pid"]) is int and p["pid"] == p["startup"]["pid"] for p in targets), "target-pid-join")
     expected = 78 if case["id"] in {"target-key", "missing-store", "rollback-store"} else -15
     require([p["returncode"] for p in targets] == [-15, expected], "target-exits")
+    startup = targets[1]["startup"]
+    if case["id"] in TARGET_REFUSALS:
+        require(set(startup) == {"pid", "status", "reason"} and startup["status"] == "refused" and startup["reason"] == TARGET_REFUSALS[case["id"]], "target-startup-refusal-reason")
+    else:
+        require(set(startup) == {"pid", "url", "initial"}, "target-startup-ready-schema")
     ids = [p["pid"] for p in workers + targets]
     require(len(set(ids)) == 4 and all(type(i) is int and i > 0 for i in ids), "distinct-processes")
     return ids
@@ -137,6 +144,10 @@ def resumed(root: Path, case: dict[str, Any], accepted: dict[str, Any], recovery
     require(len(history[3]["parts"]) == 1 and history[3]["parts"][0]["part_kind"] == "text" and history[3]["parts"][0]["content"] == "complete", "native-final-output")
     require(type(recovery["nativeModelRequests"]) is int and recovery["nativeModelRequests"] == 1 and recovery["output"] == "complete", "native-continuation-terminal")
     require(type(recovery["providerCalls"]) is int and recovery["providerCalls"] == 0, "native-provider-count")
+    from datetime import datetime
+    injected = datetime.fromisoformat(recovery["nativeResultInjectedAt"])
+    require(injected >= datetime.fromisoformat(accepted["evaluatedAt"]), "native-injection-predates-admission")
+    verify_grant(case["grant"], ActionRequest(**case["request"]), GrantPolicy(**case["policy"]), now=injected)
 
 
 def recovery_case(root: Path, case: dict[str, Any], process: dict[str, Any]) -> dict[str, Any]:
@@ -145,6 +156,7 @@ def recovery_case(root: Path, case: dict[str, Any], process: dict[str, Any]) -> 
     call = deferred(history, case)
     require(load(root / "deferred.json") == {"calls": [{"toolCallId": call["tool_call_id"], "toolName": "dispatch_ticket", "arguments": {"content": "DONE"}}]}, "deferred-request-binding")
     verified = historical(root, case)
+    selected_head(root, case, process)
     current, recovery = load(root / "current-host-selection.json"), load(root / "recovery.json")
     require(type(recovery["pid"]) is int and recovery["pid"] == process["workers"][1]["pid"], "recovery-worker-pid")
     require(type(recovery["recoveryPosts"]) is int and recovery["recoveryPosts"] == 0, "recovery-must-not-dispatch")
@@ -162,6 +174,16 @@ def recovery_case(root: Path, case: dict[str, Any], process: dict[str, Any]) -> 
         resumed(root, case, expected, recovery)
     final_readback(root, case)
     return {"id": case["id"], "priorEffect": verified, "firstExecution": "hard-exit-74", "recovery": recovery["status"], "releasedResult": recovery["releasedResult"], "recoveryPosts": 0, "nativeModelRequests": recovery["nativeModelRequests"]}
+
+
+def selected_head(root: Path, case: dict[str, Any], process: dict[str, Any]) -> None:
+    """Require the latest signed host head, including durable revocation."""
+    head = load(root / "required-target-head.json")
+    require(set(head) == {"payload", "keyid", "signature"} and head["keyid"] == case["serviceKey"], "selected-head-envelope")
+    verify_signature(case["serviceKey"], DOMAIN, head["payload"], head["signature"])
+    final_payload(load(root / "parent-prior-readback.json")["receipt"]["payload"], head["payload"], case["id"])
+    if case["id"] not in TARGET_REFUSALS:
+        require(process["targets"][1]["startup"]["initial"]["receipt"] == head, "target-startup-selected-head")
 
 
 def target_requests(root: Path, case: dict[str, Any], process: dict[str, Any]) -> None:
@@ -209,9 +231,11 @@ def decision(root: Path, case: dict[str, Any], current: dict[str, Any], recovery
     try:
         require(current["targetReady"] is True, "current-target-not-ready")
         require((root / "prior-http.json").is_file(), "historical-http-journal-missing")
-        return admit(case, read(root / "recovery-history.json"), load(root / "prior-http.json"), recovery["live"], current)
+        from datetime import datetime
+        return admit(case, read(root / "recovery-history.json"), load(root / "prior-http.json"), recovery["live"], current, evaluated_at=datetime.fromisoformat(recovery["evaluatedAt"]))
     except VerificationError as error:
         require(recovery.get("reason") == str(error), "refusal-reason-binding")
+        require(case["id"] in RECOVERY_REFUSALS and str(error) == RECOVERY_REFUSALS[case["id"]], "declared-refusal-reason")
         return None
 
 
@@ -219,14 +243,17 @@ def reconstruct(root: Path, selected: dict[str, Any]) -> dict[str, Any]:
     """Reconstruct the bounded author-operated profile from external byte pins."""
     plan = population(root, selected)
     records, identities = [], []
+    workers, targets = 0, 0
     for case in plan["cases"]:
         folder = root / case["id"]
         require(load(folder / "case.json") == case, "case-plan-join")
         process = load(folder / "processes.json")
         identities.extend(processes(process, case))
+        workers += len(process["workers"])
+        targets += len(process["targets"])
         records.append(recovery_case(folder, case, process))
     require(len(set(identities)) == len(identities), "global-process-identities")
-    return {"profile": PROFILE, "status": "verified", "plannedAttempts": len(CASES), "freshWorkers": 18, "freshTargets": 18, "providerCalls": 0, "model": "scripted-FunctionModel", "records": records, "witnessScope": "PEER", "doesNotAssert": NONCLAIMS}
+    return {"profile": PROFILE, "status": "verified", "plannedAttempts": len(CASES), "freshWorkers": workers, "freshTargets": targets, "providerCalls": 0, "model": "scripted-FunctionModel", "records": records, "witnessScope": "PEER", "doesNotAssert": NONCLAIMS}
 
 
 def verify_saved(root: Path, selected: dict[str, Any]) -> dict[str, Any]:
@@ -236,7 +263,9 @@ def verify_saved(root: Path, selected: dict[str, Any]) -> dict[str, Any]:
             frozen = Path(directory)
             freeze(root, selected, frozen)
             return reconstruct(frozen, selected)
-    except (KeyError, TypeError, IndexError, AttributeError, sqlite3.Error, RecursionError) as error:
+    except VerificationError:
+        raise
+    except (KeyError, TypeError, ValueError, OSError, IndexError, AttributeError, sqlite3.Error, RecursionError) as error:
         raise VerificationError("malformed-selected-packet") from error
 
 

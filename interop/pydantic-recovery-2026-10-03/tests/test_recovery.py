@@ -4,14 +4,17 @@ from __future__ import annotations
 import json
 import os
 import shutil
+import time
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
 from probity_observer.crypto import VerificationError, canonical
+from probity_observer.ticket_service import DOMAIN, TicketStore
 
 from probity_pydantic_recovery.common import CASES, load, sha
 from probity_pydantic_recovery.reader import verify_saved
-from recovery_run import run
+from recovery_run import run, selection
 
 
 @pytest.fixture(scope="session")
@@ -264,3 +267,167 @@ def test_reselected_boolean_process_identity_refuses(native: Path, tmp_path: Pat
     path.write_bytes(canonical(data))
     with pytest.raises(VerificationError):
         verify_saved(root, reselect(root))
+
+
+@pytest.mark.parametrize("mutation", ["recreated-store", "event-head", "event-count"])
+def test_signed_live_state_must_equal_the_historical_receipt(native: Path, tmp_path: Path, mutation: str) -> None:
+    """Even the correct service signer cannot substitute another effect history."""
+    from probity_pydantic_recovery.gate import admit
+
+    now = datetime.now(UTC).replace(microsecond=0)
+    case, store = selection(tmp_path, "join-control", "permit", now)
+    candidate = {key: case[key] for key in ("request", "grant", "contentHex")}
+    receipt = store.dispatch(candidate)
+    old = store.readback()
+    prior = {"postStatus": 200, "postRequestHex": canonical(candidate).hex(), "postResponseHex": canonical(receipt).hex(), "getStatus": 200, "getResponseHex": canonical(old).hex()}
+    clock = now + timedelta(seconds=2)
+    live = substituted_live_state(store, tmp_path, candidate, old, clock, mutation)
+    assert live["effectId"] == old["effectId"]
+    history = (native / "permit/history.json").read_bytes()
+    current = {"historySha256": sha(history), "grant": case["grant"], "serviceKey": case["serviceKey"], "policy": case["policy"], "liveSha256": sha(canonical(live)), "clockTime": clock.isoformat(), "clockSource": "host-system-utc", "targetReady": True}
+    assert admit(case, history, prior, old, {**current, "liveSha256": sha(canonical(old))}, evaluated_at=clock)["dispatchPermitted"] is False
+    with pytest.raises(VerificationError, match="ticket current state differs from retained completion"):
+        admit(case, history, prior, live, current, evaluated_at=clock)
+
+
+def substituted_live_state(store: TicketStore, root: Path, candidate: dict, old: dict, clock: datetime, mutation: str) -> dict:
+    """Keep service identity while changing a signed historical state relation."""
+    replacement = TicketStore(root / "replacement.sqlite", store.request, store.policy, store.key, clock=lambda: clock)
+    replacement.initialize()
+    replacement.dispatch(candidate)
+    live = replacement.readback() if mutation == "recreated-store" else json.loads(canonical(old))
+    if mutation != "recreated-store":
+        payload = live["receipt"]["payload"]
+        payload["eventHead" if mutation == "event-head" else "eventCount"] = "a" * 64 if mutation == "event-head" else payload["eventCount"] + 1
+        live["receipt"]["signature"] = store.key.sign(DOMAIN, payload)
+    return live
+
+
+@pytest.mark.parametrize("case", ["target-key", "missing-store", "rollback-store"])
+def test_unrelated_target_startup_failure_cannot_establish_declared_refusal(native: Path, tmp_path: Path, case: str) -> None:
+    root = tmp_path / "packet"
+    shutil.copytree(native, root)
+    path = root / case / "processes.json"
+    data = load(path)
+    data["targets"][1]["startup"]["reason"] = "unrelated configuration failure"
+    path.write_bytes(canonical(data))
+    with pytest.raises(VerificationError, match="target-startup-refusal-reason"):
+        verify_saved(root, reselect(root))
+
+
+def test_same_worker_and_reader_error_cannot_replace_a_declared_case_reason(native: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from probity_pydantic_recovery import reader
+
+    root = tmp_path / "packet"
+    shutil.copytree(native, root)
+    path = root / "revoked/recovery.json"
+    data = load(path)
+    data["reason"] = "unrelated gate failure"
+    path.write_bytes(canonical(data))
+    original = reader.admit
+
+    def unrelated(case: dict, *args: object, **kwargs: object) -> dict:
+        if case["id"] == "revoked":
+            raise VerificationError("unrelated gate failure")
+        return original(case, *args, **kwargs)
+
+    monkeypatch.setattr(reader, "admit", unrelated)
+    with pytest.raises(VerificationError, match="declared-refusal-reason"):
+        verify_saved(root, reselect(root))
+
+
+def test_latest_revoked_head_refuses_a_restored_pre_revocation_store(tmp_path: Path) -> None:
+    """An actual replacement target cannot reopen an older unrevoked snapshot."""
+    from recovery_run import cleanup, stop_target, target
+
+    case, store = selection(tmp_path, "revocation-rollback", "revoked", datetime.now(UTC).replace(microsecond=0))
+    store.dispatch({key: case[key] for key in ("request", "grant", "contentHex")})
+    retained = tmp_path / "pre-revocation.sqlite"
+    shutil.copyfile(store.path, retained)
+    store.revoke()
+    head = store.readback()["receipt"]
+    shutil.copyfile(retained, store.path)
+    try:
+        process, command, startup = target(tmp_path, store, head, "second", None)
+        assert startup["reason"] == "ticket history predates retained head"
+        assert stop_target(process, command, startup)["returncode"] == 78
+    finally:
+        cleanup()
+        (tmp_path / "second-config.json").unlink(missing_ok=True)
+
+
+def test_real_runtime_expiry_refuses_a_stale_positive_selection(native: Path, tmp_path: Path) -> None:
+    """After the real UTC expiry, a past selected clock cannot release a result."""
+    from probity_observer.authorization import GrantPolicy, issue_grant
+    from probity_observer.crypto import SigningKey
+
+    from probity_pydantic_recovery.gate import admit
+
+    now = datetime.now(UTC).replace(microsecond=0)
+    case, selected_store = selection(tmp_path, "real-expiry", "permit", now)
+    issuer = SigningKey.generate()
+    policy = GrantPolicy(issuer.public_hex)
+    grant = issue_grant(selected_store.request, issuer, issued_at=now, expires_at=now + timedelta(seconds=2))
+    case.update(policy={"issuer_key": policy.issuer_key, "max_validity_seconds": policy.max_validity_seconds}, grant=grant)
+    store = TicketStore(tmp_path / "expiring.sqlite", selected_store.request, policy, selected_store.key, clock=lambda: now)
+    store.initialize()
+    candidate = {key: case[key] for key in ("request", "grant", "contentHex")}
+    receipt = store.dispatch(candidate)
+    live = store.readback()
+    prior = {"postStatus": 200, "postRequestHex": canonical(candidate).hex(), "postResponseHex": canonical(receipt).hex(), "getStatus": 200, "getResponseHex": canonical(live).hex()}
+    history = (native / "permit/history.json").read_bytes()
+    current = {"historySha256": sha(history), "grant": grant, "serviceKey": case["serviceKey"], "policy": case["policy"], "liveSha256": sha(canonical(live)), "clockTime": now.isoformat(), "clockSource": "host-system-utc", "targetReady": True}
+    assert admit(case, history, prior, live, current)["dispatchPermitted"] is False
+    deadline = now + timedelta(seconds=2)
+    time.sleep(max(0, (deadline - datetime.now(UTC)).total_seconds()) + 0.03)
+    with pytest.raises(VerificationError, match="grant is not valid at the reference time"):
+        admit(case, history, prior, live, current)
+
+
+@pytest.mark.parametrize("mutation", ["source", "before-history", "injection-expiry"])
+def test_reselected_recovery_clock_relations_refuse(native: Path, tmp_path: Path, mutation: str) -> None:
+    root = tmp_path / "packet"
+    shutil.copytree(native, root)
+    path = root / "permit" / ("recovery.json" if mutation == "injection-expiry" else "current-host-selection.json")
+    data = load(path)
+    case = load(root / "permit/case.json")
+    if mutation == "source":
+        data["clockSource"] = "candidate-clock"
+    elif mutation == "before-history":
+        data["clockTime"] = (datetime.fromisoformat(case["historicalTime"]) - timedelta(seconds=1)).isoformat()
+    else:
+        data["nativeResultInjectedAt"] = case["grant"]["expiresAt"].replace("Z", "+00:00")
+    path.write_bytes(canonical(data))
+    with pytest.raises(VerificationError):
+        verify_saved(root, reselect(root))
+
+
+def test_expiry_between_admission_and_native_injection_writes_a_refusal(native: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Advance the trusted runtime clock across the real native injection guard."""
+    import recovery_worker
+
+    case = load(native / "permit/case.json")
+    current = load(native / "permit/current-host-selection.json")
+    live = load(native / "permit/recovery.json")["live"]
+    root = tmp_path / "interval"
+    root.mkdir()
+    for name in ("prior-http.json", "recovery-history.json"):
+        shutil.copyfile(native / "permit" / name, root / name)
+    selected = datetime.fromisoformat(current["clockTime"])
+    expiry = datetime.fromisoformat(case["grant"]["expiresAt"])
+    calls = 0
+
+    class AdvancingClock:
+        @classmethod
+        def now(cls, zone: object) -> datetime:
+            nonlocal calls
+            calls += 1
+            return selected if calls < 3 else expiry
+
+    monkeypatch.setattr(recovery_worker, "datetime", AdvancingClock)
+    monkeypatch.setattr(recovery_worker, "exchange", lambda *args: (200, canonical(live)))
+    recovery_worker.recover(case, "retained-native-get-control", root, current)
+    report = load(root / "recovery.json")
+    assert report["status"] == "refused" and report["reason"] == "grant is not valid at the reference time"
+    assert report["releasedResult"] is False and report["nativeModelRequests"] == report["recoveryPosts"] == 0
+    assert not (root / "accepted-host-receipt.json").exists() and not (root / "resumed-history.json").exists()

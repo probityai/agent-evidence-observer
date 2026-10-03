@@ -63,7 +63,7 @@ def complete(process: subprocess.Popen[bytes], command: list[str], expected: int
     return {"pid": process.pid, "argv": command, "returncode": process.returncode, "stdoutHex": stdout.hex(), "stderrHex": stderr.hex(), "environment": child_environment()}
 
 
-def target(private: Path, store: TicketStore, head: dict[str, Any], phase: str, clock: str, changed_key: bool = False) -> tuple[subprocess.Popen[bytes], list[str], dict[str, Any]]:
+def target(private: Path, store: TicketStore, head: dict[str, Any], phase: str, clock: str | None, changed_key: bool = False) -> tuple[subprocess.Popen[bytes], list[str], dict[str, Any]]:
     """Wait for actual native readiness or an explicit authenticated-store refusal."""
     config, ready, refusal = (private / (phase + suffix) for suffix in ("-config.json", "-ready.json", "-refusal.json"))
     key = SigningKey.generate() if changed_key else store.key
@@ -109,14 +109,16 @@ def worker(case: dict[str, Any], root: Path, endpoint: str, phase: str, current:
     return complete(launch(command), command, 74 if phase == "first" else 0)
 
 
-def change_target(case: dict[str, Any], store: TicketStore, private: Path) -> None:
+def change_target(case: dict[str, Any], store: TicketStore, private: Path, retained: dict[str, Any]) -> dict[str, Any]:
     """Apply declared host changes only after the first worker and target exit."""
     if case["id"] == "revoked":
         store.revoke()
+        retained = store.readback()["receipt"]
     elif case["id"] == "missing-store":
         store.path.unlink()
     elif case["id"] == "rollback-store":
         shutil.copyfile(private / "initial.sqlite", store.path)
+    return retained
 
 
 def current_selection(case: dict[str, Any], root: Path, ready: dict[str, Any]) -> dict[str, Any]:
@@ -130,8 +132,9 @@ def current_selection(case: dict[str, Any], root: Path, ready: dict[str, Any]) -
     grant = dict(case["grant"])
     if case["id"] == "changed-grant":
         grant["signature"] = "0" * len(grant["signature"])
-    clock = case["grant"]["expiresAt"].replace("Z", "+00:00") if case["id"] == "expired" else case["historicalTime"]
-    return {"historySha256": sha(history), "grant": grant, "serviceKey": case["serviceKey"], "policy": case["policy"], "liveSha256": sha(canonical(ready.get("initial"))), "clockTime": clock, "targetReady": ready.get("status") != "refused"}
+    clock = case["grant"]["expiresAt"].replace("Z", "+00:00") if case["id"] == "expired" else datetime.now(UTC).replace(microsecond=0).isoformat()
+    source = "fixture-exact-expiry" if case["id"] == "expired" else "host-system-utc"
+    return {"historySha256": sha(history), "grant": grant, "serviceKey": case["serviceKey"], "policy": case["policy"], "liveSha256": sha(canonical(ready.get("initial"))), "clockTime": clock, "clockSource": source, "targetReady": ready.get("status") != "refused"}
 
 
 def execute(root: Path, private: Path, case: dict[str, Any], store: TicketStore) -> None:
@@ -144,8 +147,9 @@ def execute(root: Path, private: Path, case: dict[str, Any], store: TicketStore)
     prior = store.readback()
     write(root / "parent-prior-readback.json", prior)
     shutil.copyfile(store.path, root / "committed.sqlite")
-    change_target(case, store, private)
-    process, command, ready = target(private, store, prior["receipt"], "second", case["historicalTime"], case["id"] == "target-key")
+    required_head = change_target(case, store, private, prior["receipt"])
+    write(root / "required-target-head.json", required_head)
+    process, command, ready = target(private, store, required_head, "second", None, case["id"] == "target-key")
     current = current_selection(case, root, ready)
     selected = private / "current-host-selection.json"
     write(selected, current)

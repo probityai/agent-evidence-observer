@@ -4,7 +4,7 @@ from __future__ import annotations
 import argparse
 import os
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -41,7 +41,7 @@ def serve(config: Path) -> None:
     """Reopen the real SQLite store without initializing a missing one."""
     selected = load(config)
     key = SigningKey(Ed25519PrivateKey.from_private_bytes(bytes.fromhex(selected["privateHex"])))
-    store = TicketStore(Path(selected["store"]), ActionRequest(**selected["request"]), GrantPolicy(**selected["policy"]), key, clock=lambda: datetime.fromisoformat(selected["clockTime"]), retained_head=selected["retainedHead"])
+    store = TicketStore(Path(selected["store"]), ActionRequest(**selected["request"]), GrantPolicy(**selected["policy"]), key, clock=lambda: datetime.now(UTC) if selected["clockTime"] is None else datetime.fromisoformat(selected["clockTime"]), retained_head=selected["retainedHead"])
     try:
         initial = store.readback()
         with TicketHTTPServer(store) as server:

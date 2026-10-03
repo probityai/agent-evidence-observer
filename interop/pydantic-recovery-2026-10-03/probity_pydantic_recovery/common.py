@@ -15,6 +15,8 @@ PROFILE = "probity-pydantic-deferred-worker-recovery-v1"
 CASES = ("permit", "revoked", "expired", "changed-grant", "changed-arguments", "target-key", "missing-store", "rollback-store", "crash-window")
 NONCLAIMS = ["independent-custody", "caller-identity", "provider-model-quality", "power-loss", "general-exactly-once", "outside-adoption"]
 MAX_FILE = 2 * 1024 * 1024
+TARGET_REFUSALS = {"target-key": "ticket key differs from consumer pin", "missing-store": "ticket store is missing; initialization required", "rollback-store": "ticket history predates retained head"}
+RECOVERY_REFUSALS = {"revoked": "ticket consumer requires unrevoked bounded completion", "expired": "grant is not valid at the reference time", "changed-grant": "grant signature does not verify under the pinned issuer key", "changed-arguments": "deferred-call-binding", "target-key": "current-target-not-ready", "missing-store": "current-target-not-ready", "rollback-store": "current-target-not-ready", "crash-window": "historical-http-journal-missing"}
 
 
 def require(condition: bool, reason: str) -> None:
