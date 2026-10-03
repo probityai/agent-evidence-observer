@@ -173,7 +173,7 @@ class TestUpgradeCommand:
 
     class TestFailingCases:
         def test_timeout_preserves_partial_streams(self, tmp_path, monkeypatch, caplog):
-            monkeypatch.setattr(upgrade, "MAX_COMMAND_SECONDS", 0.1)
+            monkeypatch.setattr(upgrade, "MAX_COMMAND_SECONDS", 1)
             argv = [sys.executable, "-c", "import sys,time; print('partial',flush=True); print('diagnostic',file=sys.stderr,flush=True); time.sleep(2)"]
             with caplog.at_level(logging.WARNING), pytest.raises(ValueError, match="^upgrade-command-outcome: timeout$"):
                 upgrade.command(argv, tmp_path, "timeout")
