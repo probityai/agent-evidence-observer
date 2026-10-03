@@ -224,3 +224,43 @@ def test_reselected_native_message_kind_refuses(native: Path, tmp_path: Path, in
     path.write_bytes(json.dumps(history, separators=(",", ":")).encode())
     with pytest.raises(VerificationError, match="native-continuation-message-kinds"):
         verify_saved(root, reselect(root))
+
+
+@pytest.mark.parametrize("case,field,value", [("permit", "returncode", False), ("permit", "nativeModelRequests", True), ("permit", "providerCalls", False), ("revoked", "nativeModelRequests", False), ("permit", "recoveryPosts", False), ("revoked", "recoveryPosts", False)])
+def test_reselected_boolean_count_refuses(native: Path, tmp_path: Path, case: str, field: str, value: bool) -> None:
+    """Boolean JSON values cannot impersonate native counts or process exits."""
+    root = tmp_path / "packet"
+    shutil.copytree(native, root)
+    path = root / case / ("processes.json" if field == "returncode" else "recovery.json")
+    data = load(path)
+    selected = data["workers"][1] if field == "returncode" else data
+    selected[field] = value
+    path.write_bytes(canonical(data))
+    with pytest.raises(VerificationError):
+        verify_saved(root, reselect(root))
+
+
+@pytest.mark.parametrize("mutation", ["target-startup", "recovery-worker", "target-event"])
+def test_reselected_boolean_process_identity_refuses(native: Path, tmp_path: Path, mutation: str) -> None:
+    """Integer one cannot make a boolean join pass as a real process identity."""
+    root = tmp_path / "packet"
+    shutil.copytree(native, root)
+    path = root / "permit/processes.json"
+    data = load(path)
+    if mutation == "recovery-worker":
+        data["workers"][1]["pid"] = 1
+        target = root / "permit/recovery.json"
+        recovery = load(target)
+        recovery["pid"] = True
+        target.write_bytes(canonical(recovery))
+    else:
+        data["targets"][0]["pid"] = 1
+        data["targets"][0]["startup"]["pid"] = True if mutation == "target-startup" else 1
+        target = root / "permit/first-target-http-events.json"
+        events = load(target)
+        for event in events:
+            event["pid"] = True if mutation == "target-event" else 1
+        target.write_bytes(canonical(events))
+    path.write_bytes(canonical(data))
+    with pytest.raises(VerificationError):
+        verify_saved(root, reselect(root))

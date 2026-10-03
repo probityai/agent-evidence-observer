@@ -89,12 +89,13 @@ def processes(record: dict[str, Any], case: dict[str, Any]) -> list[int]:
     """Check parent-recorded exits and their separately captured child identities."""
     workers, targets = record["workers"], record["targets"]
     require(len(workers) == len(targets) == 2, "process-population")
+    require(all(type(p["returncode"]) is int for p in workers + targets), "process-exit-type")
     require([p["returncode"] for p in workers] == [74, 0], "worker-exits")
     require([p["argv"][2] for p in workers] == ["first", "second"], "worker-phases")
     require(all(Path(p["argv"][3]).parent.name == case["id"] and Path(p["argv"][3]).name == "case.json" for p in workers), "worker-case-argv")
     require(all(p["environment"].get("OTEL_SDK_DISABLED") == "true" for p in workers + targets), "child-tracing")
     require(all(set(p["environment"]) <= {"PATH", "VIRTUAL_ENV", "PYTHONPATH", "LANG", "LC_ALL", "SYSTEMROOT", "OTEL_SDK_DISABLED", "PYTHONUNBUFFERED", "PYTHONDONTWRITEBYTECODE"} for p in workers + targets), "child-environment-population")
-    require(all(p["pid"] == p["startup"]["pid"] for p in targets), "target-pid-join")
+    require(all(type(p["startup"]["pid"]) is int and p["pid"] == p["startup"]["pid"] for p in targets), "target-pid-join")
     expected = 78 if case["id"] in {"target-key", "missing-store", "rollback-store"} else -15
     require([p["returncode"] for p in targets] == [-15, expected], "target-exits")
     ids = [p["pid"] for p in workers + targets]
@@ -134,7 +135,8 @@ def resumed(root: Path, case: dict[str, Any], accepted: dict[str, Any], recovery
     require(len(part) == 1 and part[0]["part_kind"] == "tool-return", "native-result-population")
     require(part[0]["tool_name"] == "dispatch_ticket" and part[0]["tool_call_id"] == accepted["toolCallId"] and part[0]["content"] == accepted["result"], "native-result-binding")
     require(len(history[3]["parts"]) == 1 and history[3]["parts"][0]["part_kind"] == "text" and history[3]["parts"][0]["content"] == "complete", "native-final-output")
-    require(recovery["nativeModelRequests"] == 1 and recovery["output"] == "complete" and recovery["providerCalls"] == 0, "native-continuation-terminal")
+    require(type(recovery["nativeModelRequests"]) is int and recovery["nativeModelRequests"] == 1 and recovery["output"] == "complete", "native-continuation-terminal")
+    require(type(recovery["providerCalls"]) is int and recovery["providerCalls"] == 0, "native-provider-count")
 
 
 def recovery_case(root: Path, case: dict[str, Any], process: dict[str, Any]) -> dict[str, Any]:
@@ -144,13 +146,14 @@ def recovery_case(root: Path, case: dict[str, Any], process: dict[str, Any]) -> 
     require(load(root / "deferred.json") == {"calls": [{"toolCallId": call["tool_call_id"], "toolName": "dispatch_ticket", "arguments": {"content": "DONE"}}]}, "deferred-request-binding")
     verified = historical(root, case)
     current, recovery = load(root / "current-host-selection.json"), load(root / "recovery.json")
-    require(recovery["pid"] == process["workers"][1]["pid"], "recovery-worker-pid")
-    require(recovery["recoveryPosts"] == 0, "recovery-must-not-dispatch")
+    require(type(recovery["pid"]) is int and recovery["pid"] == process["workers"][1]["pid"], "recovery-worker-pid")
+    require(type(recovery["recoveryPosts"]) is int and recovery["recoveryPosts"] == 0, "recovery-must-not-dispatch")
     target_requests(root, case, process)
     expected = decision(root, case, current, recovery)
     if expected is None:
         require(case["id"] != "permit", "permit-must-resume")
-        require(recovery["status"] == "refused" and recovery["releasedResult"] is False and recovery["nativeModelRequests"] == 0, "refusal-must-not-resume")
+        require(recovery["status"] == "refused" and recovery["releasedResult"] is False, "refusal-must-not-resume")
+        require(type(recovery["nativeModelRequests"]) is int and recovery["nativeModelRequests"] == 0, "refusal-model-count")
         require(not (root / "accepted-host-receipt.json").exists() and not (root / "resumed-history.json").exists(), "refusal-artifact-population")
     else:
         require(case["id"] == "permit", "denied-case-must-not-resume")
@@ -165,6 +168,7 @@ def target_requests(root: Path, case: dict[str, Any], process: dict[str, Any]) -
     """Check target-owned HTTP events rather than only a worker zero counter."""
     first = load(root / "first-target-http-events.json")
     second = load(root / "second-target-http-events.json")
+    require(all(type(event["pid"]) is int for event in first + second), "target-http-pid-type")
     expected_first = [{"method": "POST", "path": "/dispatch", "pid": process["targets"][0]["pid"]}, {"method": "GET", "path": "/tickets/tenant/" + case["id"], "pid": process["targets"][0]["pid"]}]
     require(sorted(first, key=lambda event: event["method"]) == sorted(expected_first, key=lambda event: event["method"]), "first-target-http-population")
     early_refusals = {"target-key", "missing-store", "rollback-store", "crash-window"}

@@ -44,3 +44,20 @@ def test_complete_evidence_cannot_admit_bad_recovery(mutation: str) -> None:
         candidate["records"].pop()
     with pytest.raises(VerificationError):
         decide(candidate, policy())
+
+
+@pytest.mark.parametrize("mutation", ["released-integer", "withheld-integer", "posts-boolean", "policy-results-boolean", "policy-posts-boolean"])
+def test_publication_preserves_json_count_and_boolean_types(mutation: str) -> None:
+    candidate, selected = report(), policy()
+    if mutation == "released-integer":
+        candidate["records"][0]["releasedResult"] = 1
+    elif mutation == "withheld-integer":
+        candidate["records"][1]["releasedResult"] = 0
+    elif mutation == "posts-boolean":
+        candidate["records"][0]["recoveryPosts"] = False
+    elif mutation == "policy-results-boolean":
+        selected["releasedResults"] = True
+    else:
+        selected["recoveryPosts"] = False
+    with pytest.raises(VerificationError):
+        decide(candidate, selected)

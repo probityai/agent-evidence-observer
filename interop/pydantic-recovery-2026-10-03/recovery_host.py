@@ -56,8 +56,10 @@ def select_policy(pins: Path, executable: Path) -> dict[str, Any]:
 def decide(report: dict[str, Any], policy: dict[str, Any]) -> dict[str, Any]:
     """Publish a checked refusal population without approving denied actions."""
     require(report["profile"] == policy["profile"] == PROFILE and report["status"] == "verified", "publication-profile")
-    require(report["plannedAttempts"] == policy["plannedAttempts"] == len(CASES), "publication-denominator")
+    require(all(type(policy[key]) is int for key in ("plannedAttempts", "releasedResults", "recoveryPosts")), "publication-policy-count-types")
+    require(type(report["plannedAttempts"]) is int and report["plannedAttempts"] == policy["plannedAttempts"] == len(CASES), "publication-denominator")
     require([row["id"] for row in report["records"]] == list(CASES), "publication-case-population")
+    require(all(type(row["releasedResult"]) is bool and type(row["recoveryPosts"]) is int for row in report["records"]), "publication-row-types")
     require([row["releasedResult"] for row in report["records"]] == [True] + [False] * (len(CASES) - 1), "publication-result-dispositions")
     require(sum(row["releasedResult"] for row in report["records"]) == policy["releasedResults"] == 1, "publication-result-count")
     require(sum(row["recoveryPosts"] for row in report["records"]) == policy["recoveryPosts"] == 0, "publication-effect-count")
