@@ -37,6 +37,62 @@ jobs:
           path: installed-tool-argument-controls
           if-no-files-found: error
           retention-days: 90
+  retained-native-reader:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Authenticate and extract the retained original packet without executing it
+        run: |
+          python -I -B - <<'PYTHON'
+          import hashlib, stat, zipfile
+          from pathlib import Path, PurePosixPath
+          selected=Path('interop/local-model-tool-arguments-2026-10-03/retained/native-37116827382.zip')
+          raw=selected.read_bytes()
+          assert len(raw)==2639358 and hashlib.sha256(raw).hexdigest()=='67ef1e638e814c71bbf354fe9895ea0faf5d9ef11eae2ff76b10b065bd7a7e54'
+          output=Path('retained-tool-argument-packet');output.mkdir()
+          with zipfile.ZipFile(selected) as archive:
+              members=archive.infolist()
+              assert len(members)==331 and sum(item.file_size for item in members)<=64*1024*1024
+              assert len({item.filename for item in members})==len(members)
+              for item in members:
+                  relative=PurePosixPath(item.filename)
+                  mode=item.external_attr>>16
+                  assert not relative.is_absolute() and '..' not in relative.parts and len(relative.parts)<=32
+                  assert not item.is_dir() and stat.S_IFMT(mode) in (0,stat.S_IFREG)
+                  target=output.joinpath(*relative.parts);target.parent.mkdir(parents=True,exist_ok=True)
+                  with target.open('xb') as handle:handle.write(archive.read(item))
+          PYTHON
+      - name: Install the original selected reader and preserve all eight actual quality holds
+        run: |
+          python -I -B interop/local-model-tool-arguments-2026-10-03/consume_actual.py . retained-tool-argument-packet interop/local-model-tool-arguments-2026-10-03/retained/native-37116827382-pins.json retained-tool-argument-consumer --reader-contract interop/local-model-tool-arguments-2026-10-03/reader-source-contract.json --reader-contract-sha256 1cf2a5f3527f72db90ad0881c5dd360bb0775f005cd4cc8971e287015fe400d4
+          python -I -B - <<'PYTHON'
+          import json
+          from pathlib import Path
+          root=Path('retained-tool-argument-consumer')
+          receipt=json.loads((root/'receipt.json').read_bytes())
+          assert receipt['strictExit']==1 and receipt['evidenceExit']==0
+          assert receipt['modelCalls']==receipt['providerCalls']==0
+          assert receipt['qualityDecision']=='hold-tool-decision-quality'
+          assert receipt['wheel']['sha256']=='1688f8bc9aa035301ce585cd6dc7196eb7a437d50e4ce4ce7e26d7a529c6933d'
+          report=json.loads((root/'strict.stdout').read_bytes())
+          retained=Path('interop/local-model-tool-arguments-2026-10-03/retained/native-37116827382-report.json')
+          assert report==json.loads(retained.read_bytes())
+          assert report['population']=={'planned':128,'started':128,'scored':128,'error':0,'unsupported':0,'incomplete':0,'unknown-start':0}
+          assert len(report['quality'])==8 and all(row['fullyCorrectPairs']==row['correctAbstentions']==0 for row in report['quality'])
+          PYTHON
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: tool-argument-installed-retained-native-${{ github.sha }}
+          path: retained-tool-argument-consumer
+          if-no-files-found: error
+          retention-days: 90
   actual-cpu:
     if: github.event_name == 'workflow_dispatch' && inputs.reviewed_source_head == github.sha
     needs: offline-controls
