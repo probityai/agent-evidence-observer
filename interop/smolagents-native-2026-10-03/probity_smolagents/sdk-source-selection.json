@@ -1,0 +1,92 @@
+{
+  "schema": "probity.smolagents-source-selection.v1",
+  "repository": "huggingface/smolagents",
+  "commit": "c30b115286e000e98711fae5e85993547b73d826",
+  "version": "1.27.0.dev0",
+  "files": {
+    "smolagents/__init__.py": {
+      "sha256": "efac0cfd51f49d083a25297eb4cad6c498d28616f615095cf1c154c49b963254",
+      "gitBlob": "5517fd57869af6bc6fd0c6a1731e34dfe5be3270"
+    },
+    "smolagents/_function_type_hints_utils.py": {
+      "sha256": "9ce6ce943a6ce86d6bfc8f9df084761a927c5799efee0aa6e13b1d804374a438",
+      "gitBlob": "e8102ead0d7e64c49ebaa95d69081ba373876e79"
+    },
+    "smolagents/agent_types.py": {
+      "sha256": "2a46ef484405d9a7f6316ae8608c3a9dda0f46fbdffedde8e5f94b0969ad9335",
+      "gitBlob": "10e643eecf7b70f2ae17fb73678e041e029f9368"
+    },
+    "smolagents/agents.py": {
+      "sha256": "da0da2e258c346e28d97b3584dfe58dcd203fc20fbde6c6533e333f9b1a06352",
+      "gitBlob": "a8f6e52de0361a6c23c0aa5d5907180969f259b7"
+    },
+    "smolagents/cli.py": {
+      "sha256": "c7cd04f6312242fbdb16917c48b9b5a672cb5a0652f9553c718b68dd3e2b5d62",
+      "gitBlob": "38bd4d043f2d5c5e871fa62ba291208c73a6279c"
+    },
+    "smolagents/default_tools.py": {
+      "sha256": "84e0bcb9c2aae16f493fd0f9553da4d4442bcfc7f832be840228c4b8a3f9f14c",
+      "gitBlob": "c72679dc339ffe45309dd894470149ff2b30f232"
+    },
+    "smolagents/gradio_ui.py": {
+      "sha256": "a3e601768f58523f59ee85e4770bab94b8ad1180184fa2c6b79a7234662d3590",
+      "gitBlob": "95e04783a9e038cb85f2fef0bc405173bb22eb2b"
+    },
+    "smolagents/local_python_executor.py": {
+      "sha256": "41859e622bae8ad85ed861b7abef12b02f9106133a273c2f4d8a1e37a743d1ca",
+      "gitBlob": "8e150cd5cac433ed315bff1f8f5470149da68dd6"
+    },
+    "smolagents/mcp_client.py": {
+      "sha256": "ec0041193c0ea16100f0d911aab12ff92ccb165eb27aebee76550855836f8603",
+      "gitBlob": "9432185912f042c9dc026491969588bd39664e2a"
+    },
+    "smolagents/memory.py": {
+      "sha256": "8089d5162069158bd548673b52fc4c2d15b91146ae29d503903cfde8f913418a",
+      "gitBlob": "3ce42b280c0aa1caee44189210719c0e18833719"
+    },
+    "smolagents/models.py": {
+      "sha256": "e3510666f0a36d1d09d25d9d9f2e9cb0e0c09edc47ed599b0e52445bddf146e7",
+      "gitBlob": "b0aea59ca4f463e5a1fad2e05a7abc24f57a3237"
+    },
+    "smolagents/monitoring.py": {
+      "sha256": "bce3de91526054e0f6f0b795ecca4e374dac5166aa66514d3b621ac4394659fa",
+      "gitBlob": "43c95c4636cc60d7e7246ba96db507f9f24682f3"
+    },
+    "smolagents/prompts/code_agent.yaml": {
+      "sha256": "28459ad8f3a0ffea3de76d6769d66253b54dcfcd8a86af5e806a2851ca2a4c03",
+      "gitBlob": "c81073a84a67d7c6f5ed03ded9f525c7944c9c1f"
+    },
+    "smolagents/prompts/structured_code_agent.yaml": {
+      "sha256": "ccc44c1cc7277d619abb5982d4ec0ee9c78b428cfe1c458979ea457c7902838a",
+      "gitBlob": "c3ad1fe80a6bb0da8bd03b0b70187048b2e7d4d9"
+    },
+    "smolagents/prompts/toolcalling_agent.yaml": {
+      "sha256": "28820f24906dd3ee3faa8160945e00529dda2a39c9fa8b3362093c0560c4b8f7",
+      "gitBlob": "77708594d13748187d1d83ae50e3d3c74a2706d9"
+    },
+    "smolagents/remote_executors.py": {
+      "sha256": "d14480b4dc512605df941594bd37e08aa19a92c18913775e9af7c71d5c209ab9",
+      "gitBlob": "1704a148b29bf864d2669fe0440e0799f616c64e"
+    },
+    "smolagents/serialization.py": {
+      "sha256": "1dea2a4e98136c822cad9d222e39e89cf2e680eca52b8bcdc022f1cb14e0344c",
+      "gitBlob": "86cab99b41b613f26c390b94ae274008cc6d61ba"
+    },
+    "smolagents/tool_validation.py": {
+      "sha256": "f8655437dfaa30e3c05b49222d4495402358e022b743dd0b6a4c44e12ec1517c",
+      "gitBlob": "0471fba1443a73eedd6323a4a31cc5ef0c8249f9"
+    },
+    "smolagents/tools.py": {
+      "sha256": "0f7395444c1efa48d0995efacf07bc6b68e5bad75a4312b509604eb447aff5e8",
+      "gitBlob": "931acfeccb6f2663b6c073bfa0fd8f0088c01eac"
+    },
+    "smolagents/utils.py": {
+      "sha256": "19263b4d418d5b69e3dfc3d0789aa2dc58ba6902bed2b0f9296b15057a837dc6",
+      "gitBlob": "69ade34311ce18217a008fb3a41cb0da11f0826d"
+    },
+    "smolagents/vision_web_browser.py": {
+      "sha256": "c7b2260468b7f95e86aa57d9106475184a5f39c30927ab8b6e9bafc0d3a2338d",
+      "gitBlob": "a096cfb95692c5d688387cee8c28fcd2a0278525"
+    }
+  }
+}
