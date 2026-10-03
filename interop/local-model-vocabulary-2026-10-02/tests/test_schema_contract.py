@@ -40,7 +40,14 @@ def test_broad_control_and_vocabulary_intervention_have_distinct_admissibility()
 
 @pytest.mark.parametrize(
     "text",
-    ['{"decision":"hold","decision":"dispatch"}', '{"decision":NaN}', '{"decision":'],
+    [
+        '{"decision":"hold","decision":"dispatch"}',
+        '{"decision":NaN}',
+        '{"decision":Infinity}',
+        '{"decision":1e999}',
+        '{"decision":-1e999}',
+        '{"decision":',
+    ],
 )
 def test_duplicate_nonfinite_and_incomplete_outputs_refuse(text):
     assert score(text, {"decision": "hold"}, CONTRACT) == {
@@ -48,6 +55,13 @@ def test_duplicate_nonfinite_and_incomplete_outputs_refuse(text):
         "schemaValid": False,
         "correct": False,
     }
+
+
+def test_deeply_nested_output_refuses_without_crashing_reader():
+    text = '{"decision":' + "[" * 20000 + "0" + "]" * 20000 + "}"
+    result = score(text, {"decision": "hold"}, CONTRACT)
+    assert result["schemaValid"] is False
+    assert result["correct"] is False
 
 
 @pytest.mark.parametrize("value", [{}, {"decision": "hold", "extra": "hold"}])

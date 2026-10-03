@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 from typing import Any
 
 SCALAR_TYPES = {"integer": int, "string": str, "boolean": bool, "null": type(None)}
@@ -105,12 +106,26 @@ def score(text: str, target: Any, schema: dict[str, Any]) -> dict[str, bool]:
     def nonfinite(_):
         raise ValueError("nonfinite JSON")
 
+    def finite_float(raw):
+        value = float(raw)
+        if not math.isfinite(value):
+            raise ValueError("nonfinite JSON")
+        return value
+
     try:
-        parsed = json.loads(text, object_pairs_hook=pairs, parse_constant=nonfinite)
-    except (ValueError, TypeError):
+        parsed = json.loads(
+            text,
+            object_pairs_hook=pairs,
+            parse_constant=nonfinite,
+            parse_float=finite_float,
+        )
+    except (ValueError, TypeError, RecursionError):
         return {"formatValid": False, "schemaValid": False, "correct": False}
-    return {
-        "formatValid": type(parsed) is dict,
-        "schemaValid": _accepts(parsed, schema),
-        "correct": exact(parsed, target),
-    }
+    try:
+        return {
+            "formatValid": type(parsed) is dict,
+            "schemaValid": _accepts(parsed, schema),
+            "correct": exact(parsed, target),
+        }
+    except RecursionError:
+        return {"formatValid": False, "schemaValid": False, "correct": False}
