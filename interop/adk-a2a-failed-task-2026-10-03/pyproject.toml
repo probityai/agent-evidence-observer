@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "probity-adk-failure-reference"
+version = "0.0.1"
+description = "Native ADK A2A failed-task and durable-effect publication reference"
+requires-python = ">=3.12"
+dependencies = ["agent-evidence-observer==0.0.1"]
+
+[project.scripts]
+probity-adk-failure-produce = "probity_adk_failure.producer:main"
+probity-adk-failure-read = "probity_adk_failure.reader:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["probity_adk_failure*"]
+
+[tool.setuptools.package-data]
+probity_adk_failure = ["sdk-source-selection.json"]
