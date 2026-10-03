@@ -1,0 +1,330 @@
+name: Recover exact tool-argument preparation archive
+
+on:
+  push:
+    branches: [chore/tool-argument-retention-2026-10-03]
+    paths: ['interop/artifact-retention-2026-10-03/**', '.github/workflows/tool-argument-retention.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  retain-original:
+    if: github.repository == 'probityai/agent-evidence-observer'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Install custody verification tools
+        run: python -m pip install pytest==8.3.3 hypothesis==6.168.3 ruff==0.15.8
+      - name: Check byte custody and refusal controls
+        run: |
+          python -B -m pytest interop/artifact-retention-2026-10-03/tests -q
+          python -m ruff check --select C901 --config 'lint.mccabe.max-complexity=5' interop/artifact-retention-2026-10-03
+      - name: Retrieve and verify original archive without executing its contents
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python -I -B interop/artifact-retention-2026-10-03/retain_archive.py "$RUNNER_TEMP/tool-argument-retention"
+      - name: Retain complete transfer and member verification manifests
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-manifest
+          path: ${{ runner.temp }}/tool-argument-retention/metadata/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 000
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-000
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-000.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 001
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-001
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-001.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 002
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-002
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-002.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 003
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-003
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-003.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 004
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-004
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-004.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 005
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-005
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-005.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 006
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-006
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-006.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 007
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-007
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-007.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 008
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-008
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-008.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 009
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-009
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-009.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 010
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-010
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-010.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 011
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-011
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-011.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 012
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-012
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-012.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 013
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-013
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-013.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 014
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-014
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-014.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 015
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-015
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-015.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 016
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-016
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-016.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 017
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-017
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-017.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 018
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-018
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-018.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 019
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-019
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-019.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 020
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-020
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-020.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 021
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-021
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-021.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 022
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-022
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-022.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 023
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-023
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-023.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 024
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-024
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-024.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 025
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-025
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-025.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 026
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-026
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-026.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 027
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-027
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-027.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 028
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-028
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-028.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 029
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-029
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-029.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 030
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-030
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-030.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 031
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-031
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-031.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 032
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-032
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-032.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 033
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-033
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-033.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 034
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-034
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-034.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+      - name: Retain exact original byte range 035
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: tool-argument-retention-part-035
+          path: ${{ runner.temp }}/tool-argument-retention/parts/part-035.bin
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
