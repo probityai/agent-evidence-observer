@@ -90,3 +90,59 @@ def alter_record(data: dict, mutation: str) -> None:
         data["workers"][0]["returncode"] = 0
     elif mutation == "child-env":
         data["workers"][0]["environment"]["OPENAI_API_KEY"] = "injected"
+
+
+@pytest.mark.parametrize("which", ["postResponseHex", "getResponseHex"])
+@pytest.mark.parametrize("suffix", [' ,"duplicate":0,"duplicate":1}', ',"nonfinite":NaN}'])
+def test_ambiguous_http_bytes(native: Path, tmp_path: Path, which: str, suffix: str) -> None:
+    root = tmp_path / "packet"
+    shutil.copytree(native, root)
+    target = root / "permit/prior-http.json"
+    data = load(target)
+    raw = bytes.fromhex(data[which])
+    data[which] = (raw[:-1] + suffix.encode()).hex()
+    target.write_bytes(canonical(data))
+    with pytest.raises(VerificationError):
+        verify_saved(root, reselect(root))
+
+
+def test_linked_artifact_refuses(native: Path, tmp_path: Path) -> None:
+    root = tmp_path / "packet"
+    shutil.copytree(native, root)
+    path = root / "permit/committed.sqlite"
+    moved = tmp_path / "outside.sqlite"
+    path.rename(moved)
+    path.symlink_to(moved)
+    with pytest.raises(VerificationError, match="packet-symlink"):
+        verify_saved(root, load(root / "consumer-pins.json"))
+
+
+@pytest.mark.parametrize("mutation", ["missing", "signature", "ticket", "effect", "content", "receipt-body", "revoked-effect"])
+def test_final_state_is_required_and_authenticated(native: Path, tmp_path: Path, mutation: str) -> None:
+    root = tmp_path / "packet"
+    shutil.copytree(native, root)
+    name = ("revoked" if mutation == "revoked-effect" else "permit") + "/final-parent-readback.json"
+    target = root / name
+    data = load(target)
+    if mutation == "missing":
+        target.unlink()
+        manifest = load(root / "artifact-manifest.json")
+        manifest.pop(name)
+        (root / "artifact-manifest.json").write_bytes(canonical(manifest))
+    else:
+        mutate_final(data, mutation)
+        target.write_bytes(canonical(data))
+    with pytest.raises(VerificationError):
+        verify_saved(root, reselect(root))
+
+
+def mutate_final(data: dict, mutation: str) -> None:
+    """Change signed final effect bytes or their exact body join."""
+    changes = {"ticket": ("ticketId", "another-ticket"), "effect": ("effectId", "0" * 64), "content": ("contentHex", b"CHANGED".hex())}
+    if mutation in changes:
+        key, value = changes[mutation]
+        data[key] = value
+    elif mutation == "signature":
+        data["receipt"]["signature"] = "0" * 128
+    else:
+        data["receipt"]["payload"]["effectId"] = "0" * 64

@@ -65,9 +65,14 @@ def unique(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
 
 def messages(raw: bytes) -> list[dict[str, Any]]:
     """Parse native message bytes without importing Pydantic AI."""
-    result = json.loads(raw, object_pairs_hook=unique)
+    result = json.loads(raw, object_pairs_hook=unique, parse_constant=invalid_constant)
     require(type(result) is list, "native-history-type")
     return result
+
+
+def invalid_constant(value: str) -> None:
+    """Refuse nonfinite native JSON numbers rather than accepting parser defaults."""
+    raise VerificationError("native-nonfinite-number")
 
 
 def deferred(raw: bytes, case: dict[str, Any]) -> dict[str, Any]:

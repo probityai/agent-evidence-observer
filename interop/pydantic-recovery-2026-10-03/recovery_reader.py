@@ -31,6 +31,8 @@ from probity_observer.ticket_service import DOMAIN, verify_ticket_result
 
 def population(root: Path, selected: dict[str, Any]) -> dict[str, Any]:
     """Admit the exact externally selected finite file/source population."""
+    require(root.is_dir() and not root.is_symlink(), "packet-directory")
+    require(not any(path.is_symlink() for path in root.rglob("*")), "packet-symlink")
     require(selected["profile"] == PROFILE, "selected-profile")
     require(selected["planSha256"] == sha(read(root / "plan-before-run.json")), "selected-plan")
     require(selected["artifactManifestSha256"] == sha(read(root / "artifact-manifest.json")), "selected-manifest")
@@ -78,7 +80,12 @@ def historical(root: Path, case: dict[str, Any]) -> dict[str, Any]:
     verified = verify_ticket_result(prior["receipt"], prior, ActionRequest(**case["request"]), GrantPolicy(**case["policy"]), case["serviceKey"], case["grant"], now=datetime.fromisoformat(case["historicalTime"]))
     database = root / "committed.sqlite"
     with sqlite3.connect(database.resolve().as_uri() + "?mode=ro&immutable=1", uri=True) as connection:
-        rows = connection.execute("SELECT tenant,ticket,content,revision,effect FROM tickets").fetchall()
+        connection.execute("PRAGMA query_only=ON")
+        connection.execute("PRAGMA trusted_schema=OFF")
+        connection.set_progress_handler(lambda: 1, 10000)
+        tables = connection.execute("SELECT name,type FROM sqlite_schema WHERE name IN ('tickets','state') ORDER BY name").fetchall()
+        require(tables == [("state", "table"), ("tickets", "table")], "native-sqlite-schema")
+        rows = connection.execute("SELECT tenant,ticket,content,revision,effect FROM tickets LIMIT 2").fetchall()
         state = strict_loads(connection.execute("SELECT record FROM state WHERE singleton=1").fetchone()[0])
     require(rows == [("tenant", case["id"], b"DONE", 1, prior["effectId"])], "native-committed-row")
     verify_signature(case["serviceKey"], DOMAIN, state["payload"], state["signature"])
@@ -109,6 +116,7 @@ def recovery_case(root: Path, case: dict[str, Any], process: dict[str, Any]) -> 
     current, recovery = load(root / "current-host-selection.json"), load(root / "recovery.json")
     require(recovery["pid"] == process["workers"][1]["pid"], "recovery-worker-pid")
     require(recovery["recoveryPosts"] == 0, "recovery-must-not-dispatch")
+    target_requests(root, case, process)
     expected = decision(root, case, current, recovery)
     if expected is None:
         require(case["id"] != "permit", "permit-must-resume")
@@ -119,10 +127,47 @@ def recovery_case(root: Path, case: dict[str, Any], process: dict[str, Any]) -> 
         require(load(root / "accepted-host-receipt.json") == expected and expected["dispatchPermitted"] is False, "accepted-host-receipt-binding")
         require(recovery["status"] == "completed" and recovery["releasedResult"] is True, "resume-terminal")
         resumed(root, case, expected, recovery)
-    final = root / "final-parent-readback.json"
-    if final.exists():
-        require(load(final)["revision"] == 1 and load(final)["contentHex"] == b"DONE".hex(), "final-native-revision")
+    final_readback(root, case)
     return {"id": case["id"], "priorEffect": verified, "firstExecution": "hard-exit-74", "recovery": recovery["status"], "releasedResult": recovery["releasedResult"], "recoveryPosts": 0, "nativeModelRequests": recovery["nativeModelRequests"]}
+
+
+def target_requests(root: Path, case: dict[str, Any], process: dict[str, Any]) -> None:
+    """Check target-owned HTTP events rather than only a worker zero counter."""
+    first = load(root / "first-target-http-events.json")
+    second = load(root / "second-target-http-events.json")
+    expected_first = [{"method": "POST", "path": "/dispatch", "pid": process["targets"][0]["pid"]}, {"method": "GET", "path": "/tickets/tenant/" + case["id"], "pid": process["targets"][0]["pid"]}]
+    require(sorted(first, key=lambda event: event["method"]) == sorted(expected_first, key=lambda event: event["method"]), "first-target-http-population")
+    early_refusals = {"target-key", "missing-store", "rollback-store", "crash-window"}
+    expected_second = [] if case["id"] in early_refusals else [{"method": "GET", "path": "/tickets/tenant/" + case["id"], "pid": process["targets"][1]["pid"]}]
+    require(second == expected_second, "recovery-target-http-population")
+
+
+def final_readback(root: Path, case: dict[str, Any]) -> None:
+    """Authenticate required final state, allowing only declared host revocation."""
+    path = root / "final-parent-readback.json"
+    expected_presence = case["id"] not in {"target-key", "missing-store", "rollback-store"}
+    require(path.is_file() == expected_presence, "final-readback-population")
+    if not expected_presence:
+        return
+    prior, final = load(root / "parent-prior-readback.json"), load(path)
+    require(set(final) == set(prior), "final-readback-schema")
+    require({key: value for key, value in final.items() if key != "receipt"} == {key: value for key, value in prior.items() if key != "receipt"}, "final-native-effect-binding")
+    receipt = final["receipt"]
+    require(set(receipt) == {"payload", "keyid", "signature"} and receipt["keyid"] == case["serviceKey"], "final-receipt-envelope")
+    verify_signature(case["serviceKey"], DOMAIN, receipt["payload"], receipt["signature"])
+    final_payload(prior["receipt"]["payload"], receipt["payload"], case["id"])
+
+
+def final_payload(prior: dict[str, Any], final: dict[str, Any], case_id: str) -> None:
+    """Preserve effect identity and authority binding through the final readback."""
+    if case_id != "revoked":
+        require(final == prior, "final-receipt-effect-binding")
+        return
+    permitted = {"revoked", "eventCount", "eventHead"}
+    require(set(final) == set(prior), "final-receipt-schema")
+    require({key: value for key, value in final.items() if key not in permitted} == {key: value for key, value in prior.items() if key not in permitted}, "revoked-final-effect-binding")
+    require(final["revoked"] is True and type(final["eventCount"]) is int and final["eventCount"] == prior["eventCount"] + 1, "final-revocation-state")
+    require(type(final["eventHead"]) is str and len(final["eventHead"]) == 64 and all(c in "0123456789abcdef" for c in final["eventHead"]) and final["eventHead"] != prior["eventHead"], "final-revocation-history")
 
 
 def decision(root: Path, case: dict[str, Any], current: dict[str, Any], recovery: dict[str, Any]) -> dict[str, Any] | None:
@@ -136,7 +181,7 @@ def decision(root: Path, case: dict[str, Any], current: dict[str, Any], recovery
         return None
 
 
-def verify_saved(root: Path, selected: dict[str, Any]) -> dict[str, Any]:
+def reconstruct(root: Path, selected: dict[str, Any]) -> dict[str, Any]:
     """Reconstruct the bounded author-operated profile from external byte pins."""
     plan = population(root, selected)
     records, identities = [], []
@@ -148,6 +193,14 @@ def verify_saved(root: Path, selected: dict[str, Any]) -> dict[str, Any]:
         records.append(recovery_case(folder, case, process))
     require(len(set(identities)) == len(identities), "global-process-identities")
     return {"profile": PROFILE, "status": "verified", "plannedAttempts": len(CASES), "freshWorkers": 18, "freshTargets": 18, "providerCalls": 0, "model": "scripted-FunctionModel", "records": records, "witnessScope": "PEER", "doesNotAssert": NONCLAIMS}
+
+
+def verify_saved(root: Path, selected: dict[str, Any]) -> dict[str, Any]:
+    """Convert malformed candidate representations to one bounded refusal."""
+    try:
+        return reconstruct(root, selected)
+    except (KeyError, TypeError, IndexError, AttributeError, sqlite3.Error, RecursionError) as error:
+        raise VerificationError("malformed-selected-packet") from error
 
 
 def main() -> None:

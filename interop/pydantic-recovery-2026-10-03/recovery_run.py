@@ -68,7 +68,7 @@ def target(private: Path, store: TicketStore, head: dict[str, Any], phase: str, 
     config, ready, refusal = (private / (phase + suffix) for suffix in ("-config.json", "-ready.json", "-refusal.json"))
     key = SigningKey.generate() if changed_key else store.key
     secret = key.private.private_bytes(serialization.Encoding.Raw, serialization.PrivateFormat.Raw, serialization.NoEncryption()).hex()
-    write(config, {"store": str(store.path), "request": asdict(store.request), "policy": asdict(store.policy), "privateHex": secret, "retainedHead": head, "clockTime": clock, "ready": str(ready), "refusal": str(refusal)})
+    write(config, {"store": str(store.path), "request": asdict(store.request), "policy": asdict(store.policy), "privateHex": secret, "retainedHead": head, "clockTime": clock, "ready": str(ready), "refusal": str(refusal), "auditDirectory": str(private / (phase + "-http-events"))})
     config.chmod(0o600)
     command = [sys.executable, str(Path(__file__).with_name("recovery_target.py")), str(config)]
     process = launch(command)
@@ -153,6 +153,8 @@ def execute(root: Path, private: Path, case: dict[str, Any], store: TicketStore)
     second_target = stop_target(process, command, ready)
     write(root / "current-host-selection.json", current)
     write(root / "processes.json", {"workers": [first, second], "targets": [first_target, second_target]})
+    for phase in ("first", "second"):
+        write(root / (phase + "-target-http-events.json"), [load(path) for path in sorted((private / (phase + "-http-events")).glob("*.json"))])
     if store.path.exists() and case["id"] not in {"rollback-store", "target-key"}:
         write(root / "final-parent-readback.json", store.readback())
 

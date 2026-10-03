@@ -7,7 +7,7 @@ from typing import Any
 from recovery_common import deferred, require, sha
 
 from probity_observer.authorization import ActionRequest, GrantPolicy, verify_grant
-from probity_observer.crypto import canonical
+from probity_observer.crypto import canonical, strict_loads
 from probity_observer.ticket_service import verify_ticket_result
 
 
@@ -16,8 +16,7 @@ def effect(case: dict[str, Any], packet: dict[str, Any]) -> dict[str, Any]:
     require(packet["postStatus"] == packet["getStatus"] == 200, "historical-http-status")
     candidate = {key: case[key] for key in ("request", "grant", "contentHex")}
     require(packet["postRequestHex"] == canonical(candidate).hex(), "historical-post-binding")
-    import json
-    receipt, readback = (json.loads(bytes.fromhex(packet[key])) for key in ("postResponseHex", "getResponseHex"))
+    receipt, readback = (strict_loads(bytes.fromhex(packet[key])) for key in ("postResponseHex", "getResponseHex"))
     return verify_ticket_result(receipt, readback, ActionRequest(**case["request"]), GrantPolicy(**case["policy"]), case["serviceKey"], case["grant"], now=datetime.fromisoformat(case["historicalTime"]))
 
 
