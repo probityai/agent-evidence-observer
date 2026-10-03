@@ -1,0 +1,210 @@
+"""Behavior and refusal controls for the local authority/effect comparison."""
+
+from __future__ import annotations
+
+import json
+import logging
+import os
+import shutil
+import sqlite3
+from pathlib import Path
+
+import pytest
+from hypothesis import given, settings, strategies as st
+
+from probity_observer.authorization import ActionRequest, GrantPolicy, verify_grant
+from probity_observer.crypto import SigningKey, VerificationError
+
+from authority_profile import AUTHORITY_DOMAIN, MAX_AGE_SECONDS, check_authority, checked_record, content_bytes, reference_time, sign_record
+from producer import START, produce
+from reader import read_case, read_run
+from source_discriminator import inspect_fingerprint
+
+
+@pytest.fixture(scope="session")
+def produced(tmp_path_factory):
+    """Create native durable cases once; every reader reopens the databases."""
+    path = tmp_path_factory.mktemp("authority") / "run"
+    produce(path, "local-uncommitted")
+    pins = json.loads((path / "consumer-pins.json").read_text())
+    return path, pins
+
+
+class TestAuthorityProfile:
+    class TestPassingCases:
+        @given(age=st.integers(min_value=0, max_value=MAX_AGE_SECONDS))
+        @settings(max_examples=40)
+        def test_all_admitted_freshness_ages(self, age):
+            key = SigningKey.generate()
+            record = sign_record({"principalId": "approver", "observedAt": START - age,
+                                  "status": "active", "sourceRevision": "revision-1"}, key, AUTHORITY_DOMAIN)
+            result = check_authority(record, key.public_hex, "approver", START)
+            assert result["ageSeconds"] == age
+
+        @pytest.mark.parametrize("field", ["text", "media", "destination", "catalogue"])
+        def test_each_final_descriptor_field_is_bound(self, field):
+            original = {"text": "approved", "media": b"media", "destination": "destination-1", "catalogue": b"catalogue-1"}
+            replacements = {"text": "changed", "media": b"changed", "destination": "destination-2", "catalogue": b"catalogue-2"}
+            changed = {**original, field: replacements[field]}
+            assert content_bytes(**original) != content_bytes(**changed)
+
+    class TestFailingCases:
+        @pytest.mark.parametrize("change,reason", [
+            ({"status": "revoked"}, "approver authority is not active"),
+            ({"principalId": "other"}, "authority identity or fields differ"),
+            ({"observedAt": START + 1}, "authority time is invalid"),
+            ({"observedAt": True}, "authority time is invalid"),
+            ({"observedAt": START - 181}, "authority evidence is stale"),
+        ])
+        def test_current_authority_refusals_are_exact_and_logged(self, change, reason, caplog):
+            key = SigningKey.generate()
+            fields = {"principalId": "approver", "observedAt": START, "status": "active", "sourceRevision": "revision-1"}
+            record = sign_record({**fields, **change}, key, AUTHORITY_DOMAIN)
+            with caplog.at_level(logging.WARNING), pytest.raises(VerificationError) as error:
+                check_authority(record, key.public_hex, "approver", START)
+            assert str(error.value) == reason
+            assert "authority profile refused: " + reason in caplog.messages
+
+        @pytest.mark.parametrize("mutation,reason", [
+            ("signature", "evidence signature does not verify"),
+            ("wrong-key", "evidence signer differs from consumer pin"),
+            ("missing-signature", "evidence envelope is incomplete"),
+        ])
+        def test_consumer_selects_the_source_key(self, mutation, reason, caplog):
+            key = SigningKey.generate()
+            record = sign_record({"claim": "bounded"}, key, AUTHORITY_DOMAIN)
+            expected = key.public_hex
+            if mutation == "signature":
+                record["signature"] = "AA=="
+            if mutation == "wrong-key":
+                expected = SigningKey.generate().public_hex
+            if mutation == "missing-signature":
+                record.pop("signature")
+            with caplog.at_level(logging.WARNING), pytest.raises(VerificationError) as error:
+                checked_record(record, expected, AUTHORITY_DOMAIN)
+            assert str(error.value) == reason
+            assert "authority profile refused: " + reason in caplog.messages
+
+
+class TestReader:
+    class TestPassingCases:
+        @pytest.mark.parametrize("case_id,revision,terminal,publish", [
+            ("approved-human-reachable", 1, "completed", True),
+            ("unreachable-with-prior-fallback", 1, "completed", True),
+            ("unreachable-no-fallback", 0, "failed", False),
+            ("fallback-expired", 0, "failed", False),
+            ("late-approval-for-expired-request", 0, "failed", False),
+            ("approver-revoked-at-dispatch", 0, "failed", False),
+            ("authority-evidence-stale", 0, "failed", False),
+            ("media-bytes-mutated", 0, "failed", False),
+            ("platform-content-mutated", 0, "failed", False),
+            ("catalogue-mutated", 0, "failed", False),
+            ("destination-mutated", 0, "failed", False),
+            ("revoked-between-intent-and-effect", 0, "failed", False),
+            ("crash-after-intent", 0, "failed", False),
+            ("crash-inside-effect-transaction", 0, "failed", False),
+            ("effect-committed-response-lost", 1, "failed", False),
+            ("same-request-retry", 1, "completed", True),
+            ("effect-then-authority-revoked", 1, "failed", False),
+            ("incomplete-proof-after-effect", 1, "completed", False),
+        ])
+        def test_effect_task_and_publication_are_separate(self, produced, case_id, revision, terminal, publish):
+            root, pins = produced
+            result = read_case(root / case_id, pins)
+            assert result["nativeRevision"] == revision
+            assert result["effectObserved"] == bool(revision)
+            assert result["taskTerminal"] == terminal
+            assert result["publicationReady"] is publish
+            assert result["witnessScope"] == "PEER"
+
+        def test_late_fresh_grant_does_not_reopen_old_request(self, produced):
+            root, pins = produced
+            payload = json.loads((root / "late-approval-for-expired-request" / "record.json").read_text())["payload"]
+            # The new approval is cryptographically valid at arrival; the original
+            # decision deadline is the distinct reason dispatch remains blocked.
+            verify_grant(payload["grant"], ActionRequest(**payload["request"]), GrantPolicy(**payload["grantPolicy"]),
+                         now=reference_time(payload["decisionAt"]))
+            assert payload["attempts"][0]["reason"] == "original decision window has closed"
+            assert read_case(root / payload["caseId"], pins)["nativeRevision"] == 0
+
+        def test_retry_reuses_one_effect_identity(self, produced):
+            root, pins = produced
+            payload = json.loads((root / "same-request-retry" / "record.json").read_text())["payload"]
+            assert payload["attempts"][0]["receipt"] == payload["attempts"][1]["receipt"]
+            result = read_case(root / "same-request-retry", pins)
+            assert result["attemptCount"] == 2 and result["nativeRevision"] == 1
+
+        def test_missing_retained_proof_preserves_native_effect(self, produced):
+            root, pins = produced
+            result = read_case(root / "incomplete-proof-after-effect", pins)
+            assert result["nativeCompletionProof"] == "incomplete-or-no-longer-admissible"
+            assert result["proofReason"] == "ticket envelope fields differ"
+            assert result["effectObserved"] is True and result["publicationReady"] is False
+
+        def test_run_reports_the_full_selected_case_set(self, produced):
+            root, pins = produced
+            result = read_run(root, pins)
+            assert result["caseCount"] == 18
+            assert sum(row["effectObserved"] for row in result["results"]) == 6
+            assert sum(row["publicationReady"] for row in result["results"]) == 3
+            assert result["independentCustody"] is False
+
+    class TestFailingCases:
+        @pytest.mark.parametrize("mutation,reason", [
+            ("wrong-record-key", "evidence signer differs from consumer pin"),
+            ("unsigned-task-edit", "evidence signature does not verify"),
+            ("changed-native-bytes", "native effect bytes differ"),
+            ("missing-native-event", "native history is incomplete"),
+        ])
+        def test_reader_tamper_controls(self, produced, tmp_path, mutation, reason, caplog):
+            root, pins = produced
+            case = tmp_path / "approved-human-reachable"
+            shutil.copytree(root / case.name, case)
+            selected = dict(pins)
+            if mutation == "wrong-record-key":
+                selected["recordKey"] = SigningKey.generate().public_hex
+            if mutation == "unsigned-task-edit":
+                record = json.loads((case / "record.json").read_text())
+                record["payload"]["taskTerminal"] = "failed"
+                (case / "record.json").write_text(json.dumps(record))
+            if mutation in {"changed-native-bytes", "missing-native-event"}:
+                with sqlite3.connect(case / "native.sqlite") as db:
+                    if mutation == "changed-native-bytes":
+                        db.execute("UPDATE tickets SET content=?", (b"unapproved",))
+                    else:
+                        db.execute("DELETE FROM events WHERE sequence=(SELECT max(sequence) FROM events)")
+            with caplog.at_level(logging.WARNING), pytest.raises(VerificationError) as error:
+                read_case(case, selected)
+            assert str(error.value) == reason
+            assert "authority profile refused: " + reason in caplog.messages
+
+        def test_deleted_case_is_not_complete_coverage(self, produced, tmp_path, caplog):
+            root, pins = produced
+            report = json.loads((root / "producer-report.json").read_text())
+            report["cases"].pop()
+            (tmp_path / "producer-report.json").write_text(json.dumps(report))
+            reason = "declared case coverage differs from selected profile"
+            with caplog.at_level(logging.WARNING), pytest.raises(VerificationError) as error:
+                read_run(tmp_path, pins)
+            assert str(error.value) == reason
+            assert "authority profile refused: " + reason in caplog.messages
+
+
+class TestSourceDiscriminator:
+    class TestPassingCases:
+        @pytest.mark.skipif(not os.environ.get("ALAKRIS_SOURCE"), reason="pinned Alakris source must be explicitly selected")
+        def test_exact_source_function_discriminators(self):
+            result = inspect_fingerprint(Path(os.environ["ALAKRIS_SOURCE"]))
+            expected = [True, True, True, False, False, False]
+            assert [row["fingerprintChanged"] for row in result["results"]] == expected
+            assert result["originalTestsRerun"] is False
+            assert result["deployedSystemRerun"] is False
+
+    class TestFailingCases:
+        def test_unpinned_source_never_executes(self, tmp_path, caplog):
+            source = tmp_path / "publication_jobs.py"
+            source.write_text("raise RuntimeError('must not run')\n")
+            with caplog.at_level(logging.WARNING), pytest.raises(ValueError) as error:
+                inspect_fingerprint(source)
+            assert str(error.value) == "Alakris source differs from pinned SHA-256"
+            assert str(error.value) in caplog.messages
