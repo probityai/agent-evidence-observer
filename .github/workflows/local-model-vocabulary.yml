@@ -43,7 +43,7 @@ jobs:
           python interop/local-model-vocabulary-2026-10-02/prepare_boundary.py model-vocabulary-artifacts --finalize
       - name: Execute all 128 frozen vocabulary attempts within the original ten-minute envelope
         run: |
-          timeout --signal=TERM --kill-after=5s 595s python interop/local-model-vocabulary-2026-10-02/task_matrix.py model-vocabulary-artifacts/run --protocol-commit PREREGISTRATION_COMMIT_PENDING --weights model-vocabulary-artifacts --provenance model-vocabulary-artifacts/provenance.json > model-vocabulary-artifacts/run-stdout.json 2> model-vocabulary-artifacts/run-stderr.txt
+          timeout --signal=TERM --kill-after=5s 595s python interop/local-model-vocabulary-2026-10-02/task_matrix.py model-vocabulary-artifacts/run --protocol-commit 70922782fae0595218732e4756c8a5f603ad212d --weights model-vocabulary-artifacts --provenance model-vocabulary-artifacts/provenance.json > model-vocabulary-artifacts/run-stdout.json 2> model-vocabulary-artifacts/run-stderr.txt
       - name: Print the produced artifact selections for later independent readers
         run: cat model-vocabulary-artifacts/run/consumer-pins.json
       - name: Recompute from selected retained bytes in a separate reader invocation
