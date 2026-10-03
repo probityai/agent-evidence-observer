@@ -48,6 +48,7 @@ def _admission_at(case: dict[str, Any], history: bytes, prior: dict[str, Any], l
     require(actual.tzinfo is not None and actual.utcoffset().total_seconds() == 0, "current-runtime-clock-utc")
     expected_clock = "fixture-exact-expiry" if case["id"] == "expired" else "host-system-utc"
     require(current["clockSource"] == expected_clock, "current-clock-source")
+    require(case["id"] != "expired" or selected_at == datetime.fromisoformat(case["grant"]["expiresAt"]), "current-exact-expiry-binding")
     require(selected_at >= datetime.fromisoformat(case["historicalTime"]), "current-clock-predates-history")
     now = selected_at if case["id"] == "expired" else actual
     require(case["id"] == "expired" or actual >= selected_at, "current-selection-from-future")

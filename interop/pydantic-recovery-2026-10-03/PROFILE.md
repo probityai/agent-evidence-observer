@@ -105,6 +105,8 @@ instructions resumable and does not alter the earlier seven-case Pydantic
 exception/exhaustion profile. Historical dispatch uses a declared fixed clock.
 Recovery selects the actual host UTC time after the second target starts.
 The exact-expiry case alone uses the grant's UTC boundary as an explicit fixture.
+That fixture time must equal the selected grant's exact expiry, so it cannot
+provide a past runtime clock for a positive decision.
 The reader checks the declared clock source, UTC second precision and rejects a
 time before history. Runtime admission checks actual UTC and exposes no clock
 override. It rechecks expiry before native result input and immediately before

@@ -494,3 +494,61 @@ def test_expiry_during_native_setup_refuses_before_any_model_request(native: Pat
     assert report["status"] == "refused" and report["releasedResult"] is False
     assert report["nativeModelRequests"] == report["recoveryPosts"] == 0
     assert not (root / "accepted-host-receipt.json").exists() and not (root / "resumed-history.json").exists()
+
+
+def test_exact_expiry_fixture_cannot_be_used_as_a_past_runtime_clock(native: Path) -> None:
+    """Naming the denial fixture cannot convert its old timestamp to admission."""
+    from probity_pydantic_recovery.gate import admit
+
+    root = native / "expired"
+    case = load(root / "case.json")
+    current = load(root / "current-host-selection.json")
+    live = load(root / "recovery.json")["live"]
+    history = (root / "recovery-history.json").read_bytes()
+    prior = load(root / "prior-http.json")
+    with pytest.raises(VerificationError, match="grant is not valid at the reference time"):
+        admit(case, history, prior, live, current)
+    current["clockTime"] = case["historicalTime"]
+    with pytest.raises(VerificationError, match="current-exact-expiry-binding"):
+        admit(case, history, prior, live, current)
+
+
+def test_actually_expired_grant_refuses_retagged_past_clock_in_both_boundaries(native: Path, tmp_path: Path) -> None:
+    """Both runtime and retained replay refuse the expired-label clock bypass."""
+    from probity_observer.authorization import GrantPolicy, issue_grant
+    from probity_observer.crypto import SigningKey
+
+    from probity_pydantic_recovery.gate import admit, reconstruct_admission
+
+    now = datetime.now(UTC).replace(microsecond=0)
+    case, selected_store = selection(tmp_path, "expired-fixture-attack", "expired", now)
+    issuer = SigningKey.generate()
+    policy = GrantPolicy(issuer.public_hex)
+    case.update(policy={"issuer_key": policy.issuer_key, "max_validity_seconds": policy.max_validity_seconds}, grant=issue_grant(selected_store.request, issuer, issued_at=now, expires_at=now + timedelta(seconds=2)))
+    store = TicketStore(tmp_path / "expiring.sqlite", selected_store.request, policy, selected_store.key, clock=lambda: now)
+    store.initialize()
+    candidate = {key: case[key] for key in ("request", "grant", "contentHex")}
+    receipt = store.dispatch(candidate)
+    live = store.readback()
+    prior = {"postStatus": 200, "postRequestHex": canonical(candidate).hex(), "postResponseHex": canonical(receipt).hex(), "getStatus": 200, "getResponseHex": canonical(live).hex()}
+    history = (native / "expired/history.json").read_bytes()
+    current = {"historySha256": sha(history), "grant": case["grant"], "serviceKey": case["serviceKey"], "policy": case["policy"], "liveSha256": sha(canonical(live)), "clockTime": now.isoformat(), "clockSource": "fixture-exact-expiry", "targetReady": True}
+    deadline = now + timedelta(seconds=2)
+    time.sleep(max(0, (deadline - datetime.now(UTC)).total_seconds()) + 0.03)
+    assert datetime.now(UTC) >= deadline
+    with pytest.raises(VerificationError, match="current-exact-expiry-binding"):
+        admit(case, history, prior, live, current)
+    with pytest.raises(VerificationError, match="current-exact-expiry-binding"):
+        reconstruct_admission(case, history, prior, live, current, evaluated_at=now)
+
+
+def test_reselected_expiry_fixture_clock_refuses_offline_packet(native: Path, tmp_path: Path) -> None:
+    root = tmp_path / "packet"
+    shutil.copytree(native, root)
+    case = load(root / "expired/case.json")
+    path = root / "expired/current-host-selection.json"
+    current = load(path)
+    current["clockTime"] = case["historicalTime"]
+    path.write_bytes(canonical(current))
+    with pytest.raises(VerificationError):
+        verify_saved(root, reselect(root))
