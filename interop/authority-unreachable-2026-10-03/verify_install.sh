@@ -8,6 +8,8 @@ source_revision="${2:?immutable source revision or local-uncommitted required}"
 alakris_source="${3:-}"
 authority_python="${AUTHORITY_PROFILE_PYTHON:-python}"
 [[ "$run_dir" == /* ]] || { echo "output directory must be absolute" >&2; exit 2; }
+# A fixed build time makes wheel hashes comparable between independent reruns of the same revision.
+export SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-315532800}"
 
 mkdir -p "$run_dir/wheels" "$run_dir/empty"
 "$authority_python" -m build --no-isolation --wheel --outdir "$run_dir/wheels" "$repository_dir"
