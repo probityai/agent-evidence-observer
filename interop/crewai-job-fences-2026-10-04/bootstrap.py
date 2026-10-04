@@ -77,6 +77,17 @@ def child(argv, prefix, cwd, timeout=120):
         if prefix.name != "native-production" and native_output.is_file():
             print("Earlier native producer stdout tail (maximum 8192 bytes):", flush=True)
             print(native_output.read_bytes()[-8192:].decode("utf-8", errors="replace"), flush=True)
+        if prefix.name.startswith("offline-reader-"):
+            for case in ("valid-runner", "refusal-before-body", "effect-before-refusal"):
+                for name in ("manual-publication.json", "native-state-after-run.json"):
+                    retained = prefix.parent / "packet" / "cases" / case / name
+                    if not retained.is_file():
+                        continue
+                    raw = retained.read_bytes()
+                    print("Retained native publication:", str(retained.relative_to(prefix.parent)),
+                          "bytes:", len(raw), "sha256:", hashlib.sha256(raw).hexdigest(),
+                          "maximum display bytes: 32768", flush=True)
+                    print(raw[:32768].decode("utf-8", errors="replace"), flush=True)
     require(status == 0, "child-failed-or-timed-out")
     return stdout
 
