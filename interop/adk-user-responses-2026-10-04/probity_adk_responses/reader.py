@@ -68,6 +68,13 @@ def event_view(event: dict[str, Any]) -> dict[str, Any]:
             "content": event.get("content")}
 
 
+def model_entry(callback: dict[str, Any], agent: str) -> dict[str, Any]:
+    """Reconstruct ADK's agent label added after this plugin's callback."""
+    require(callback["config"]["labels"] is None, "callback-pre-label-state")
+    return {**callback, "config": {**callback["config"],
+                                   "labels": {"adk_agent_name": agent}}}
+
+
 def case_read(root: Path, case: str, keys: dict[str, str]) -> dict[str, Any]:
     directory = root / "cases" / case
     get = lambda name: decode((directory / name).read_bytes())
@@ -142,10 +149,13 @@ def case_read(root: Path, case: str, keys: dict[str, str]) -> dict[str, Any]:
             original(row)
     model_callbacks = [original(r["native"]) for r in records
                        if r["callback"] == "before-model"]
-    require(model_callbacks == [original(requests["root"][0]),
-                                original(requests["issuer"][0]),
-                                original(requests["issuer"][1]),
-                                original(requests["root"][1])],
+    require(len(model_callbacks) == 4, "callback-model-request-population")
+    # The pinned _model_call.call_llm_async adds this label after callbacks.
+    # Raw callback and model-entry JSON keep their separate original bytes.
+    require([model_entry(callback, agent) for callback, agent in zip(
+                model_callbacks, ("root", "issuer", "issuer", "root"))] ==
+            [original(requests["root"][0]), original(requests["issuer"][0]),
+             original(requests["issuer"][1]), original(requests["root"][1])],
             "callback-model-request-population")
 
     packet = strict_loads((directory / "observer-packet.json").read_bytes())

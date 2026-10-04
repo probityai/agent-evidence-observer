@@ -64,6 +64,10 @@ as native execution are refused. Failed CLI reads remove stale passing output.
 The reference reuses the existing
 [`CapturePlugin`](../adk-ticket-2026-10-02/src/probity_adk/plugin.py) unchanged.
 Its callback position and finite capture limits remain part of the contract.
+ADK adds `config.labels.adk_agent_name` after the before-model callback.
+The reader checks that exact enrichment and retains both original snapshots;
+every other request field must agree. The first failed run retained the native
+routing results and this reader mismatch before the comparison was corrected.
 The native-model example follows Google's retained MockModel and Runner tests;
 the fixed script is a local author control. The prospective eight-task
 implementation-owned study remains not started.

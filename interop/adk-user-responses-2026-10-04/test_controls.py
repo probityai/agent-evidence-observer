@@ -141,6 +141,34 @@ class NativeSemanticControls(unittest.TestCase):
                     self.decision()
                 path.write_bytes(original)
 
+    def test_foreign_model_agent_label_is_refused(self):
+        def mutate(value):
+            record = value["issuer"][1]
+            record["value"]["config"]["labels"]["adk_agent_name"] = "root"
+            record["jsonHex"] = encode(record["value"]).hex()
+        self.edit("long-running-completed", "model-requests.json", mutate)
+        with self.assertRaisesRegex(ValueError, "callback-model-request-population"):
+            self.decision()
+
+    def test_post_callback_request_change_is_refused(self):
+        def mutate(value):
+            record = value["issuer"][1]
+            record["value"]["contents"][0]["parts"][0]["text"] = "changed input"
+            record["jsonHex"] = encode(record["value"]).hex()
+        self.edit("approval-granted", "model-requests.json", mutate)
+        with self.assertRaisesRegex(ValueError, "callback-model-request-population"):
+            self.decision()
+
+    def test_early_callback_label_is_refused(self):
+        def mutate(value):
+            record = next(r["native"] for r in value["records"]
+                          if r["callback"] == "before-model")
+            record["value"]["config"]["labels"] = {"adk_agent_name": "root"}
+            record["jsonHex"] = encode(record["value"]).hex()
+        self.edit("approval-granted", "callbacks.json", mutate)
+        with self.assertRaisesRegex(ValueError, "callback-pre-label-state"):
+            self.decision()
+
     def test_native_original_ast_mismatch_is_refused(self):
         self.edit("approval-granted", "session.json", lambda value:
                   value["value"].update({"id": "invented"}))
