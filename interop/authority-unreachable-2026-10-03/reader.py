@@ -13,7 +13,7 @@ from probity_observer.authorization import ActionRequest, GrantPolicy, verify_gr
 from probity_observer.crypto import VerificationError, digest, strict_loads
 from probity_observer.ticket_service import DOMAIN, STATE_FIELDS, _checked as checked_native_receipt, _state_schema, verify_ticket_result
 
-from authority_profile import CASE_IDS, PROFILE, RECORD_DOMAIN, check_authority, checked_record, reference_time, refuse
+from authority_profile import CASE_IDS, PROFILE, RECORD_DOMAIN, check_authority, check_veto, checked_record, reference_time, refuse
 
 
 def _native_envelope(raw: bytes, key: str) -> dict[str, Any]:
@@ -124,17 +124,29 @@ def read_native(path: Path, payload: dict[str, Any], pins: dict[str, str]) -> tu
     return {**result, "nativePhase": state["phase"], "nativeRevoked": state["revoked"]}, state, prefixes
 
 
-def _authorization(payload: dict[str, Any], pins: dict[str, str]) -> tuple[str, str | None]:
-    """Recompute action-time authority without implying the action completed."""
+def _authorization(payload: dict[str, Any], pins: dict[str, str]) -> tuple[str, str | None, int | None]:
+    """Recompute action-time authority without implying the action completed.
+
+    The checks run in the gate's own order, so each refusal carries the same
+    reason the dispatch attempt recorded: veto, missing fallback, closed
+    decision window, unreachable or invalid status, then grant validity.
+    """
     request = ActionRequest(**payload["request"])
+    at = payload["decisionAt"]
     try:
-        if payload["decisionAt"] >= payload["requestDeadline"]:
+        check_veto(payload["vetoEvidence"], pins["authorityKey"], request, at)
+        if payload["grant"] is None:
+            refuse("no pre-authorized fallback")
+        if at >= payload["requestDeadline"]:
             refuse("original decision window has closed")
-        check_authority(payload["authorityEvidence"], pins["authorityKey"], request.principal_id, payload["decisionAt"])
-        verify_grant(payload["grant"], request, GrantPolicy(**payload["grantPolicy"]), now=reference_time(payload["decisionAt"]))
+        if payload["authorityEvidence"] is None:
+            refuse("authority source unreachable")
+        status = check_authority(payload["authorityEvidence"], pins["authorityKey"], request.principal_id, at,
+                                 payload["authorityLatest"])
+        verify_grant(payload["grant"], request, GrantPolicy(**payload["grantPolicy"]), now=reference_time(at))
     except VerificationError as error:
-        return "not-admitted", str(error)
-    return "valid-for-approved-request-at-reference-time", None
+        return "not-admitted", str(error), None
+    return "valid-for-approved-request-at-reference-time", None, status["ageSeconds"]
 
 
 def _completion(payload: dict[str, Any], pins: dict[str, str], native_state: dict[str, Any]) -> tuple[str, str | None]:
@@ -208,7 +220,8 @@ def _attempts(payload: dict[str, Any]) -> None:
 
 def _record_schema(payload: dict[str, Any]) -> None:
     """Check the finite profile's exact fields before interpreting its claims."""
-    fields = {"profile", "caseId", "request", "grantPolicy", "grant", "authorityEvidence", "decisionAt",
+    fields = {"profile", "caseId", "request", "grantPolicy", "grant", "authorityEvidence", "authorityLatest",
+              "vetoEvidence", "decisionAt",
               "requestDeadline", "humanReachable", "priorFallback", "attempts", "faultInjection",
               "dispatchContentSha256", "taskTerminal", "readback", "coverage", "custody", "witnessScope"}
     if set(payload) != fields:
@@ -263,7 +276,7 @@ def read_case(path: Path, pins: dict[str, str]) -> dict[str, Any]:
     if payload["witnessScope"] != "PEER" or payload["custody"] != "author-operated-local":
         refuse("record custody or scope exceeds reference profile")
     native, native_state, prefixes = read_native(path / "native.sqlite", payload, pins)
-    authority, authority_reason = _authorization(payload, pins)
+    authority, authority_reason, evidence_age = _authorization(payload, pins)
     proof, proof_reason = _completion(payload, pins, native_state)
     for attempt in payload["attempts"]:
         if attempt["returnStatus"] == "completed":
@@ -272,9 +285,11 @@ def read_case(path: Path, pins: dict[str, str]) -> dict[str, Any]:
                    and proof == "verified-bounded-native-completion" and authority == "valid-for-approved-request-at-reference-time"
                    and not native["nativeRevoked"])
     return {"caseId": payload["caseId"], **native, "authorityStatus": authority, "authorityReason": authority_reason,
+            "authorityEvidenceAgeSeconds": evidence_age,
             "taskTerminal": payload["taskTerminal"], "nativeCompletionProof": proof, "proofReason": proof_reason,
             "publicationReady": publication, "attemptCount": len(payload["attempts"]),
-            "dispatchDecisions": [a["decision"] for a in payload["attempts"]], "witnessScope": "PEER",
+            "dispatchDecisions": [a["decision"] for a in payload["attempts"]],
+            "dispatchReasons": [a["reason"] for a in payload["attempts"]], "witnessScope": "PEER",
             "custody": "author-operated-local", "coverage": payload["coverage"]}
 
 

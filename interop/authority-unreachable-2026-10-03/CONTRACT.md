@@ -16,13 +16,16 @@ Use one record per attempted action. Keep implemented checks, known gaps and sim
 | Reader appraisal | Selected trust pins, checks actually performed, missing proof, contradictions, publication/consumer decision and retained evidence. |
 | Operation and custody | Who ran the producer, gate, status source and reader; who controlled each key/store; retained artifact location and covered effect boundary. |
 
-The reference profile implements eighteen deterministic cases over one local native ticket per case. Availability is a controlled input, not a live human outage. A host-supplied signed status snapshot models current authority, with a selected 180-second maximum age; it is not a MintID root verifier or a deployed revocation measurement. The deadline prevents a newly valid late grant from reopening an expired request.
+The reference profile implements twenty-one deterministic cases over one local native ticket per case. Availability is a controlled input, not a live human outage. A host-supplied signed status snapshot models current authority, with a selected 180-second maximum age; it is not a MintID root verifier or a deployed revocation measurement. The deadline prevents a newly valid late grant from reopening an expired request.
 
 | Cases | Bounded result to inspect |
 | --- | --- |
 | Approved action; unavailable human with prior fallback | One local ticket commits. |
 | No fallback; expired grant; late fresh grant after original deadline | No local ticket commits. |
 | Revoked approver; stale authority evidence | Admission stops before native mutation. |
+| Binding veto recorded; executor presents a valid prior grant | The veto blocks dispatch; no native mutation. |
+| Active snapshot inside the freshness window, superseded by a newer revoked status | Superseded evidence is refused; no native mutation. |
+| Authority source unreachable; prior fallback grant held | Dispatch stays blocked; no native mutation. |
 | Changed media, text, catalogue or destination | Exact approved bytes differ; no native mutation. |
 | Revocation between durable intent and effect | Native persistent revocation blocks the second transaction. |
 | Crash after intent; crash inside effect transaction | Recovery retains incomplete closure and refuses automatic replay. |
@@ -32,6 +35,19 @@ The reference profile implements eighteen deterministic cases over one local nat
 | Missing retained completion signature | The native row remains observed; complete publication proof is unavailable. |
 
 The peer reader authenticates the profile record and native service state, opens the retained SQLite database read-only, replays the exact native event bodies and transitions, and compares the actual ticket identity and bytes. Retained completion must match every field of the observed signed native state. Completed dispatch returns must match the observed immutable state and a real unrevoked prefix of its native history; a task terminal must agree with its retained final dispatch return. Signed contradictions are refused. Native completion appraisal reuses Observer's source-pinned verifier. This is a separately installed consumer, not an independently implemented or independently operated verifier. The reference table has no general remote publication, multi-hop delegation, OAuth descendant-token revocation, funded recourse or private-chain proof.
+
+## Four matched cases
+
+Four matched cases were proposed for a joint run on the AAIF identity-and-trust list on 2026-10-04. Each maps to reference cases below. The reader reports every attempt's reason code (`dispatchReasons`) and the admitted evidence age (`authorityEvidenceAgeSeconds`), and recomputes authority in the gate's order, so the gate and the reader give the same reason.
+
+| Matched case | Reference cases | Reason code at dispatch |
+| --- | --- | --- |
+| Executor tries to override a binding veto | `binding-veto-override-attempt` | `binding veto recorded for request` |
+| Revoked authority presented with stale evidence | `authority-evidence-stale`, `revoked-authority-superseded-evidence`, `approver-revoked-at-dispatch` | `authority evidence is stale`; `authority evidence superseded by newer status`; `approver authority is not active` |
+| Verifier or remote authority unreachable; the action stays blocked | `authority-source-unreachable`, `unreachable-no-fallback` | `authority source unreachable`; `no pre-authorized fallback` |
+| Revocation after dispatch; refusal and committed effects kept apart | `revoked-between-intent-and-effect`, `effect-then-authority-revoked` | The earlier effect stays observed; the later dispatch is denied |
+
+The superseded case is the window a freshness limit alone leaves open: the presented active snapshot is 60 seconds old, inside the 180-second limit, and the gate has already read a newer revoked status. Each deployed system states its own rule for this window and the point where it starts refusing.
 
 ## Source-backed Alakris discriminator
 

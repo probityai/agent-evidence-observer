@@ -14,7 +14,7 @@ from probity_observer.authorization import ActionRequest, GrantPolicy, issue_gra
 from probity_observer.crypto import SigningKey, VerificationError, canonical
 from probity_observer.ticket_service import TicketStore
 
-from authority_profile import AUTHORITY_DOMAIN, CASE_IDS, PROFILE, RECORD_DOMAIN, content_bytes, dispatch, reference_time, sign_record
+from authority_profile import AUTHORITY_DOMAIN, CASE_IDS, PROFILE, RECORD_DOMAIN, VETO_DOMAIN, content_bytes, dispatch, reference_time, sign_record
 
 NATIVE_REVISION = "9db0558cf8cc8112ea31b601fa7c7d3c2f38c907"
 START = 1791028800
@@ -51,10 +51,12 @@ def _fault_hook(case_id: str, store: TicketStore, fault_log: list[str]):
 
 
 def _attempt(store: TicketStore, request: ActionRequest, grant: dict[str, Any] | None,
-             authority: dict[str, Any], authority_key: str, content: bytes, at: int) -> dict[str, Any]:
+             authority: dict[str, Any] | None, authority_key: str, content: bytes, at: int,
+             veto: dict[str, Any] | None = None, latest: dict[str, Any] | None = None) -> dict[str, Any]:
     """Retain a native return or failure without inferring effect absence."""
     try:
-        receipt = dispatch(store, request, grant, content, authority, authority_key, at=at, request_deadline=START + 120)
+        receipt = dispatch(store, request, grant, content, authority, authority_key, at=at, request_deadline=START + 120,
+                           veto=veto, latest=latest)
         return {"decision": "allow", "returnStatus": "completed", "reason": None, "receipt": receipt}
     except VerificationError as error:
         return {"decision": "deny", "returnStatus": "failed", "reason": str(error), "receipt": None}
@@ -76,15 +78,27 @@ def _case(root: Path, case_id: str, keys: dict[str, SigningKey]) -> dict[str, An
     if case_id == "late-approval-for-expired-request":
         grant = issue_grant(request, keys["issuer"], issued_at=reference_time(at), expires_at=reference_time(at + 120))
     status = "revoked" if case_id == "approver-revoked-at-dispatch" else "active"
-    age = 181 if case_id == "authority-evidence-stale" else 0
+    age = {"authority-evidence-stale": 181, "revoked-authority-superseded-evidence": 60}.get(case_id, 0)
     authority = sign_record({"principalId": request.principal_id, "observedAt": at - age,
                              "status": status, "sourceRevision": "controlled-status-snapshot-1"}, keys["authority"], AUTHORITY_DOMAIN)
+    latest = None
+    if case_id == "revoked-authority-superseded-evidence":
+        # The executor presents the older active snapshot; the gate has since read the revocation.
+        latest = sign_record({"principalId": request.principal_id, "observedAt": at - 5, "status": "revoked",
+                              "sourceRevision": "controlled-status-snapshot-2"}, keys["authority"], AUTHORITY_DOMAIN)
+    if case_id == "authority-source-unreachable":
+        authority = None
+    veto = None
+    if case_id == "binding-veto-override-attempt":
+        veto = sign_record({"runId": request.run_id, "requestId": request.request_id, "decidedAt": START + 5,
+                            "decision": "veto", "sourceRevision": "controlled-oversight-decision-1"}, keys["authority"], VETO_DOMAIN)
     store = TicketStore(path / "native.sqlite", request, policy, keys["service"], clock=lambda: reference_time(at))
     store.initialize()
     faults: list[str] = []
     store.crash_hook = _fault_hook(case_id, store, faults)
     delegated = None if case_id == "unreachable-no-fallback" else grant
-    attempts = [_attempt(store, request, delegated, authority, keys["authority"].public_hex, _action_bytes(case_id), at)]
+    attempts = [_attempt(store, request, delegated, authority, keys["authority"].public_hex, _action_bytes(case_id), at,
+                         veto, latest)]
     store.crash_hook = None
     if case_id == "same-request-retry":
         attempts.append(_attempt(store, request, grant, authority, keys["authority"].public_hex, approved, at))
@@ -96,7 +110,8 @@ def _case(root: Path, case_id: str, keys: dict[str, SigningKey]) -> dict[str, An
         attempts.append(_attempt(store, request, grant, authority, keys["authority"].public_hex, approved, at))
     readback = store.readback()
     payload = {"profile": PROFILE, "caseId": case_id, "request": asdict(request), "grantPolicy": asdict(policy),
-               "grant": delegated, "authorityEvidence": authority, "decisionAt": at,
+               "grant": delegated, "authorityEvidence": authority, "authorityLatest": latest, "vetoEvidence": veto,
+               "decisionAt": at,
                "requestDeadline": START + 120,
                "humanReachable": case_id == "approved-human-reachable", "priorFallback": delegated is not None,
                "attempts": attempts, "faultInjection": faults,
