@@ -1,0 +1,71 @@
+name: ADK user FunctionResponse routing and effects
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['interop/adk-user-responses-2026-10-04/**', '.github/workflows/adk-user-responses.yml']
+  pull_request:
+    branches: [main]
+    paths: ['interop/adk-user-responses-2026-10-04/**', '.github/workflows/adk-user-responses.yml']
+
+permissions:
+  contents: read
+
+jobs:
+  installed-native-routing:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      SOURCE_DATE_EPOCH: '946684800'
+      PYTHONDONTWRITEBYTECODE: '1'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: google/adk-python
+          ref: 86a47f6974bae349a5c9ea15a74a4b450614ae42
+          path: selected-adk
+          persist-credentials: false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: probityai/agent-evidence-observer
+          ref: 8c074d7b8f380dd01fd55277b68a37ad8217c8cb
+          path: selected-observer
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.13.15'
+      - name: Build wheels and normally install the exact SDK into the producer
+        run: |
+          set -euo pipefail
+          profile="$GITHUB_WORKSPACE/interop/adk-user-responses-2026-10-04"
+          python -m venv "$RUNNER_TEMP/adk-responses-producer"
+          "$RUNNER_TEMP/adk-responses-producer/bin/python" -m pip install --no-compile --require-hashes -r "$profile/requirements.lock" -r "$profile/build.lock"
+          "$RUNNER_TEMP/adk-responses-producer/bin/python" -m pip wheel --no-deps --no-build-isolation "$GITHUB_WORKSPACE/selected-observer" "$profile" --wheel-dir "$RUNNER_TEMP/adk-responses-wheels"
+          "$RUNNER_TEMP/adk-responses-producer/bin/python" -m pip install --no-compile --no-deps "$RUNNER_TEMP/adk-responses-wheels/agent_evidence_observer-0.0.1-py3-none-any.whl" "$RUNNER_TEMP/adk-responses-wheels/probity_adk_user_responses-0.0.1-py3-none-any.whl"
+          "$RUNNER_TEMP/adk-responses-producer/bin/python" -m pip install --no-compile --no-deps --no-build-isolation --force-reinstall "$GITHUB_WORKSPACE/selected-adk"
+          python -m venv "$RUNNER_TEMP/adk-responses-reader"
+          "$RUNNER_TEMP/adk-responses-reader/bin/python" -m pip install --no-compile --require-hashes -r "$profile/requirements-reader.lock"
+          "$RUNNER_TEMP/adk-responses-reader/bin/python" -m pip install --no-compile --no-deps "$RUNNER_TEMP/adk-responses-wheels/agent_evidence_observer-0.0.1-py3-none-any.whl" "$RUNNER_TEMP/adk-responses-wheels/probity_adk_user_responses-0.0.1-py3-none-any.whl"
+      - name: Run three actual native cases then the isolated offline reader twice
+        run: |
+          set -euo pipefail
+          profile="$GITHUB_WORKSPACE/interop/adk-user-responses-2026-10-04"
+          python -I -B "$profile/bootstrap.py" --producer "$RUNNER_TEMP/adk-responses-producer/bin/python" --reader "$RUNNER_TEMP/adk-responses-reader/bin/python" --wheels "$RUNNER_TEMP/adk-responses-wheels" --sdk "$GITHUB_WORKSPACE/selected-adk" --output "$profile/actual-run"
+      - name: Refuse semantic mutations even after their artifact hashes are reselected
+        run: |
+          set -euo pipefail
+          profile="$GITHUB_WORKSPACE/interop/adk-user-responses-2026-10-04"
+          ADK_RESPONSES_PACKET="$profile/actual-run/packet" "$RUNNER_TEMP/adk-responses-reader/bin/python" -I -B "$profile/test_controls.py" -v 2>&1 | tee "$profile/actual-run/reader-controls.log"
+      - name: Retain installed source, raw callbacks, effects and original child receipts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: adk-user-response-native-evidence
+          path: |
+            interop/adk-user-responses-2026-10-04/actual-run/
+          if-no-files-found: error
+          retention-days: 90
