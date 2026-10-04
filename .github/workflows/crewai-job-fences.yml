@@ -79,7 +79,7 @@ jobs:
           set -euo pipefail
           profile="$GITHUB_WORKSPACE/interop/crewai-job-fences-2026-10-04"
           python -I -B "$profile/bootstrap.py" --producer "$RUNNER_TEMP/crewai-jobs-producer/bin/python" --reader "$RUNNER_TEMP/crewai-jobs-reader/bin/python" --wheels "$RUNNER_TEMP/crewai-jobs-wheels" --sdk "$GITHUB_WORKSPACE/selected-crewai" --output "$profile/actual-run"
-      - name: Refuse twenty-two semantic mutations even when their hashes are reselected
+      - name: Refuse thirty semantic mutations even when their hashes are reselected
         run: |
           set -euo pipefail
           profile="$GITHUB_WORKSPACE/interop/crewai-job-fences-2026-10-04"

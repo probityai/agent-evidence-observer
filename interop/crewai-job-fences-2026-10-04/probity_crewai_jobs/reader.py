@@ -183,10 +183,18 @@ def runner_case(root, name, keys):
             job["committed_stages"] == (["collect", "write"] if name == "valid-runner" else ["collect"]) and
             job["last_update_seq"] == len(proposals) and prepub["job_sequence"] == len(snapshots),
             "native-committed-state")
-    require(postpub["messages"] == [{"role": "user", "content": "Status please"},
-            {"role": "assistant", "content": publication["reply"]}] and
-            publication["reply"] == expected_status + ": Public fact" + ("; Public answer" if expected_answer else ""),
-            "explicit-foreground-publication")
+    expected_reply = expected_status + ": Public fact" + ("; Public answer" if expected_answer else "")
+    # Pinned ConversationMessage serializes all seven fields, including its defaults.
+    defaults = {"name": None, "tool_call_id": None, "tool_calls": None,
+                "files": None, "metadata": {}}
+    expected_messages = [{"role": "user", "content": "Status please", **defaults},
+                         {"role": "assistant", "content": expected_reply, **defaults}]
+    expected_published_state = {**prepub, "current_user_message": "Status please",
+                                "last_user_message": "Status please", "last_intent": "converse",
+                                "messages": expected_messages}
+    require(set(publication) == {"userInput", "reply", "before", "after", "operator", "sdkAutoPublication"} and
+            publication["userInput"] == "Status please" and publication["reply"] == expected_reply and
+            postpub == expected_published_state, "explicit-foreground-publication")
     require(all(original(r)["jobs"][0]["status"] in {"queued", "running", "completed", "failed"} for r in snapshots) and
             original(snapshots[-1])["jobs"][0] == job, "final-native-parent-snapshot")
     require(get("runner-after-close.json") == {"closed": True, "tasksSettled": True, "pendingReceipts": 0},

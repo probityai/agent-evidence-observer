@@ -30,6 +30,12 @@ class Controls(unittest.TestCase):
         operation(wrapper["value"])
         wrapper["jsonHex"] = encode(wrapper["value"]).hex()
 
+    def change_published_state(self, operation):
+        self.change("cases/valid-runner/manual-publication.json",
+                    lambda v: self.wrap_change(v["after"], operation))
+        self.change("cases/valid-runner/native-state-after-run.json",
+                    lambda v: self.wrap_change(v, operation))
+
     def refuse(self):
         raw = encode(host_policy(self.root))
         with self.assertRaises(ValueError):
@@ -142,6 +148,40 @@ class Controls(unittest.TestCase):
 
     def test_missing_earlier_commitment(self):
         self.change("cases/valid-runner/begin-before-run.json", lambda v: v.update(checkpoint={}))
+        self.refuse()
+
+    def test_nonnull_publication_default(self):
+        self.change_published_state(lambda s: s["messages"][1].update(name="foreign"))
+        self.refuse()
+
+    def test_missing_publication_default(self):
+        self.change_published_state(lambda s: s["messages"][1].pop("files"))
+        self.refuse()
+
+    def test_enriched_publication_metadata(self):
+        self.change_published_state(lambda s: s["messages"][1]["metadata"].update(authority="foreign"))
+        self.refuse()
+
+    def test_extra_publication_member(self):
+        self.change_published_state(lambda s: s["messages"][1].update(authority=True))
+        self.refuse()
+
+    def test_changed_foreground_input(self):
+        self.change("cases/valid-runner/manual-publication.json",
+                    lambda v: v.update(userInput="Other input"))
+        self.refuse()
+
+    def test_changed_foreground_return(self):
+        self.change("cases/valid-runner/manual-publication.json",
+                    lambda v: v.update(reply="Changed reply"))
+        self.refuse()
+
+    def test_reordered_foreground_messages(self):
+        self.change_published_state(lambda s: s["messages"].reverse())
+        self.refuse()
+
+    def test_job_changed_during_publication(self):
+        self.change_published_state(lambda s: s["jobs"]["job:valid-runner"].update(answer="Changed answer"))
         self.refuse()
 
 
