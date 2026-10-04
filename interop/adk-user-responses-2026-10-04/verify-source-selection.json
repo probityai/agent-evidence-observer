@@ -1,0 +1,22 @@
+{
+  "adapter": "event_absence/v1",
+  "operator": "author-operated",
+  "package": "probity-verify",
+  "pythonGitBlobs": {
+    "__init__.py": "f84d0e0a85a2ae2a7089cbb5b702e7236780b764",
+    "adapters/__init__.py": "1816102dd8158de12c55e66938e3bd74887d8248",
+    "adapters/authority_anchor.py": "864e608fc2eedcdd9d77faee0d5dfab2ba932a3e",
+    "adapters/event_absence.py": "897ed52e5cf0161623ad92115713b527938a3fe4",
+    "adapters/operand_lineage.py": "d13f6d3e82d9a1d09c047a477cb31806879d3b88",
+    "adapters/source_coverage.py": "96c4a0f1fec728a6deca0db57c01086621951151",
+    "bundle.py": "030e534f75165e9803a9675d231acb8e9b2aa17a",
+    "cli.py": "d13cc3c7049d91d60d6835259139c747348cc066",
+    "common.py": "37d2403533bc41c26b333edf9fae507e678fa5cb",
+    "core.py": "ef1cd275217d773d703df3c9073587a7a084e930",
+    "index.py": "8d15b0ddde4e6f68ddf5f542eda18cf0e2827a0d"
+  },
+  "repository": "probityai/probity-verify",
+  "revision": "e835ce2bd6a960e7a1cc2fa6522f16d55dce728a",
+  "sourceSelection": "Exact Git Python blobs, normally wheel-built and installed; original Verify implementation unchanged.",
+  "version": "0.1.0"
+}
