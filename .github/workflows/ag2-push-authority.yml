@@ -49,7 +49,11 @@ jobs:
         run: |
           set -euo pipefail
           profile="$GITHUB_WORKSPACE/interop/ag2-push-authority-2026-10-04"
+          mkdir -p "$profile/install-attempt"
+          cp "$profile/native-source-selection.json" "$profile/install-attempt/native-source-selection.json"
+          exec > >(tee "$profile/install-attempt/install.log") 2>&1
           python -m venv "$RUNNER_TEMP/ag2-push-producer"
+          export PATH="$RUNNER_TEMP/ag2-push-producer/bin:$PATH"
           "$RUNNER_TEMP/ag2-push-producer/bin/python" -m pip install --no-compile --require-hashes -r "$profile/requirements.lock"
           "$RUNNER_TEMP/ag2-push-producer/bin/python" -m pip wheel --no-deps --no-build-isolation "$GITHUB_WORKSPACE/selected-observer" "$profile" --wheel-dir "$RUNNER_TEMP/ag2-push-wheels"
           "$RUNNER_TEMP/ag2-push-producer/bin/python" -m pip install --no-compile --no-deps "$RUNNER_TEMP/ag2-push-wheels/agent_evidence_observer-0.0.1-py3-none-any.whl" "$RUNNER_TEMP/ag2-push-wheels/probity_ag2_push_authority-0.0.1-py3-none-any.whl"
@@ -73,6 +77,8 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: ag2-push-authority-native-evidence
-          path: interop/ag2-push-authority-2026-10-04/actual-run/
+          path: |
+            interop/ag2-push-authority-2026-10-04/actual-run/
+            interop/ag2-push-authority-2026-10-04/install-attempt/
           if-no-files-found: error
           retention-days: 90
