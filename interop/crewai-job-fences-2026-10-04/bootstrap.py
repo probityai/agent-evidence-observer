@@ -68,6 +68,15 @@ def child(argv, prefix, cwd, timeout=120):
     prefix.with_suffix(".stderr").write_bytes(stderr)
     prefix.with_suffix(".status.json").write_bytes(encoded({"returncode": status,
                                                            "timeout": status is None}))
+    if status != 0:
+        print("Failed retained child:", prefix.name, "status:", status, flush=True)
+        for label, data in (("stdout", stdout), ("stderr", stderr)):
+            print(label + " tail (maximum 8192 bytes):", flush=True)
+            print(data[-8192:].decode("utf-8", errors="replace"), flush=True)
+        native_output = prefix.parent / "native-production.stdout"
+        if prefix.name != "native-production" and native_output.is_file():
+            print("Earlier native producer stdout tail (maximum 8192 bytes):", flush=True)
+            print(native_output.read_bytes()[-8192:].decode("utf-8", errors="replace"), flush=True)
     require(status == 0, "child-failed-or-timed-out")
     return stdout
 
