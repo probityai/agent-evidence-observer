@@ -5,6 +5,15 @@ retained attempts, native logs, source bytes, and summary counts. Errors,
 interruptions, wrong answers, and absent native entries stay in the population.
 It does not establish execution truth, independent custody, or global completeness.
 
+For a consumer-retained opening and final witness checkpoint, see
+[Witnessed run selection](WITNESSED-RUN-SELECTION.md). Its
+`verify_selected_history` adds a single selected plan, original configuration and
+control bytes, expected operator, execution start and native closure to the
+`verify_history` consistency checks. The guide includes an installed profile,
+candidate-shopping counterexample and retained hostile-control results. Coverage
+is the supplied anchored history for the named run; global unique selection,
+trusted real-time precedence and independent custody remain unestablished.
+
 ## Run the official mock harness
 
 The native example requires the optional dependency:

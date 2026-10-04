@@ -1,0 +1,5 @@
+agent-evidence-observer @ file:///tmp/observer-selection-installed-1004-b/wheels/agent_evidence_observer-0.0.1-py3-none-any.whl
+cffi==2.1.1
+cryptography==46.0.7
+pycparser==3.0
+rfc8785==0.1.4
