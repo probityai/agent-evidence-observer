@@ -1,0 +1,6 @@
+Name                                                                                                                   Stmts   Miss  Cover
+------------------------------------------------------------------------------------------------------------------------------------------
+/tmp/observer-selection-installed-1004-b/producer/lib/python3.12/site-packages/probity_observer/run_selection.py         112      0   100%
+/tmp/observer-selection-installed-1004-b/producer/lib/python3.12/site-packages/probity_observer/selection_profile.py     180      2    99%
+------------------------------------------------------------------------------------------------------------------------------------------
+TOTAL                                                                                                                    292      2    99%

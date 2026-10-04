@@ -1,0 +1,15 @@
+{
+  "artifactBytes": 190738,
+  "artifactSha256": "925dbaba536bb1bf94d0e57418126ebfd191cc05e11f4c7deffd74f34b641f55",
+  "baseCommit": "1ec93df92b49239175147c2b9f3ccda87a090cd1",
+  "executedSnapshotCommit": "5e0b0a903ab4365742b3e3921ab25f48390071aa",
+  "executionOperator": "local-installed-profile",
+  "executionScope": "finite bundled checker/config/control profile and core tests; no registered study or independent custody",
+  "implementationAgent": "Codex",
+  "keyCustody": "same-local-process",
+  "sourceBytes": {
+    "src/probity_observer/run_selection.py": "585472cc4cd4a8e740155e3f5ff87c5119c2bac083a8f5493c3bb2c2196ecb60",
+    "src/probity_observer/selection_profile.py": "f93beee6042b7a76f0eb3fbe891cb66064e7d68acc4a2974407dbdcd2dff8eec"
+  },
+  "sourceRefKind": "local-box-run-snapshot"
+}
