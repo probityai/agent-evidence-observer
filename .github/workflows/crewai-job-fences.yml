@@ -27,6 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
@@ -55,6 +56,7 @@ jobs:
           profile="$GITHUB_WORKSPACE/interop/crewai-job-fences-2026-10-04"
           mkdir -p "$profile/install-attempt"
           cp "$profile/native-source-selection.json" "$profile/install-attempt/"
+          git rev-parse HEAD > "$profile/install-attempt/owned-head.txt"
           cp "$GITHUB_WORKSPACE/selected-crewai/uv.lock" "$profile/install-attempt/publisher-uv.lock"
           exec > >(tee "$profile/install-attempt/setup.log") 2>&1
           python -I -B -c 'import ast,sys;from pathlib import Path;[ast.parse(p.read_text(),filename=str(p)) for p in Path(sys.argv[1]).rglob("*.py")]' "$profile"
@@ -62,7 +64,7 @@ jobs:
           uv --version
           uv export --quiet --project "$GITHUB_WORKSPACE/selected-crewai" --frozen --package crewai --no-dev --no-editable --no-emit-workspace --format requirements-txt --output-file "$profile/install-attempt/native-dependencies.lock"
           python -m venv "$RUNNER_TEMP/crewai-jobs-producer"
-          uv pip sync --python "$RUNNER_TEMP/crewai-jobs-producer/bin/python" --require-hashes -r "$profile/install-attempt/native-dependencies.lock"
+          uv pip sync --python "$RUNNER_TEMP/crewai-jobs-producer/bin/python" --require-hashes "$profile/install-attempt/native-dependencies.lock"
           uv build --wheel --python "$(command -v python)" "$GITHUB_WORKSPACE/selected-crewai/lib/crewai-core" --out-dir "$RUNNER_TEMP/crewai-jobs-wheels"
           uv build --wheel --python "$(command -v python)" "$GITHUB_WORKSPACE/selected-crewai/lib/cli" --out-dir "$RUNNER_TEMP/crewai-jobs-wheels"
           uv build --wheel --python "$(command -v python)" "$GITHUB_WORKSPACE/selected-crewai/lib/crewai" --out-dir "$RUNNER_TEMP/crewai-jobs-wheels"
