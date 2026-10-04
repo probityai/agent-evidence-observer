@@ -62,6 +62,33 @@ current candidate cannot expose a withheld suffix. The public-key-only client
 checks the full returned receipt log and advances its last verified prefix;
 `retained_head` returns a copy for separate host persistence.
 
+### Durable consumer retention
+
+The installed `probity_witness_operator.retention` command verifies public
+receipt bytes and a signed current head before promoting the consumer's
+separately retained prefix. It requires no private witness key or store.
+Choose a new destination inside a consumer-owned 0700 directory and retain
+that directory outside producer and witness-store authority. Pin the witness
+public key through the consumer's trusted channel.
+
+```sh
+python -I -B -m probity_witness_operator.retention "$ledger" "$candidate" "$retained" --witness-key "$witness_key" --ledger-sha256 "$ledger_sha" --candidate-sha256 "$candidate_sha" --initial
+```
+
+For subsequent promotions, replace `--initial` with
+`--previous-sha256 "$previous_sha"`, the digest of the already retained head.
+The command checks every receipt, verifies both signed prefixes, and requires
+the candidate to describe the complete selected log. A rollback, same-key
+fork, wrong key, stale pin or missing retained state refuses without replacing
+the prior head. A private lock serializes cooperating consumer processes.
+
+Successful acknowledgment follows file fsync, atomic replacement and parent
+directory fsync. An error before replacement preserves the old head. A failed
+directory fsync may leave the new head visible without acknowledgment; inspect
+its bytes and retry under its observed pin. The native lost-ack/restart controls
+now use this promotion path. Heads bind receipt count and hash, not a trusted
+timestamp; authorization replay uses its recorded reference time.
+
 The request contains bounded exact canonical JSONL history bytes and their digest,
 never an operator-local pathname, private key or reset choice. The operator checks
 the selected observer signature, a 1-128 printable ASCII interval ID, SHA-256

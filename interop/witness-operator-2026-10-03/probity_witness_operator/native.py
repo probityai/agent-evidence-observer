@@ -20,6 +20,7 @@ from probity_observer.crypto import canonical, strict_loads
 
 from .protocol import FORMAT, receive, require, sha
 from .reader import CASES
+from .retention import retain_head
 from .server import OperatorServer, remove_stale_socket
 from .sources import retain_sources
 from .store import Configuration, OperatorStore, generate_key, initialize, load_key, write_private
@@ -120,8 +121,13 @@ def create_case(name: str, packet: Path, private: Path, socket_root: Path) -> Na
     config_path.write_bytes(canonical(value))
     configuration = Configuration.read(config_path, sha(config_path.read_bytes()))
     initial = initialize(configuration)
-    retained = runtime / "host-retained.json"
-    retained.write_bytes(canonical(initial))
+    retained_directory = runtime / "retained"
+    retained_directory.mkdir(mode=0o700)
+    retained = retained_directory / "head.json"
+    candidate = retained_directory / "candidate.json"
+    candidate.write_bytes(canonical(initial))
+    retain_head(configuration.store_path / "ledger.jsonl", candidate, retained, witness_key=witness_key,
+                ledger_sha256=sha(b""), candidate_sha256=sha(candidate.read_bytes()), previous_sha256=None)
     worker = {"case": name, "socketPath": value["socketPath"], "witnessKey": witness_key,
               "observerKey": observer.public_hex, "observerKeyPath": str(producer / "observer.raw"),
               "issuerKey": issuer.public_hex, "issuerKeyPath": str(producer / "issuer.raw"),
@@ -189,7 +195,11 @@ def _unavailable_after(case: NativeCase, python: str) -> dict[str, Any]:
 def _retain_current(case: NativeCase) -> None:
     """Acquire and retain an authenticated head through the host operator seam."""
     exported = case.store().export()
-    case.retained_path.write_bytes(canonical(exported["head"]))
+    candidate = case.retained_path.parent / "candidate.json"
+    candidate.write_bytes(canonical(exported["head"]))
+    retain_head(case.configuration.store_path / "ledger.jsonl", candidate, case.retained_path,
+                witness_key=case.configuration.witness_key, ledger_sha256=sha(bytes.fromhex(exported["ledgerHex"])),
+                candidate_sha256=sha(candidate.read_bytes()), previous_sha256=sha(case.retained_path.read_bytes()))
     value = strict_loads(case.worker_config.read_bytes())
     value["retainedHead"] = exported["head"]
     case.worker_config.write_bytes(canonical(value))
