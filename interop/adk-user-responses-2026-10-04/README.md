@@ -71,3 +71,27 @@ routing results and this reader mismatch before the comparison was corrected.
 The native-model example follows Google's retained MockModel and Runner tests;
 the fixed script is a local author control. The prospective eight-task
 implementation-owned study remains not started.
+
+## Verify consumer
+
+The workflow also installs unchanged
+[Verify `e835ce2`](https://github.com/probityai/probity-verify/tree/e835ce2bd6a960e7a1cc2fa6522f16d55dce728a)
+and checks all 11 installed Python source blobs before its CLI runs.
+[The consumer](verify_consumer.py) projects captured native event IDs, authors
+and timestamps into six `event_absence/v1` cases: no root output during the
+supplied response, and no issuer output during later plain text, for each run.
+Separate capability and observation files name the same author operator.
+Their coverage is the finite yielded event population delivered to this plugin.
+
+Each Verify decision runs twice with identical output. Separate controls add a
+bound wrong-agent event (`contradicted`), remove the coverage declaration
+(`not_established`) and supply duplicate JSON members (exit 2, no verdict).
+The retained derivation records pin every native input and describe the event
+projection, including Verify v1's whole-second timestamp format. Native
+timestamps remain same-host timestamps. This actual Verify
+consumer is separate from the profile's callback and signed-effect reader.
+
+GitHub Actions ZIPs omit empty directories. Restore the originally empty
+`packet/cases/approval-denied/workspace/` directory before replaying its retained
+packet; no file bytes are added. The denied tool body and signed write history
+remain empty.
