@@ -1,8 +1,7 @@
-"""Durably retain a public signed head under explicit consumer-selected pins.
+"""Durably retain public signed witness heads with consumer-selected pins.
 
-This consumer operation requires no witness private key or operator store.
-It preserves the PEER claim ceiling and establishes neither clock truth nor
-organizational independence. See :func:`retain_head` for its crash boundary.
+The consumer owns the retention directory and uses the witness public key.
+See :func:`retain_head` for the prefix checks and crash boundary.
 """
 
 from __future__ import annotations
