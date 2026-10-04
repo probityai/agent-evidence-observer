@@ -49,6 +49,16 @@ class Controls(unittest.TestCase):
         self.change("direct/foreign-owner/native-call.json", lambda v: v.update(accepted=True))
         self.refuse()
 
+    def test_nonnull_native_error_enrichment(self):
+        self.change("direct/valid-stage/native-call.json",
+                    lambda v: self.wrap_change(v["submitted"], lambda u: u.update(error="unselected")))
+        self.refuse()
+
+    def test_missing_native_nullable_default(self):
+        self.change("direct/valid-stage/native-call.json",
+                    lambda v: self.wrap_change(v["submitted"], lambda u: u.pop("error")))
+        self.refuse()
+
     def test_owner_fault_removed(self):
         self.change("direct/foreign-owner/inputs-before-call.json",
                     lambda v: v["candidate"].update(session_id="session:foreign-owner"))

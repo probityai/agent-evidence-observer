@@ -49,6 +49,8 @@ def direct_case(root, name):
             all(row["accepted"] is True for row in inputs["setups"]),
             "direct-native-admission")
     candidate = inputs["candidate"]
+    require(set(candidate) == {"session_id", "job_id", "revision", "attempt", "seq", "kind", "stage", "outputs"},
+            "selected-caller-request-fields")
     require(result["case"] == name and result["recordIdentityPreserved"] is True and
             result["nativeToolBodyEffects"] == 0 and result["publicationDecision"] is None,
             "direct-native-scope")
@@ -57,7 +59,9 @@ def direct_case(root, name):
         require(candidate["seq"] is True and result["submitted"] is None and result["accepted"] is None and
                 result["validation"]["type"] == "ValidationError", "strict-native-model-admission")
     else:
-        require(result["validation"] is None and original(result["submitted"]) == candidate and
+        # Pinned JobUpdate.model_dump_json() includes its omitted nullable default.
+        materialized = {**candidate, "error": None}
+        require(result["validation"] is None and original(result["submitted"]) == materialized and
                 result["accepted"] is accepted, "native-direct-receipt")
     if not accepted:
         require(result["before"] == result["after"], "rejected-native-update-must-not-mutate-state")
