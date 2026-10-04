@@ -60,9 +60,9 @@ jobs:
           python -I -B -c 'import ast,sys;from pathlib import Path;[ast.parse(p.read_text(),filename=str(p)) for p in Path(sys.argv[1]).rglob("*.py")]' "$profile"
           python -m pip install --no-compile uv==0.11.15
           uv --version
-          uv export --project "$GITHUB_WORKSPACE/selected-crewai" --frozen --package crewai --no-dev --no-editable --no-emit-workspace --format requirements-txt --output-file "$profile/install-attempt/native-dependencies.lock"
+          uv export --quiet --project "$GITHUB_WORKSPACE/selected-crewai" --frozen --package crewai --no-dev --no-editable --no-emit-workspace --format requirements-txt --output-file "$profile/install-attempt/native-dependencies.lock"
           python -m venv "$RUNNER_TEMP/crewai-jobs-producer"
-          uv pip install --python "$RUNNER_TEMP/crewai-jobs-producer/bin/python" --require-hashes -r "$profile/install-attempt/native-dependencies.lock"
+          uv pip sync --python "$RUNNER_TEMP/crewai-jobs-producer/bin/python" --require-hashes -r "$profile/install-attempt/native-dependencies.lock"
           uv build --wheel --python "$(command -v python)" "$GITHUB_WORKSPACE/selected-crewai/lib/crewai-core" --out-dir "$RUNNER_TEMP/crewai-jobs-wheels"
           uv build --wheel --python "$(command -v python)" "$GITHUB_WORKSPACE/selected-crewai/lib/cli" --out-dir "$RUNNER_TEMP/crewai-jobs-wheels"
           uv build --wheel --python "$(command -v python)" "$GITHUB_WORKSPACE/selected-crewai/lib/crewai" --out-dir "$RUNNER_TEMP/crewai-jobs-wheels"
