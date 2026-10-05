@@ -1,0 +1,37 @@
+name: Native APS refund controls
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  aps-refund:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['20', '22']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - uses: astral-sh/setup-uv@v6
+      - run: bash interop/aps-durable-refund-2026-10-05/verify_install.sh ./aps-refund-run
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: aps-refund-node-${{ matrix.node }}
+          retention-days: 90
+          path: |
+            aps-refund-run/
+            !aps-refund-run/operator/
+            !aps-refund-run/reader/
