@@ -11,7 +11,7 @@ No release is published yet, so pin a commit. Python 3.12 or later and
 
 ```sh
 git clone https://github.com/probityai/agent-evidence-observer && cd agent-evidence-observer
-git checkout 0278d8313611e7a7cddd7bb2d9eb7f418b237ef0
+git checkout f68c8538639aea1515ea357a85a20739004e66fd
 uv venv .venv --python python3.12 && uv pip install --python .venv/bin/python .
 .venv/bin/agent-evidence-observer demo ./sample-run
 .venv/bin/agent-evidence-observer verify ./sample-run

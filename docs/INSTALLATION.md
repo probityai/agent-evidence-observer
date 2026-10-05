@@ -11,7 +11,7 @@ With Python 3.12 and [uv](https://docs.astral.sh/uv/):
 
 ```sh
 uv venv observer-env --python python3.12
-uv pip install --python observer-env/bin/python 'agent-evidence-observer @ git+https://github.com/probityai/agent-evidence-observer.git@0278d8313611e7a7cddd7bb2d9eb7f418b237ef0'
+uv pip install --python observer-env/bin/python 'agent-evidence-observer @ git+https://github.com/probityai/agent-evidence-observer.git@f68c8538639aea1515ea357a85a20739004e66fd'
 observer-env/bin/agent-evidence-observer demo sample-run
 observer-env/bin/agent-evidence-observer verify sample-run
 ```
@@ -25,7 +25,7 @@ Keep a separate source checkout if the selected profile needs scripts:
 
 ```sh
 git clone https://github.com/probityai/agent-evidence-observer.git observer-source
-git -C observer-source checkout 0278d8313611e7a7cddd7bb2d9eb7f418b237ef0
+git -C observer-source checkout f68c8538639aea1515ea357a85a20739004e66fd
 observer-env/bin/agent-evidence-read-native --source-checkout "$PWD/observer-source" --describe-sources inspect-execution
 ```
 
