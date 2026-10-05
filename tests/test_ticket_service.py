@@ -11,6 +11,7 @@ import sqlite3
 import threading
 from dataclasses import asdict, replace
 from datetime import datetime, timedelta, timezone
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
 
@@ -18,7 +19,7 @@ import pytest
 
 from probity_observer.authorization import ActionRequest, GrantPolicy, issue_grant
 from probity_observer.crypto import SigningKey, VerificationError, canonical
-from probity_observer.ticket_service import DOMAIN, TicketHTTPServer, TicketStore, http_json, running_server, verify_ticket_result
+from probity_observer.ticket_service import DOMAIN, MAX_BODY, TicketHTTPServer, TicketStore, http_json, running_server, verify_ticket_result
 
 
 @pytest.fixture
@@ -48,6 +49,128 @@ def read_url(server: TicketHTTPServer) -> str:
 def consume(case: dict[str, Any], receipt: Any, readback: Any) -> dict[str, Any]:
     """Use keys, grant, clock and request from consumer policy, not the bundle."""
     return verify_ticket_result(receipt, readback, case["request"], case["policy"], case["key"].public_hex, case["grant"], now=case["now"])
+
+
+def payload_case(case: dict[str, Any], path: Path, content: bytes, **identity: str) -> dict[str, Any]:
+    """Select fresh authority and native storage for an exact boundary payload."""
+    request = replace(case["request"], content_sha256=hashlib.sha256(content).hexdigest(), **identity)
+    grant = issue_grant(request, case["issuer"], issued_at=case["now"] - timedelta(seconds=1), expires_at=case["now"] + timedelta(seconds=120))
+    store = TicketStore(path, request, case["policy"], case["key"], clock=lambda: case["now"])
+    initial = store.initialize()
+    return {**case, "request": request, "grant": grant, "store": store, "initial": initial, "candidate": {"request": asdict(request), "grant": grant, "contentHex": content.hex()}}
+
+
+@pytest.mark.parametrize("identity", [{}, {"principal_id": '"' * 128, "run_id": "\\" * 128, "attempt_id": '"' * 128, "request_id": "\\" * 128, "tenant_id": "t" * 128, "target_path": "/work/tickets/" + "x" * (256 - len("/work/tickets/"))}])
+@pytest.mark.parametrize("unit", [b"x", b"\x00", '{"summary":"\u00e9\U0001f512"}'.encode()])
+def test_exact_http_round_trip_boundary(case: dict[str, Any], tmp_path: Path, identity: dict[str, str], unit: bytes) -> None:
+    """Escaped identities and arbitrary native bytes obey both envelope budgets."""
+    sample = payload_case(case, tmp_path / "sample.sqlite", b"x", **identity)
+    sample_receipt = sample["store"].dispatch(sample["candidate"])
+    sample_native = sample["store"].readback()
+    assert consume(sample, sample_receipt, sample_native)["status"] == "verified"
+    request_overhead = len(canonical(sample["candidate"])) - 2
+    response_overhead = len(canonical(sample_native)) - 2
+    size = (MAX_BODY - max(request_overhead, response_overhead)) // 2
+    content = (unit * (size // len(unit) + 1))[:size]
+    bounded = payload_case(case, tmp_path / "bounded.sqlite", content, **identity)
+    with running_server(bounded["store"]) as server:
+        status, receipt = http_json(server.url + "/dispatch", bounded["candidate"])
+        assert status == 200
+        route = server.url + f"/tickets/{bounded['request'].tenant_id}/{bounded['store'].ticket_id}"
+        status, native = http_json(route)
+        assert status == 200
+        assert consume(bounded, receipt, native)["status"] == "verified"
+        assert native["contentHex"] == content.hex()
+        assert len(canonical(native)) == response_overhead + 2 * size
+        assert MAX_BODY - max(len(canonical(native)), len(canonical(bounded["candidate"]))) <= 1
+        assert http_json(server.url + "/dispatch", bounded["candidate"]) == (200, receipt)
+        assert http_json(route) == (200, native)
+        bounded["store"].revoke()
+        status, revoked = http_json(route)
+        assert status == 200
+        assert len(canonical(revoked)) == len(canonical(native)) - 1
+        assert revoked["contentHex"] == content.hex()
+        assert revoked["revision"] == 1
+        with pytest.raises(VerificationError, match="unrevoked"):
+            consume(bounded, receipt, revoked)
+        assert http_json(server.url + "/dispatch", bounded["candidate"])[0] == 409
+    overflow = payload_case(case, tmp_path / "overflow.sqlite", content + b"x", **identity)
+    with running_server(overflow["store"]) as server:
+        raw = canonical(overflow["candidate"])
+        if len(raw) <= MAX_BODY:
+            assert http_json(server.url + "/dispatch", overflow["candidate"])[0] == 409
+        else:
+            with pytest.raises(VerificationError, match="HTTP request exceeds"):
+                http_json(server.url + "/dispatch", overflow["candidate"])
+            with socket.create_connection(server.server_address, timeout=5) as connection:
+                connection.sendall(b"POST /dispatch HTTP/1.0\r\nContent-Length: " + str(len(raw)).encode() + b"\r\n\r\n" + raw)
+                assert b"409" in connection.recv(1024)
+        assert overflow["store"].readback() == overflow["initial"]
+    with pytest.raises(VerificationError, match="finite limit"):
+        overflow["store"].dispatch(overflow["candidate"])
+    assert overflow["store"].readback() == overflow["initial"]
+
+
+def test_http_body_fits_but_readback_does_not(case: dict[str, Any], tmp_path: Path) -> None:
+    """A formerly accepted POST must refuse before recording an unreadable effect."""
+    overhead = len(canonical(case["candidate"])) - len(case["candidate"]["contentHex"])
+    content = b"x" * ((MAX_BODY - overhead) // 2)
+    oversized = payload_case(case, tmp_path / "readback-overflow.sqlite", content)
+    assert MAX_BODY - len(canonical(oversized["candidate"])) <= 1
+    with running_server(oversized["store"]) as server:
+        assert http_json(server.url + "/dispatch", oversized["candidate"])[0] == 409
+        assert http_json(read_url(server))[1] == oversized["initial"]
+    with pytest.raises(VerificationError, match="completion read-back exceeds"):
+        oversized["store"].dispatch(oversized["candidate"])
+    assert oversized["store"].readback() == oversized["initial"]
+
+
+def test_non_ascii_request_refuses_before_intent(case: dict[str, Any]) -> None:
+    """Native UTF-8 content remains separate from restricted signed JSON identity."""
+    candidate = copy.deepcopy(case["candidate"])
+    candidate["request"]["principal_id"] = "\u00e9"
+    with pytest.raises(VerificationError, match="non-ASCII"):
+        case["store"].dispatch(candidate)
+    with running_server(case["store"]) as server:
+        raw = b'{"principal_id":"\xc3\xa9"}'
+        with socket.create_connection(server.server_address, timeout=5) as connection:
+            connection.sendall(b"POST /dispatch HTTP/1.0\r\nContent-Length: " + str(len(raw)).encode() + b"\r\n\r\n" + raw)
+            assert b"409" in connection.recv(1024)
+    assert case["store"].readback() == case["initial"]
+
+
+def test_server_refuses_oversized_readback(case: dict[str, Any], monkeypatch: pytest.MonkeyPatch) -> None:
+    """An oversized native response cannot bypass the server's actual byte bound."""
+    original = case["store"].readback
+    monkeypatch.setattr(case["store"], "readback", lambda: {"unexpected": "x" * MAX_BODY})
+    with running_server(case["store"]) as server:
+        status, refusal = http_json(read_url(server))
+        assert status == 409
+        assert refusal["status"] == "refused"
+    assert original() == case["initial"]
+
+
+def test_client_bounds_oversized_get_response() -> None:
+    """A real external HTTP response cannot enlarge the client's read budget."""
+    class OversizedHandler(BaseHTTPRequestHandler):
+        def log_message(self, format: str, *args: Any) -> None:
+            pass
+
+        def do_GET(self) -> None:
+            self.send_response(200)
+            self.send_header("Content-Length", str(MAX_BODY + 1))
+            self.end_headers()
+            self.wfile.write(b"x" * (MAX_BODY + 1))
+
+    with ThreadingHTTPServer(("127.0.0.1", 0), OversizedHandler) as server:
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            with pytest.raises(VerificationError, match="HTTP response exceeds"):
+                http_json(f"http://127.0.0.1:{server.server_address[1]}/readback")
+        finally:
+            server.shutdown()
+            thread.join(timeout=5)
 
 
 def test_real_http_write_and_restart(case: dict[str, Any]) -> None:

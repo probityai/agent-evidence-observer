@@ -68,6 +68,18 @@ production deployment or arbitrary agent sandbox. A host that controls the key
 and database can forge or omit records. Transient bypasses restored between
 snapshots and effects beyond this ticket row remain outside coverage.
 
+Both HTTP envelopes have a 65,536-byte limit. Dispatch checks the complete
+request envelope and the exact future GET envelope before it records an intent.
+The GET calculation includes the hex-encoded content, escaped identity fields,
+signed completion and native row fields. Digests and timestamps have fixed
+widths; Ed25519 signatures have 88 base64 bytes. The size calculation uses an
+unsigned placeholder and does not sign a completion before the effect.
+Content that fits POST but cannot fit GET refuses without a new intent or row.
+Direct dispatch applies the same request and read-back limits. HTTP clients
+refuse oversized outbound requests and inbound responses; the server bounds
+its actual response too. Arbitrary native content bytes travel as hex. Signed
+JSON identity remains restricted to the existing ASCII profile.
+
 Outside operation requires a separately controlled host, keys, SQLite store,
 clock and retained checkpoint channel. The local run provides an executable
 service target and explicit measured controls for that deployment discussion.
