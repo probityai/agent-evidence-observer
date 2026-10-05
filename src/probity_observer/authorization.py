@@ -21,7 +21,7 @@ from collections.abc import Callable, Mapping
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, NoReturn
+from typing import Any, Literal, NoReturn
 
 from . import broker as native_broker
 from .broker import Broker, WriteResult
@@ -207,12 +207,16 @@ def utc_clock() -> datetime:
     return datetime.now(timezone.utc).replace(microsecond=0)
 
 
-def _utc(value: Any, name: str) -> datetime:
-    """Require an aware UTC datetime with no discarded fractional seconds."""
+def validate_utc_time(value: Any, name: str, *, precision: Literal["seconds", "milliseconds"] = "seconds") -> datetime:
+    """Validate an explicit UTC observation contract without rounding its input."""
+    if not isinstance(precision, str) or precision not in {"seconds", "milliseconds"}:
+        _refuse("UTC time precision is unsupported")
     if not isinstance(value, datetime) or value.utcoffset() != timedelta(0):
         _refuse(f"{name} must be a timezone-aware UTC datetime")
-    if value.microsecond:
+    if precision == "seconds" and value.microsecond:
         _refuse(f"{name} must use UTC second precision")
+    if precision == "milliseconds" and value.microsecond % 1000:
+        _refuse(f"{name} must use UTC millisecond precision")
     return value
 
 
@@ -292,8 +296,8 @@ def issue_grant(
     VerificationError
         If timestamps or their duration are outside the public profile.
     """
-    _utc(issued_at, "issued_at")
-    _utc(expires_at, "expires_at")
+    validate_utc_time(issued_at, "issued_at")
+    validate_utc_time(expires_at, "expires_at")
     _window(issued_at, expires_at, MAX_VALIDITY_SECONDS)
     payload = {
         "profile": PROFILE,
@@ -332,6 +336,7 @@ def verify_grant(
     policy: GrantPolicy,
     *,
     now: datetime,
+    reference_precision: Literal["seconds", "milliseconds"] = "seconds",
 ) -> AuthorizedAction:
     """Authenticate exact authorization at an explicit consumer reference time.
 
@@ -345,9 +350,13 @@ def verify_grant(
     policy : GrantPolicy
         Independently configured issuer public key and duration limit.
     now : datetime
-        Aware UTC second-precision reference time satisfying
-        ``issued_at <= now < expires_at``. Historical offline verification uses
+        Aware UTC reference time with the explicitly selected precision,
+        satisfying ``issued_at <= now < expires_at``. Grant issuance/expiry
+        remain canonical whole seconds. Historical offline verification uses
         a declared reference time and does not imply present-day freshness.
+
+    reference_precision : {"seconds", "milliseconds"}
+        Declared observation precision; finer inputs refuse without rounding.
 
     Returns
     -------
@@ -361,7 +370,7 @@ def verify_grant(
         signature, mismatched request, excessive duration, or invalid time.
         Refusals are logged using bounded reasons without candidate contents.
     """
-    reference = _utc(now, "now")
+    reference = validate_utc_time(now, "now", precision=reference_precision)
     candidate = _grant_object(grant)
     _authenticate(candidate, expected_request, policy)
     issued_at = _parse_timestamp(candidate["issuedAt"], "issuedAt")

@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "probity-aps-refund-controls"
+version = "0.0.1"
+description = "Native APS approval binding and durable local refund-record controls"
+requires-python = ">=3.12"
+dependencies = ["agent-evidence-observer==0.0.1"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["probity_aps_refund*"]
+
+[tool.coverage.run]
+branch = true
+parallel = true
+source_pkgs = ["probity_aps_refund"]
+patch = ["subprocess"]
+data_file = "${APS_REFUND_COVERAGE_FILE?}"

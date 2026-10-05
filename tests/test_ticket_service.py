@@ -9,6 +9,7 @@ import os
 import socket
 import sqlite3
 import threading
+from contextlib import closing
 from dataclasses import asdict, replace
 from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -18,8 +19,8 @@ from typing import Any
 import pytest
 
 from probity_observer.authorization import ActionRequest, GrantPolicy, issue_grant
-from probity_observer.crypto import SigningKey, VerificationError, canonical
-from probity_observer.ticket_service import DOMAIN, MAX_BODY, TicketHTTPServer, TicketStore, http_json, running_server, verify_ticket_result
+from probity_observer.crypto import SigningKey, VerificationError, canonical, digest, strict_loads
+from probity_observer.ticket_service import DOMAIN, MAX_BODY, TicketHTTPServer, TicketStore, http_json, running_server, verify_ticket_capture, verify_ticket_result
 
 
 @pytest.fixture
@@ -536,3 +537,322 @@ def test_concurrent_http_retries_do_not_duplicate_effect(case: dict[str, Any]) -
         with sqlite3.connect(case["store"].path) as db:
             assert db.execute("SELECT COUNT(*) FROM tickets").fetchone()[0] == 1
             assert db.execute("SELECT COUNT(*) FROM events").fetchone()[0] == 3
+
+
+
+def captured_populations(case: dict[str, Any]) -> tuple:
+    """Query the actual selected native populations and close this owned reader."""
+    with closing(sqlite3.connect(case["store"].path.resolve().as_uri() + "?mode=ro", uri=True)) as db:
+        return (db.execute("SELECT record FROM state WHERE singleton=1").fetchone()[0],
+                db.execute("SELECT sequence,record FROM events ORDER BY sequence").fetchall(),
+                db.execute("SELECT tenant,ticket,content,revision,effect FROM tickets").fetchall())
+
+
+@pytest.mark.parametrize("phase", ["ready", "pending", "incomplete", "completed", "revoked-ready", "revoked-completed"])
+def test_public_native_capture_preserves_real_store_phases(case: dict[str, Any], phase: str) -> None:
+    """A public-key-only validator and the store share actual phase and row semantics."""
+    store = case["store"]
+    if phase in {"pending", "incomplete"}:
+        def interrupted(point: str) -> None:
+            if point == "after-intent":
+                raise RuntimeError("controlled interruption")
+        store.crash_hook = interrupted
+        with pytest.raises(RuntimeError, match="controlled interruption"):
+            store.dispatch(case["candidate"])
+        if phase == "incomplete":
+            store.recover()
+    elif phase in {"completed", "revoked-completed"}:
+        store.dispatch(case["candidate"])
+    if phase.startswith("revoked-"):
+        store.revoke()
+    native = store.readback()
+    before = store.path.read_bytes()
+    verified = verify_ticket_capture(*captured_populations(case), case["request"], case["policy"],
+                                     case["key"].public_hex, retained_head=native["receipt"])
+    assert verified.state["phase"] == native["receipt"]["payload"]["phase"]
+    assert verified.logical_admissions == int(phase not in {"ready", "revoked-ready"})
+    assert verified.local_effects == int(phase in {"completed", "revoked-completed"})
+    assert type(verified.logical_admissions) is type(verified.local_effects) is int
+    assert verified.content == (bytes.fromhex(native["contentHex"]) if native["contentHex"] is not None else None)
+    assert store.path.read_bytes() == before
+
+
+def rewrite_signed_ticket_capture(case: dict[str, Any], kind: str) -> None:
+    """Retain real signing authority while making the intended native relation invalid."""
+    key = case["key"]
+    with closing(sqlite3.connect(case["store"].path)) as db:
+        state = strict_loads(db.execute("SELECT record FROM state WHERE singleton=1").fetchone()[0])["payload"]
+        events = [strict_loads(raw)["payload"] for (_, raw) in db.execute("SELECT sequence,record FROM events ORDER BY sequence")]
+        if kind == "boolean-event-sequence":
+            events[0]["sequence"] = True
+        elif kind == "boolean-intent-revision":
+            events[1]["event"]["beforeRevision"] = False
+        elif kind == "boolean-effect-revision":
+            events[2]["event"]["revision"] = True
+        elif kind == "unsupported-event":
+            events[2]["event"]["kind"] = "claimed-provider-effect"
+        elif kind == "missing-initialize":
+            events = events[1:]
+            for number, event in enumerate(events, 1):
+                event["sequence"] = number
+        elif kind == "boolean-state-revision":
+            state["revision"] = True
+        elif kind == "boolean-state-count":
+            state["eventCount"] = True
+        elif kind == "integer-state-revocation":
+            state["revoked"] = 0
+        elif kind == "wrong-terminal-phase":
+            state.update(phase="incomplete", revision=0, contentDigest=None, effectTime=None)
+            db.execute("DELETE FROM tickets")
+        elif kind == "sql-event-real":
+            db.execute("ALTER TABLE events RENAME TO old_events")
+            db.execute("CREATE TABLE events(sequence REAL PRIMARY KEY, record BLOB NOT NULL)")
+            db.execute("INSERT INTO events SELECT * FROM old_events")
+            db.execute("DROP TABLE old_events")
+        elif kind == "sql-row-real":
+            db.execute("ALTER TABLE tickets RENAME TO old_tickets")
+            db.execute("CREATE TABLE tickets(tenant TEXT, ticket TEXT, content BLOB NOT NULL, revision REAL NOT NULL, effect TEXT NOT NULL, PRIMARY KEY(tenant,ticket))")
+            db.execute("INSERT INTO tickets SELECT * FROM old_tickets")
+            db.execute("DROP TABLE old_tickets")
+        else:
+            raise AssertionError("unknown signed control")
+        db.execute("DELETE FROM events")
+        previous = "0" * 64
+        for number, event in enumerate(events, 1):
+            body = {"sequence": event["sequence"], "previous": previous, "event": event["event"]}
+            body["hash"] = digest(DOMAIN + "-event", body)
+            signed = {"payload": body, "keyid": key.public_hex, "signature": key.sign(DOMAIN, body)}
+            db.execute("INSERT INTO events VALUES(?,?)", (number, canonical(signed)))
+            previous = body["hash"]
+        state["eventHead"] = previous
+        if kind != "boolean-state-count":
+            state["eventCount"] = len(events)
+        signed = {"payload": state, "keyid": key.public_hex, "signature": key.sign(DOMAIN, state)}
+        db.execute("UPDATE state SET record=? WHERE singleton=1", (canonical(signed),))
+        db.commit()
+
+
+@pytest.mark.parametrize("kind,refusal", [
+    ("boolean-event-sequence", "event schema"), ("boolean-intent-revision", "intent history"),
+    ("boolean-effect-revision", "effect history"), ("unsupported-event", "unsupported event"),
+    ("missing-initialize", "lacks initial configuration"), ("boolean-state-revision", "counters or revocation"),
+    ("boolean-state-count", "counters or revocation"), ("integer-state-revocation", "counters or revocation"),
+    ("wrong-terminal-phase", "native effect history"), ("sql-event-real", "event schema"),
+    ("sql-row-real", "row types"),
+])
+def test_signed_native_faults_refuse_in_store_and_public_capture(case: dict[str, Any], kind: str, refusal: str) -> None:
+    """Authentic signatures and closed canonical bytes cannot erase native phase or type faults."""
+    case["store"].dispatch(case["candidate"])
+    rewrite_signed_ticket_capture(case, kind)
+    populations = captured_populations(case)
+    before = case["store"].path.read_bytes()
+    with pytest.raises(VerificationError, match=refusal):
+        verify_ticket_capture(*populations, case["request"], case["policy"], case["key"].public_hex)
+    with pytest.raises(VerificationError, match=refusal):
+        reopen(case).readback()
+    assert case["store"].path.read_bytes() == before
+
+
+@pytest.mark.parametrize("kind", ["request", "authority", "scope", "coverage"])
+def test_signed_retained_profile_refuses_in_store_and_public_capture(case: dict[str, Any], kind: str) -> None:
+    """A genuinely signed retained head must name this exact bounded ticket profile."""
+    receipt = case["store"].dispatch(case["candidate"])
+    field = {"request": "request", "authority": "authorityKey", "scope": "witnessScope", "coverage": "coverage"}[kind]
+    replacement = {"request": {**asdict(case["request"]), "request_id": "other"},
+                   "authority": "00" * 32, "scope": "INDEPENDENT", "coverage": "provider-completion"}[kind]
+    receipt["payload"][field] = replacement
+    receipt["signature"] = case["key"].sign(DOMAIN, receipt["payload"])
+    before = case["store"].path.read_bytes()
+    with pytest.raises(VerificationError, match="retained ticket head profile"):
+        verify_ticket_capture(*captured_populations(case), case["request"], case["policy"],
+                              case["key"].public_hex, retained_head=receipt)
+    with pytest.raises(VerificationError, match="retained ticket head profile"):
+        reopen(case, retained_head=receipt).readback()
+    assert case["store"].path.read_bytes() == before
+
+
+@pytest.mark.parametrize("kind,refusal", [("tool", "action or target"), ("target", "URL-safe"),
+    ("tenant", "URL-safe"), ("same-role-key", "issuer keys must differ")])
+def test_public_and_store_selected_configuration_share_constraints(case: dict[str, Any], kind: str, refusal: str) -> None:
+    """Both entry points reject unsupported selected tool, literal identifiers and key roles."""
+    request, policy = case["request"], case["policy"]
+    if kind == "tool":
+        request = replace(request, tool_id="file-write")
+    elif kind == "target":
+        request = replace(request, target_path="/work/tickets/group/ticket")
+    elif kind == "tenant":
+        request = replace(request, tenant_id="tenant/other")
+    else:
+        policy = GrantPolicy(case["key"].public_hex)
+    with pytest.raises(VerificationError, match=refusal):
+        verify_ticket_capture(*captured_populations(case), request, policy, case["key"].public_hex)
+    with pytest.raises(VerificationError, match=refusal):
+        TicketStore(case["store"].path, request, policy, case["key"])
+
+
+@pytest.mark.parametrize("kind", ["content-digest-and-row", "consistent-effect-id"])
+def test_signed_state_history_and_rows_require_selected_relations(case: dict[str, Any], kind: str) -> None:
+    """Matching host signatures cannot replace the selected payload or deterministic effect."""
+    case["store"].dispatch(case["candidate"])
+    key = case["key"]
+    with closing(sqlite3.connect(case["store"].path)) as db:
+        state = strict_loads(db.execute("SELECT record FROM state WHERE singleton=1").fetchone()[0])["payload"]
+        if kind == "content-digest-and-row":
+            content = b"different native content"
+            state["contentDigest"] = hashlib.sha256(content).hexdigest()
+            db.execute("UPDATE tickets SET content=?", (content,))
+        else:
+            state["effectId"] = "f" * 64
+            events = [strict_loads(raw)["payload"] for (raw,) in db.execute("SELECT record FROM events ORDER BY sequence")]
+            db.execute("DELETE FROM events")
+            previous = "0" * 64
+            for event in events:
+                if "effectId" in event["event"]:
+                    event["event"]["effectId"] = state["effectId"]
+                body = {"sequence": event["sequence"], "previous": previous, "event": event["event"]}
+                body["hash"] = digest(DOMAIN + "-event", body)
+                db.execute("INSERT INTO events VALUES(?,?)", (body["sequence"], canonical({"payload": body,
+                    "keyid": key.public_hex, "signature": key.sign(DOMAIN, body)})))
+                previous = body["hash"]
+            state["eventHead"] = previous
+            db.execute("UPDATE tickets SET effect=?", (state["effectId"],))
+        db.execute("UPDATE state SET record=? WHERE singleton=1", (canonical({"payload": state,
+            "keyid": key.public_hex, "signature": key.sign(DOMAIN, state)}),))
+        db.commit()
+    before = case["store"].path.read_bytes()
+    refusal = "native ticket bytes" if kind == "content-digest-and-row" else "deterministic effect identity"
+    with pytest.raises(VerificationError, match=refusal):
+        verify_ticket_capture(*captured_populations(case), case["request"], case["policy"], key.public_hex)
+    with pytest.raises(VerificationError, match=refusal):
+        reopen(case).readback()
+    assert case["store"].path.read_bytes() == before
+
+
+@pytest.mark.parametrize("kind", ["revocation", "phase", "content", "effect", "grant", "intent-time", "effect-time"])
+def test_signed_retained_state_requires_replayed_prefix(case: dict[str, Any], kind: str) -> None:
+    """An unchanged retained event hash cannot authenticate contradictory state fields."""
+    receipt = case["store"].dispatch(case["candidate"])
+    payload = receipt["payload"]
+    if kind == "phase":
+        payload.update(phase="incomplete", revision=0, contentDigest=None, effectTime=None)
+    elif kind == "revocation":
+        payload["revoked"] = True
+    elif kind in {"intent-time", "effect-time"}:
+        field = "intentTime" if kind == "intent-time" else "effectTime"
+        offset = -1 if kind == "intent-time" else 1
+        payload[field] = (case["now"] + timedelta(seconds=offset)).isoformat(timespec="seconds").replace("+00:00", "Z")
+    else:
+        payload[{"content": "contentDigest", "effect": "effectId", "grant": "grantDigest"}[kind]] = "f" * 64
+    receipt["signature"] = case["key"].sign(DOMAIN, payload)
+    before = case["store"].path.read_bytes()
+    with pytest.raises(VerificationError, match="retained state differs from native history"):
+        verify_ticket_capture(*captured_populations(case), case["request"], case["policy"],
+            case["key"].public_hex, retained_head=receipt)
+    with pytest.raises(VerificationError, match="retained state differs from native history"):
+        reopen(case, retained_head=receipt).readback()
+    assert case["store"].path.read_bytes() == before
+
+
+@pytest.mark.parametrize("prefix", ["ready", "pending"])
+def test_real_retained_prefix_preserves_later_completion(case: dict[str, Any], prefix: str) -> None:
+    """Genuine ready and pending heads remain valid prefixes of an actual completed operation."""
+    heads = {"ready": case["store"].readback()["receipt"]}
+    def retain(point: str) -> None:
+        if point == "after-intent":
+            heads["pending"] = case["store"].readback()["receipt"]
+    case["store"].crash_hook = retain
+    case["store"].dispatch(case["candidate"])
+    before = case["store"].path.read_bytes()
+    result = verify_ticket_capture(*captured_populations(case), case["request"], case["policy"],
+        case["key"].public_hex, retained_head=heads[prefix])
+    assert result.logical_admissions == result.local_effects == 1
+    assert reopen(case, retained_head=heads[prefix]).readback()["revision"] == 1
+    assert case["store"].path.read_bytes() == before
+
+
+def test_default_second_capture_keeps_exact_configuration_and_signed_bytes(case: dict[str, Any]) -> None:
+    """The seconds default adds no field and retains its original signed lexical form."""
+    receipt = case["store"].dispatch(case["candidate"])
+    configuration = {"request": asdict(case["request"]), "policy": asdict(case["policy"]), "serviceKey": case["key"].public_hex}
+    assert case["store"].configuration == configuration
+    assert receipt["payload"]["configuration"] == digest(DOMAIN + "-configuration", configuration)
+    expected_time = case["now"].isoformat(timespec="seconds").replace("+00:00", "Z")
+    assert receipt["payload"]["intentTime"] == receipt["payload"]["effectTime"] == expected_time
+    assert len(expected_time) == 20
+    expected_receipt = {"payload": receipt["payload"], "keyid": case["key"].public_hex,
+        "signature": case["key"].sign(DOMAIN, receipt["payload"])}
+    assert canonical(receipt) == canonical(expected_receipt)
+    assert consume(case, receipt, case["store"].readback())["status"] == "verified"
+
+
+def test_selected_milliseconds_preserve_both_transaction_observations(case: dict[str, Any], tmp_path: Path) -> None:
+    """One declared configuration preserves exact observations through store and public APIs."""
+    observations = [case["now"] + timedelta(milliseconds=123), case["now"] + timedelta(milliseconds=456)]
+    clock = iter(observations)
+    store = TicketStore(tmp_path / "milliseconds.sqlite", case["request"], case["policy"], case["key"],
+        clock=lambda: next(clock), time_precision="milliseconds")
+    store.initialize()
+    selected = {**case, "store": store}
+    receipt = store.dispatch(case["candidate"])
+    assert store.configuration["timePrecision"] == "milliseconds"
+    assert receipt["payload"]["intentTime"].endswith(".123Z") and receipt["payload"]["effectTime"].endswith(".456Z")
+    capture = verify_ticket_capture(*captured_populations(selected), case["request"], case["policy"],
+        case["key"].public_hex, retained_head=receipt, time_precision="milliseconds")
+    assert capture.local_effects == capture.logical_admissions == 1
+    readback = store.readback()
+    assert verify_ticket_result(receipt, readback, case["request"], case["policy"], case["key"].public_hex,
+        case["grant"], now=observations[-1], time_precision="milliseconds")["status"] == "verified"
+    with pytest.raises(VerificationError, match="ticket reference time is malformed"):
+        verify_ticket_capture(*captured_populations(selected), case["request"], case["policy"], case["key"].public_hex)
+    assert case["grant"]["issuedAt"].endswith("Z") and "." not in case["grant"]["issuedAt"]
+
+
+@pytest.mark.parametrize("precision", ["microseconds", "Milliseconds", True, None, [], {}])
+def test_ticket_precision_selection_is_closed(case: dict[str, Any], tmp_path: Path, precision: Any) -> None:
+    """Unsupported host selections refuse before creating storage or admitting an intent."""
+    path = tmp_path / "unsupported.sqlite"
+    with pytest.raises(VerificationError, match="selected time precision is unsupported"):
+        TicketStore(path, case["request"], case["policy"], case["key"], time_precision=precision)
+    assert not path.exists()
+
+
+@pytest.mark.parametrize("stage", ["intent", "effect"])
+def test_millisecond_ticket_refuses_finer_injected_clock(case: dict[str, Any], tmp_path: Path, stage: str) -> None:
+    """Finer host observations are refused without rounding or committing an effect."""
+    precise = case["now"] + timedelta(microseconds=123001)
+    reads = iter([precise, precise] if stage == "intent" else [case["now"], precise])
+    store = TicketStore(tmp_path / "fine.sqlite", case["request"], case["policy"], case["key"],
+        clock=lambda: next(reads), time_precision="milliseconds")
+    store.initialize()
+    with pytest.raises(VerificationError, match="UTC millisecond precision"):
+        store.dispatch(case["candidate"])
+    state = store.readback()["receipt"]["payload"]
+    assert state["phase"] == ("ready" if stage == "intent" else "pending") and state["revision"] == 0
+    assert not captured_populations({**case, "store": store})[2]
+
+
+def test_selected_precision_is_a_configuration_relation_even_without_timestamps(case: dict[str, Any], tmp_path: Path) -> None:
+    """A ready state has no time lexemes, so refusal must reach the selected configuration join."""
+    store = TicketStore(tmp_path / "ready-ms.sqlite", case["request"], case["policy"], case["key"], time_precision="milliseconds")
+    store.initialize()
+    populations = captured_populations({**case, "store": store})
+    assert verify_ticket_capture(*populations, case["request"], case["policy"], case["key"].public_hex,
+        time_precision="milliseconds").logical_admissions == 0
+    with pytest.raises(VerificationError, match="configuration differs on restart"):
+        verify_ticket_capture(*populations, case["request"], case["policy"], case["key"].public_hex)
+
+
+@pytest.mark.parametrize("suffix", ["Z", ".1Z", ".1230Z", ".123+00:00", ".123001Z"])
+def test_signed_millisecond_state_requires_exact_selected_lexical_form(case: dict[str, Any], tmp_path: Path, suffix: str) -> None:
+    """A valid state signature cannot admit timestamp aliases or finer observations."""
+    store = TicketStore(tmp_path / "lexical-ms.sqlite", case["request"], case["policy"], case["key"],
+        clock=lambda: case["now"] + timedelta(milliseconds=123), time_precision="milliseconds")
+    store.initialize()
+    store.dispatch(case["candidate"])
+    populations = captured_populations({**case, "store": store})
+    state = strict_loads(populations[0])["payload"]
+    state["intentTime"] = case["now"].isoformat(timespec="seconds").removesuffix("+00:00") + suffix
+    encoded = canonical({"payload": state, "keyid": case["key"].public_hex, "signature": case["key"].sign(DOMAIN, state)})
+    with pytest.raises(VerificationError, match="ticket reference time is malformed|ticket reference time is noncanonical|UTC millisecond precision"):
+        verify_ticket_capture(encoded, populations[1], populations[2], case["request"], case["policy"],
+            case["key"].public_hex, time_precision="milliseconds")
