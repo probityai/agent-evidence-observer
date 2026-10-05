@@ -12,9 +12,9 @@ import base64
 import hashlib
 import sqlite3
 import threading
-from collections.abc import Callable, Iterator, Mapping
+from collections.abc import Callable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -97,6 +97,162 @@ def _checked(record: Any, public_key: str) -> dict[str, Any]:
     return record["payload"]
 
 
+def _ticket_configuration(request: ActionRequest, policy: GrantPolicy, service_key: str,
+                          decision_digest: str | None) -> dict[str, Any]:
+    """Validate one supported host selection before committing its configuration."""
+    if request.tool_id != "ticket-update" or not isinstance(request.target_path, str) or not request.target_path.startswith("/work/tickets/"):
+        raise VerificationError("ticket action or target is unsupported")
+    ticket_id = request.target_path.removeprefix("/work/tickets/")
+    safe = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.-"
+    if not isinstance(request.tenant_id, str) or not ticket_id or any(c not in safe for c in ticket_id + request.tenant_id):
+        raise VerificationError("ticket and tenant must use literal URL-safe identifiers")
+    if not _hex(service_key) or not _hex(policy.issuer_key):
+        raise VerificationError("ticket selected role keys differ")
+    if service_key == policy.issuer_key:
+        raise VerificationError("service and issuer keys must differ")
+    configuration = {"request": asdict(request), "policy": asdict(policy), "serviceKey": service_key}
+    if decision_digest is not None:
+        if not _hex(decision_digest):
+            raise VerificationError("ticket decision commitment differs")
+        configuration["decisionDigest"] = decision_digest
+    return configuration
+
+
+@dataclass(frozen=True)
+class VerifiedTicketCapture:
+    """Authenticated native state and measured populations under selected public policy.
+
+    This result establishes the supplied signed history and local row relation.
+    It does not establish current grant validity, custody or provider execution.
+    """
+    state: dict[str, Any]
+    content: bytes | None
+    logical_admissions: int
+    local_effects: int
+
+
+@dataclass(frozen=True)
+class _TicketHistoryProgress:
+    """Native phase and authority after one verified history prefix."""
+    phase: str = "ready"
+    revoked: bool = False
+    admissions: int = 0
+
+
+def _ticket_history_transition(number: int, carried: Any, state: dict[str, Any],
+                               request: ActionRequest, policy: GrantPolicy,
+                               progress: _TicketHistoryProgress) -> _TicketHistoryProgress:
+    """Apply the closed native event vocabulary to one authenticated prefix."""
+    if not isinstance(carried, dict) or not isinstance(carried.get("kind"), str):
+        raise VerificationError("ticket event body differs")
+    kind = carried["kind"]
+    if kind == "initialize":
+        if number != 1 or carried != {"kind": "initialize", "configuration": state["configuration"]}:
+            raise VerificationError("ticket initialization history differs")
+        return progress
+    if number == 1:
+        raise VerificationError("ticket history lacks initial configuration")
+    if kind == "intent":
+        expected = {"kind": "intent", "request": asdict(request), "grantDigest": state["grantDigest"],
+                    "effectId": state["effectId"], "beforeRevision": 0, "intentTime": state["intentTime"]}
+        if progress.phase != "ready" or progress.revoked or carried != expected or type(carried.get("beforeRevision")) is not int:
+            raise VerificationError("ticket intent history differs")
+        return _TicketHistoryProgress("pending", progress.revoked, progress.admissions + 1)
+    if kind == "effect":
+        expected = {"kind": "effect", "effectId": state["effectId"], "revision": 1,
+                    "contentDigest": request.content_sha256, "effectTime": state["effectTime"], "grantDigest": state["grantDigest"]}
+        if progress.phase != "pending" or progress.revoked or progress.admissions != 1 or carried != expected or type(carried.get("revision")) is not int:
+            raise VerificationError("ticket native effect history differs")
+        return _TicketHistoryProgress("completed", progress.revoked, progress.admissions)
+    if kind == "revoke":
+        if progress.revoked or carried != {"kind": "revoke", "authorityKey": policy.issuer_key}:
+            raise VerificationError("ticket revocation history differs")
+        return _TicketHistoryProgress(progress.phase, True, progress.admissions)
+    if kind == "incomplete":
+        expected = {"kind": "incomplete", "effectId": state["effectId"], "requestId": request.request_id,
+                    "outcome": "not-established-after-interruption"}
+        if progress.phase != "pending" or carried != expected:
+            raise VerificationError("ticket interruption history differs")
+        return _TicketHistoryProgress("incomplete", progress.revoked, progress.admissions)
+    raise VerificationError("ticket history has unsupported event")
+
+
+def _verify_ticket_history(events: Sequence[tuple[int, bytes]], state: dict[str, Any],
+                           request: ActionRequest, policy: GrantPolicy, service_key: str,
+                           retained: dict[str, Any] | None) -> _TicketHistoryProgress:
+    """Verify signed ordering, native transitions and the externally retained prefix."""
+    head, progress = "0" * 64, _TicketHistoryProgress()
+    for number, (sequence, raw) in enumerate(events, 1):
+        event = _checked(strict_loads(raw), service_key)
+        if set(event) != {"sequence", "previous", "event", "hash"} or type(event["sequence"]) is not int or type(sequence) is not int:
+            raise VerificationError("ticket event schema differs")
+        body = {name: event[name] for name in ("sequence", "previous", "event")}
+        if sequence != number or event["sequence"] != number or event["previous"] != head or event["hash"] != digest(DOMAIN + "-event", body):
+            raise VerificationError("ticket history differs")
+        progress = _ticket_history_transition(number, event["event"], state, request, policy, progress)
+        head = event["hash"]
+        if retained is not None and number == retained["eventCount"] and head != retained["eventHead"]:
+            raise VerificationError("ticket history changed retained prefix")
+    if len(events) != state["eventCount"] or head != state["eventHead"]:
+        raise VerificationError("ticket history is incomplete")
+    if progress.phase != state["phase"] or progress.revoked != state["revoked"]:
+        raise VerificationError("ticket terminal state differs from native history")
+    if retained is not None and retained["eventCount"] > len(events):
+        raise VerificationError("ticket history predates retained head")
+    return progress
+
+
+def _verify_ticket_rows(tickets: Sequence[tuple[str, str, bytes, int, str]],
+                        state: dict[str, Any], request: ActionRequest) -> bytes | None:
+    """Join the actual native row population, storage types and exact content bytes."""
+    if state["revision"] == 0:
+        if tickets:
+            raise VerificationError("unrecorded ticket bypass detected")
+        return None
+    if len(tickets) != 1:
+        raise VerificationError("native ticket population differs")
+    tenant, ticket, content, revision, effect = tickets[0]
+    if not isinstance(content, bytes) or type(revision) is not int:
+        raise VerificationError("native ticket row types differ")
+    if (tenant, ticket, revision, effect) != (request.tenant_id, request.target_path.removeprefix("/work/tickets/"), state["revision"], state["effectId"]):
+        raise VerificationError("native ticket relation differs")
+    if hashlib.sha256(content).hexdigest() != state["contentDigest"]:
+        raise VerificationError("native ticket bytes differ")
+    return content
+
+
+def verify_ticket_capture(
+    state_record: bytes, events: Sequence[tuple[int, bytes]],
+    tickets: Sequence[tuple[str, str, bytes, int, str]], request: ActionRequest,
+    policy: GrantPolicy, service_key: str, *, decision_digest: str | None = None,
+    retained_head: dict[str, Any] | None = None,
+) -> VerifiedTicketCapture:
+    """Verify selected native populations with public keys and no storage mutation.
+
+    The caller selects the request, issuer policy, service key, optional decision
+    digest and captured bytes. This authenticates native state, complete phase
+    history, retained prefix and actual row relation. Current grant authorization
+    and external native decision replay remain separate consumer checks.
+    """
+    configuration = _ticket_configuration(request, policy, service_key, decision_digest)
+    configuration_digest = digest(DOMAIN + "-configuration", configuration)
+    state = _checked(strict_loads(state_record), service_key)
+    _state_schema(state)
+    if state["configuration"] != configuration_digest:
+        raise VerificationError("ticket configuration differs on restart")
+    retained = None
+    if retained_head is not None:
+        retained = _checked(retained_head, service_key)
+        _state_schema(retained, receipt=True)
+        if retained["configuration"] != configuration_digest:
+            raise VerificationError("retained ticket head configuration differs")
+        if canonical(retained["request"]) != canonical(asdict(request)) or retained["authorityKey"] != policy.issuer_key or retained["witnessScope"] != "PEER" or retained["coverage"] != "one-native-ticket-row-and-service-events":
+            raise VerificationError("retained ticket head profile differs")
+    history = _verify_ticket_history(events, state, request, policy, service_key, retained)
+    content = _verify_ticket_rows(tickets, state, request)
+    return VerifiedTicketCapture(state, content, history.admissions, len(tickets))
+
+
 class TicketStore:
     """Own one exact ticket update, native persistence and monotonic history.
 
@@ -120,19 +276,8 @@ class TicketStore:
         self.path, self.request, self.policy, self.key = path, request, policy, key
         self.clock, self.crash_hook = clock, crash_hook
         self.retained_head = retained_head
-        if request.tool_id != "ticket-update" or not request.target_path.startswith("/work/tickets/"):
-            raise VerificationError("ticket action or target is unsupported")
+        self.configuration = _ticket_configuration(request, policy, key.public_hex, decision_digest)
         self.ticket_id = request.target_path.removeprefix("/work/tickets/")
-        safe = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_.-"
-        if not self.ticket_id or any(c not in safe for c in self.ticket_id + request.tenant_id):
-            raise VerificationError("ticket and tenant must use literal URL-safe identifiers")
-        if key.public_hex == policy.issuer_key:
-            raise VerificationError("service and issuer keys must differ")
-        self.configuration = {"request": asdict(request), "policy": asdict(policy), "serviceKey": key.public_hex}
-        if decision_digest is not None:
-            if not _hex(decision_digest):
-                raise VerificationError("ticket decision commitment differs")
-            self.configuration["decisionDigest"] = decision_digest
         self.configuration_digest = digest(DOMAIN + "-configuration", self.configuration)
 
     @contextmanager
@@ -184,85 +329,16 @@ class TicketStore:
         db.execute("UPDATE state SET record=? WHERE singleton=1", (canonical(_signed(state, self.key)),))
 
     def _load(self, db: sqlite3.Connection) -> tuple[dict[str, Any], bytes | None]:
-        """Recheck configuration, history prefix and actual native ticket row."""
+        """Query native populations and apply the shared public capture validator."""
         row = db.execute("SELECT record FROM state WHERE singleton=1").fetchone()
         if row is None:
             raise VerificationError("ticket state is missing")
-        state = _checked(strict_loads(row[0]), self.key.public_hex)
-        _state_schema(state)
-        if state["format"] != DOMAIN or state["configuration"] != self.configuration_digest:
-            raise VerificationError("ticket configuration differs on restart")
-        rows = db.execute("SELECT sequence,record FROM events ORDER BY sequence").fetchall()
-        head = "0" * 64
-        phase, revoked = "ready", False
-        intent = None
-        retained = None
-        if self.retained_head is not None:
-            retained = _checked(self.retained_head, self.key.public_hex)
-            _state_schema(retained, receipt=True)
-            if retained["configuration"] != self.configuration_digest:
-                raise VerificationError("retained ticket head configuration differs")
-        for number, (sequence, raw) in enumerate(rows, 1):
-            event = _checked(strict_loads(raw), self.key.public_hex)
-            if set(event) != {"sequence", "previous", "event", "hash"} or type(event["sequence"]) is not int:
-                raise VerificationError("ticket event schema differs")
-            body = {name: event[name] for name in ("sequence", "previous", "event")}
-            if sequence != number or event["sequence"] != number or event["previous"] != head or event["hash"] != digest(DOMAIN + "-event", body):
-                raise VerificationError("ticket history differs")
-            carried = event["event"]
-            if not isinstance(carried, dict) or not isinstance(carried.get("kind"), str):
-                raise VerificationError("ticket event body differs")
-            kind = carried["kind"]
-            if kind == "initialize":
-                if number != 1 or carried != {"kind": "initialize", "configuration": self.configuration_digest}:
-                    raise VerificationError("ticket initialization history differs")
-            elif number == 1:
-                raise VerificationError("ticket history lacks initial configuration")
-            elif kind == "intent":
-                expected = {"kind": "intent", "request": asdict(self.request), "grantDigest": state["grantDigest"], "effectId": state["effectId"], "beforeRevision": 0, "intentTime": state["intentTime"]}
-                if phase != "ready" or revoked or carried != expected or type(carried.get("beforeRevision")) is not int:
-                    raise VerificationError("ticket intent history differs")
-                phase, intent = "pending", carried
-            elif kind == "effect":
-                expected = {"kind": "effect", "effectId": state["effectId"], "revision": 1, "contentDigest": self.request.content_sha256, "effectTime": state["effectTime"], "grantDigest": state["grantDigest"]}
-                if phase != "pending" or revoked or intent is None or carried != expected or type(carried.get("revision")) is not int:
-                    raise VerificationError("ticket native effect history differs")
-                phase = "completed"
-            elif kind == "revoke":
-                if revoked or carried != {"kind": "revoke", "authorityKey": self.policy.issuer_key}:
-                    raise VerificationError("ticket revocation history differs")
-                revoked = True
-            elif kind == "incomplete":
-                expected = {"kind": "incomplete", "effectId": state["effectId"], "requestId": self.request.request_id, "outcome": "not-established-after-interruption"}
-                if phase != "pending" or carried != expected:
-                    raise VerificationError("ticket interruption history differs")
-                phase = "incomplete"
-            else:
-                raise VerificationError("ticket history has unsupported event")
-            head = event["hash"]
-            if retained is not None and number == retained["eventCount"] and head != retained["eventHead"]:
-                raise VerificationError("ticket history changed retained prefix")
-        if len(rows) != state["eventCount"] or head != state["eventHead"]:
-            raise VerificationError("ticket history is incomplete")
-        if phase != state["phase"] or revoked != state["revoked"]:
-            raise VerificationError("ticket terminal state differs from native history")
-        if retained is not None and retained["eventCount"] > len(rows):
-            raise VerificationError("ticket history predates retained head")
-        tickets = db.execute("SELECT tenant,ticket,content,revision,effect FROM tickets").fetchall()
-        if state["revision"] == 0:
-            if tickets:
-                raise VerificationError("unrecorded ticket bypass detected")
-            return state, None
-        if len(tickets) != 1:
-            raise VerificationError("native ticket population differs")
-        tenant, ticket, content, revision, effect = tickets[0]
-        if not isinstance(content, bytes) or type(revision) is not int:
-            raise VerificationError("native ticket row types differ")
-        if (tenant, ticket, revision, effect) != (self.request.tenant_id, self.ticket_id, state["revision"], state["effectId"]):
-            raise VerificationError("native ticket relation differs")
-        if hashlib.sha256(content).hexdigest() != state["contentDigest"]:
-            raise VerificationError("native ticket bytes differ")
-        return state, content
+        capture = verify_ticket_capture(row[0],
+            db.execute("SELECT sequence,record FROM events ORDER BY sequence").fetchall(),
+            db.execute("SELECT tenant,ticket,content,revision,effect FROM tickets").fetchall(),
+            self.request, self.policy, self.key.public_hex,
+            decision_digest=self.configuration.get("decisionDigest"), retained_head=self.retained_head)
+        return capture.state, capture.content
 
     def dispatch(self, candidate: Any) -> dict[str, Any]:
         """Authorize, persist an intent, then atomically mutate ticket and receipt."""
@@ -495,11 +571,7 @@ def verify_ticket_result(
         raise VerificationError("ticket native read-back fields or counter differ")
     carried = _checked(dict(receipt), service_key)
     current = _checked(readback["receipt"], service_key)
-    configuration_fields = {"request": asdict(request), "policy": asdict(policy), "serviceKey": service_key}
-    if decision_digest is not None:
-        if not _hex(decision_digest):
-            raise VerificationError("ticket consumer decision commitment differs")
-        configuration_fields["decisionDigest"] = decision_digest
+    configuration_fields = _ticket_configuration(request, policy, service_key, decision_digest)
     configuration = digest(DOMAIN + "-configuration", configuration_fields)
     for record in (carried, current):
         _state_schema(record, receipt=True)

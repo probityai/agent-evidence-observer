@@ -9,6 +9,7 @@ import os
 import socket
 import sqlite3
 import threading
+from contextlib import closing
 from dataclasses import asdict, replace
 from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -18,8 +19,8 @@ from typing import Any
 import pytest
 
 from probity_observer.authorization import ActionRequest, GrantPolicy, issue_grant
-from probity_observer.crypto import SigningKey, VerificationError, canonical
-from probity_observer.ticket_service import DOMAIN, MAX_BODY, TicketHTTPServer, TicketStore, http_json, running_server, verify_ticket_result
+from probity_observer.crypto import SigningKey, VerificationError, canonical, digest, strict_loads
+from probity_observer.ticket_service import DOMAIN, MAX_BODY, TicketHTTPServer, TicketStore, http_json, running_server, verify_ticket_capture, verify_ticket_result
 
 
 @pytest.fixture
@@ -536,3 +537,154 @@ def test_concurrent_http_retries_do_not_duplicate_effect(case: dict[str, Any]) -
         with sqlite3.connect(case["store"].path) as db:
             assert db.execute("SELECT COUNT(*) FROM tickets").fetchone()[0] == 1
             assert db.execute("SELECT COUNT(*) FROM events").fetchone()[0] == 3
+
+
+
+def captured_populations(case: dict[str, Any]) -> tuple:
+    """Query the actual selected native populations and close this owned reader."""
+    with closing(sqlite3.connect(case["store"].path.resolve().as_uri() + "?mode=ro", uri=True)) as db:
+        return (db.execute("SELECT record FROM state WHERE singleton=1").fetchone()[0],
+                db.execute("SELECT sequence,record FROM events ORDER BY sequence").fetchall(),
+                db.execute("SELECT tenant,ticket,content,revision,effect FROM tickets").fetchall())
+
+
+@pytest.mark.parametrize("phase", ["ready", "pending", "incomplete", "completed", "revoked-ready", "revoked-completed"])
+def test_public_native_capture_preserves_real_store_phases(case: dict[str, Any], phase: str) -> None:
+    """A public-key-only validator and the store share actual phase and row semantics."""
+    store = case["store"]
+    if phase in {"pending", "incomplete"}:
+        def interrupted(point: str) -> None:
+            if point == "after-intent":
+                raise RuntimeError("controlled interruption")
+        store.crash_hook = interrupted
+        with pytest.raises(RuntimeError, match="controlled interruption"):
+            store.dispatch(case["candidate"])
+        if phase == "incomplete":
+            store.recover()
+    elif phase in {"completed", "revoked-completed"}:
+        store.dispatch(case["candidate"])
+    if phase.startswith("revoked-"):
+        store.revoke()
+    native = store.readback()
+    before = store.path.read_bytes()
+    verified = verify_ticket_capture(*captured_populations(case), case["request"], case["policy"],
+                                     case["key"].public_hex, retained_head=native["receipt"])
+    assert verified.state["phase"] == native["receipt"]["payload"]["phase"]
+    assert verified.logical_admissions == int(phase not in {"ready", "revoked-ready"})
+    assert verified.local_effects == int(phase in {"completed", "revoked-completed"})
+    assert type(verified.logical_admissions) is type(verified.local_effects) is int
+    assert verified.content == (bytes.fromhex(native["contentHex"]) if native["contentHex"] is not None else None)
+    assert store.path.read_bytes() == before
+
+
+def rewrite_signed_ticket_capture(case: dict[str, Any], kind: str) -> None:
+    """Retain real signing authority while making the intended native relation invalid."""
+    key = case["key"]
+    with closing(sqlite3.connect(case["store"].path)) as db:
+        state = strict_loads(db.execute("SELECT record FROM state WHERE singleton=1").fetchone()[0])["payload"]
+        events = [strict_loads(raw)["payload"] for (_, raw) in db.execute("SELECT sequence,record FROM events ORDER BY sequence")]
+        if kind == "boolean-event-sequence":
+            events[0]["sequence"] = True
+        elif kind == "boolean-intent-revision":
+            events[1]["event"]["beforeRevision"] = False
+        elif kind == "boolean-effect-revision":
+            events[2]["event"]["revision"] = True
+        elif kind == "unsupported-event":
+            events[2]["event"]["kind"] = "claimed-provider-effect"
+        elif kind == "missing-initialize":
+            events = events[1:]
+            for number, event in enumerate(events, 1):
+                event["sequence"] = number
+        elif kind == "boolean-state-revision":
+            state["revision"] = True
+        elif kind == "boolean-state-count":
+            state["eventCount"] = True
+        elif kind == "integer-state-revocation":
+            state["revoked"] = 0
+        elif kind == "wrong-terminal-phase":
+            state.update(phase="incomplete", revision=0, contentDigest=None, effectTime=None)
+            db.execute("DELETE FROM tickets")
+        elif kind == "sql-event-real":
+            db.execute("ALTER TABLE events RENAME TO old_events")
+            db.execute("CREATE TABLE events(sequence REAL PRIMARY KEY, record BLOB NOT NULL)")
+            db.execute("INSERT INTO events SELECT * FROM old_events")
+            db.execute("DROP TABLE old_events")
+        elif kind == "sql-row-real":
+            db.execute("ALTER TABLE tickets RENAME TO old_tickets")
+            db.execute("CREATE TABLE tickets(tenant TEXT, ticket TEXT, content BLOB NOT NULL, revision REAL NOT NULL, effect TEXT NOT NULL, PRIMARY KEY(tenant,ticket))")
+            db.execute("INSERT INTO tickets SELECT * FROM old_tickets")
+            db.execute("DROP TABLE old_tickets")
+        else:
+            raise AssertionError("unknown signed control")
+        db.execute("DELETE FROM events")
+        previous = "0" * 64
+        for number, event in enumerate(events, 1):
+            body = {"sequence": event["sequence"], "previous": previous, "event": event["event"]}
+            body["hash"] = digest(DOMAIN + "-event", body)
+            signed = {"payload": body, "keyid": key.public_hex, "signature": key.sign(DOMAIN, body)}
+            db.execute("INSERT INTO events VALUES(?,?)", (number, canonical(signed)))
+            previous = body["hash"]
+        state["eventHead"] = previous
+        if kind != "boolean-state-count":
+            state["eventCount"] = len(events)
+        signed = {"payload": state, "keyid": key.public_hex, "signature": key.sign(DOMAIN, state)}
+        db.execute("UPDATE state SET record=? WHERE singleton=1", (canonical(signed),))
+        db.commit()
+
+
+@pytest.mark.parametrize("kind,refusal", [
+    ("boolean-event-sequence", "event schema"), ("boolean-intent-revision", "intent history"),
+    ("boolean-effect-revision", "effect history"), ("unsupported-event", "unsupported event"),
+    ("missing-initialize", "lacks initial configuration"), ("boolean-state-revision", "counters or revocation"),
+    ("boolean-state-count", "counters or revocation"), ("integer-state-revocation", "counters or revocation"),
+    ("wrong-terminal-phase", "native effect history"), ("sql-event-real", "event schema"),
+    ("sql-row-real", "row types"),
+])
+def test_signed_native_faults_refuse_in_store_and_public_capture(case: dict[str, Any], kind: str, refusal: str) -> None:
+    """Authentic signatures and closed canonical bytes cannot erase native phase or type faults."""
+    case["store"].dispatch(case["candidate"])
+    rewrite_signed_ticket_capture(case, kind)
+    populations = captured_populations(case)
+    before = case["store"].path.read_bytes()
+    with pytest.raises(VerificationError, match=refusal):
+        verify_ticket_capture(*populations, case["request"], case["policy"], case["key"].public_hex)
+    with pytest.raises(VerificationError, match=refusal):
+        reopen(case).readback()
+    assert case["store"].path.read_bytes() == before
+
+
+@pytest.mark.parametrize("kind", ["request", "authority", "scope", "coverage"])
+def test_signed_retained_profile_refuses_in_store_and_public_capture(case: dict[str, Any], kind: str) -> None:
+    """A genuinely signed retained head must name this exact bounded ticket profile."""
+    receipt = case["store"].dispatch(case["candidate"])
+    field = {"request": "request", "authority": "authorityKey", "scope": "witnessScope", "coverage": "coverage"}[kind]
+    replacement = {"request": {**asdict(case["request"]), "request_id": "other"},
+                   "authority": "00" * 32, "scope": "INDEPENDENT", "coverage": "provider-completion"}[kind]
+    receipt["payload"][field] = replacement
+    receipt["signature"] = case["key"].sign(DOMAIN, receipt["payload"])
+    before = case["store"].path.read_bytes()
+    with pytest.raises(VerificationError, match="retained ticket head profile"):
+        verify_ticket_capture(*captured_populations(case), case["request"], case["policy"],
+                              case["key"].public_hex, retained_head=receipt)
+    with pytest.raises(VerificationError, match="retained ticket head profile"):
+        reopen(case, retained_head=receipt).readback()
+    assert case["store"].path.read_bytes() == before
+
+
+@pytest.mark.parametrize("kind,refusal", [("tool", "action or target"), ("target", "URL-safe"),
+    ("tenant", "URL-safe"), ("same-role-key", "issuer keys must differ")])
+def test_public_and_store_selected_configuration_share_constraints(case: dict[str, Any], kind: str, refusal: str) -> None:
+    """Both entry points reject unsupported selected tool, literal identifiers and key roles."""
+    request, policy = case["request"], case["policy"]
+    if kind == "tool":
+        request = replace(request, tool_id="file-write")
+    elif kind == "target":
+        request = replace(request, target_path="/work/tickets/group/ticket")
+    elif kind == "tenant":
+        request = replace(request, tenant_id="tenant/other")
+    else:
+        policy = GrantPolicy(case["key"].public_hex)
+    with pytest.raises(VerificationError, match=refusal):
+        verify_ticket_capture(*captured_populations(case), request, policy, case["key"].public_hex)
+    with pytest.raises(VerificationError, match=refusal):
+        TicketStore(case["store"].path, request, policy, case["key"])
