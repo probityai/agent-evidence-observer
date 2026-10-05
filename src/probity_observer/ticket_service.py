@@ -8,6 +8,7 @@ reference evidence, with no claim of remote identity or independent custody.
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import sqlite3
 import threading
@@ -267,6 +268,8 @@ class TicketStore:
         """Authorize, persist an intent, then atomically mutate ticket and receipt."""
         if not isinstance(candidate, dict) or set(candidate) != {"request", "grant", "contentHex"}:
             raise VerificationError("ticket dispatch fields differ")
+        if len(canonical(candidate)) > MAX_BODY:
+            raise VerificationError("ticket dispatch envelope exceeds finite limit")
         if candidate["request"] != asdict(self.request):
             raise VerificationError("ticket request differs")
         encoded = candidate["contentHex"]
@@ -276,7 +279,7 @@ class TicketStore:
         if hashlib.sha256(content).hexdigest() != self.request.content_sha256:
             raise VerificationError("ticket content digest differs")
         with self._transaction() as db:
-            state, _ = self._load(db)
+            state, stored_content = self._load(db)
             # Fresh grant validity and host revocation apply to cached retries too.
             intent_time = self.clock()
             authorized = verify_grant(candidate["grant"], self.request, self.policy, now=intent_time)
@@ -287,9 +290,11 @@ class TicketStore:
             if state["phase"] == "completed":
                 if intent_time < _time(state["effectTime"]):
                     raise VerificationError("ticket host clock predates cached effect")
+                self._require_readable_readback(state, None if stored_content is None else stored_content.hex())
                 return self._response(state)
             if state["phase"] != "ready":
                 raise VerificationError("ticket effect remains incomplete; automatic replay refused")
+            self._require_readable_completion(state, encoded, authorized.grant_digest, intent_time)
             state["phase"], state["grantDigest"] = "pending", authorized.grant_digest
             state["intentTime"] = _timestamp(intent_time)
             state["effectId"] = digest(DOMAIN + "-effect", {"configuration": self.configuration_digest, "requestId": self.request.request_id, "grantDigest": authorized.grant_digest})
@@ -318,9 +323,31 @@ class TicketStore:
         if self.crash_hook is not None:
             self.crash_hook(point)
 
+    def _receipt_payload(self, state: dict[str, Any]) -> dict[str, Any]:
+        """Use one receipt shape for size admission and completed signatures."""
+        return {**state, "request": asdict(self.request), "authorityKey": self.policy.issuer_key, "witnessScope": "PEER", "coverage": "one-native-ticket-row-and-service-events"}
+
     def _response(self, state: dict[str, Any]) -> dict[str, Any]:
         """Sign a bounded service receipt retaining each identity separately."""
-        return _signed({**state, "request": asdict(self.request), "authorityKey": self.policy.issuer_key, "witnessScope": "PEER", "coverage": "one-native-ticket-row-and-service-events"}, self.key)
+        return _signed(self._receipt_payload(state), self.key)
+
+    def _native_response(self, state: dict[str, Any], encoded: str | None, receipt: dict[str, Any]) -> dict[str, Any]:
+        """Build the exact GET envelope used by admission and actual read-back."""
+        return {"tenantId": self.request.tenant_id, "ticketId": self.ticket_id, "contentHex": encoded, "revision": state["revision"], "effectId": state["effectId"], "receipt": receipt}
+
+    def _require_readable_completion(self, state: dict[str, Any], encoded: str, grant_digest: str, intent_time: datetime) -> None:
+        """Refuse an unreadable native effect before its durable intent exists."""
+        completed = {**state, "phase": "completed", "revision": 1, "contentDigest": self.request.content_sha256, "effectId": "0" * 64, "grantDigest": grant_digest, "eventCount": state["eventCount"] + 2, "eventHead": "0" * 64, "intentTime": _timestamp(intent_time), "effectTime": _timestamp(intent_time)}
+        self._require_readable_readback(completed, encoded)
+
+    def _require_readable_readback(self, state: dict[str, Any], encoded: str | None) -> None:
+        """Apply one exact envelope bound to new and retained native state."""
+        # Every digest has 64 ASCII bytes; both timestamps have 20. Ed25519's
+        # 64-byte signature always has 88 base64 bytes. This unsigned shape
+        # measures the future envelope without signing an unobserved effect.
+        receipt = {"payload": self._receipt_payload(state), "keyid": self.key.public_hex, "signature": base64.b64encode(bytes(64)).decode("ascii")}
+        if len(canonical(self._native_response(state, encoded, receipt))) > MAX_BODY:
+            raise VerificationError("ticket native read-back exceeds finite limit")
 
     def readback(self) -> dict[str, Any]:
         """Query actual SQLite ticket bytes separately from dispatch responses."""
@@ -328,7 +355,9 @@ class TicketStore:
             raise VerificationError("ticket store is missing; initialization required")
         with self._transaction() as db:
             state, content = self._load(db)
-            return {"tenantId": self.request.tenant_id, "ticketId": self.ticket_id, "contentHex": None if content is None else content.hex(), "revision": state["revision"], "effectId": state["effectId"], "receipt": self._response(state)}
+            encoded = None if content is None else content.hex()
+            self._require_readable_readback(state, encoded)
+            return self._native_response(state, encoded, self._response(state))
 
     def revoke(self) -> dict[str, Any]:
         """Persist host-only revocation; there is no network admin endpoint."""
@@ -379,6 +408,8 @@ class _TicketHandler(BaseHTTPRequestHandler):
     def _reply(self, code: int, value: dict[str, Any]) -> None:
         """Return a finite canonical JSON response."""
         raw = canonical(value)
+        if len(raw) > MAX_BODY:
+            raise VerificationError("ticket HTTP response exceeds finite limit")
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(raw)))
@@ -429,7 +460,10 @@ def running_server(store: TicketStore) -> Iterator[TicketHTTPServer]:
 
 def http_json(url: str, candidate: dict[str, Any] | None = None) -> tuple[int, dict[str, Any]]:
     """Perform a bounded native HTTP request, preserving refusal status codes."""
-    request = Request(url, data=None if candidate is None else canonical(candidate), headers={"Content-Type": "application/json"})
+    body = None if candidate is None else canonical(candidate)
+    if body is not None and len(body) > MAX_BODY:
+        raise VerificationError("ticket HTTP request exceeds finite limit")
+    request = Request(url, data=body, headers={"Content-Type": "application/json"})
     try:
         response = urlopen(request, timeout=5)
     except HTTPError as error:
