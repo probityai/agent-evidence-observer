@@ -31,6 +31,8 @@ jobs:
       - name: Build wheel and use it from an outside consumer directory
         run: |
           python -m build --wheel --outdir dist
+          python scripts/check-distribution.py dist/*.whl
+          python scripts/check-distribution-controls.py dist/*.whl
           python -m venv "$RUNNER_TEMP/native-consumer-env"
           "$RUNNER_TEMP/native-consumer-env/bin/python" -m pip install dist/*.whl
           mkdir "$RUNNER_TEMP/native-consumer-cwd"

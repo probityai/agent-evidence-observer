@@ -1,11 +1,8 @@
 # Agent Evidence Observer (prototype)
 
-A local broker that writes files on an agent's behalf, signs what it was allowed to do, records every
-accepted, denied and repeated request in a hash chain, and lets an offline reader check that record
-with pinned keys.
+Record brokered agent writes and check selected native framework reports offline.
 
-It's for people who build agent harnesses or evaluation pipelines and want a record of what an agent
-actually changed that a second party can verify, rather than the agent's own report.
+Use it in agent harnesses and evaluation pipelines that need replayable action records or a consumer gate for retained reports.
 
 ## Quick start
 
@@ -14,7 +11,7 @@ No release is published yet, so pin a commit. Python 3.12 or later and
 
 ```sh
 git clone https://github.com/probityai/agent-evidence-observer && cd agent-evidence-observer
-git checkout bec8e5082d82e99aa0238d8488d511373437bd1b
+git checkout f68c8538639aea1515ea357a85a20739004e66fd
 uv venv .venv --python python3.12 && uv pip install --python .venv/bin/python .
 .venv/bin/agent-evidence-observer demo ./sample-run
 .venv/bin/agent-evidence-observer verify ./sample-run
@@ -47,8 +44,10 @@ exposed. Running an unmodified agent that way, and a separately operated witness
 | <a name="claim-and-trust-boundary"></a><a name="tests-and-remaining-gaps"></a><a name="linux-boundary-gate"></a><a name="consumer-admission"></a><a name="roadmap"></a>[Design, trust boundary and roadmap](https://github.com/probityai/agent-evidence-observer/blob/main/docs/DESIGN.md) | what each mechanism checks and does not establish, the Linux boundary gate, recovery, consumer admission, and the roadmap |
 | [Isolated producer](https://github.com/probityai/agent-evidence-observer/blob/main/docs/ISOLATED-PRODUCER.md) | the acceptance criteria for running an unmodified agent behind the broker |
 | [Witness ledger](https://github.com/probityai/agent-evidence-observer/blob/main/docs/WITNESS-LEDGER.md) | signed begin and terminal receipts, and how a reader checks them |
-| [Atomic native reader](docs/ATOMIC-NATIVE-READER.md) | install an offline reader for selected native delegation runs and their refusal controls |
+| [Installation and profile selection](https://github.com/probityai/agent-evidence-observer/blob/main/docs/INSTALLATION.md) | choose the root wheel, a separate profile wheel or a selected source reader; runtime requirements and installed examples |
+| [Atomic native reader](https://github.com/probityai/agent-evidence-observer/blob/main/docs/ATOMIC-NATIVE-READER.md) | install an offline reader for selected native delegation runs and their refusal controls |
+| [Witnessed run selection](https://github.com/probityai/agent-evidence-observer/blob/main/docs/WITNESSED-RUN-SELECTION.md) | check a selected run against consumer-retained opening and closing checkpoints |
 
 ## License
 
-Apache License 2.0; see [`LICENSE`](LICENSE).
+Apache License 2.0; see [LICENSE](https://github.com/probityai/agent-evidence-observer/blob/main/LICENSE).
