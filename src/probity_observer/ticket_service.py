@@ -279,7 +279,7 @@ class TicketStore:
         if hashlib.sha256(content).hexdigest() != self.request.content_sha256:
             raise VerificationError("ticket content digest differs")
         with self._transaction() as db:
-            state, _ = self._load(db)
+            state, stored_content = self._load(db)
             # Fresh grant validity and host revocation apply to cached retries too.
             intent_time = self.clock()
             authorized = verify_grant(candidate["grant"], self.request, self.policy, now=intent_time)
@@ -290,6 +290,7 @@ class TicketStore:
             if state["phase"] == "completed":
                 if intent_time < _time(state["effectTime"]):
                     raise VerificationError("ticket host clock predates cached effect")
+                self._require_readable_readback(state, None if stored_content is None else stored_content.hex())
                 return self._response(state)
             if state["phase"] != "ready":
                 raise VerificationError("ticket effect remains incomplete; automatic replay refused")
@@ -337,12 +338,16 @@ class TicketStore:
     def _require_readable_completion(self, state: dict[str, Any], encoded: str, grant_digest: str, intent_time: datetime) -> None:
         """Refuse an unreadable native effect before its durable intent exists."""
         completed = {**state, "phase": "completed", "revision": 1, "contentDigest": self.request.content_sha256, "effectId": "0" * 64, "grantDigest": grant_digest, "eventCount": state["eventCount"] + 2, "eventHead": "0" * 64, "intentTime": _timestamp(intent_time), "effectTime": _timestamp(intent_time)}
+        self._require_readable_readback(completed, encoded)
+
+    def _require_readable_readback(self, state: dict[str, Any], encoded: str | None) -> None:
+        """Apply one exact envelope bound to new and retained native state."""
         # Every digest has 64 ASCII bytes; both timestamps have 20. Ed25519's
         # 64-byte signature always has 88 base64 bytes. This unsigned shape
         # measures the future envelope without signing an unobserved effect.
-        receipt = {"payload": self._receipt_payload(completed), "keyid": self.key.public_hex, "signature": base64.b64encode(bytes(64)).decode("ascii")}
-        if len(canonical(self._native_response(completed, encoded, receipt))) > MAX_BODY:
-            raise VerificationError("ticket completion read-back exceeds finite limit")
+        receipt = {"payload": self._receipt_payload(state), "keyid": self.key.public_hex, "signature": base64.b64encode(bytes(64)).decode("ascii")}
+        if len(canonical(self._native_response(state, encoded, receipt))) > MAX_BODY:
+            raise VerificationError("ticket native read-back exceeds finite limit")
 
     def readback(self) -> dict[str, Any]:
         """Query actual SQLite ticket bytes separately from dispatch responses."""
@@ -350,7 +355,9 @@ class TicketStore:
             raise VerificationError("ticket store is missing; initialization required")
         with self._transaction() as db:
             state, content = self._load(db)
-            return self._native_response(state, None if content is None else content.hex(), self._response(state))
+            encoded = None if content is None else content.hex()
+            self._require_readable_readback(state, encoded)
+            return self._native_response(state, encoded, self._response(state))
 
     def revoke(self) -> dict[str, Any]:
         """Persist host-only revocation; there is no network admin endpoint."""

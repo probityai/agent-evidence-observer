@@ -80,6 +80,11 @@ refuse oversized outbound requests and inbound responses; the server bounds
 its actual response too. Arbitrary native content bytes travel as hex. Signed
 JSON identity remains restricted to the existing ASCII profile.
 
+An older service can have committed a valid ticket whose GET envelope exceeds
+this limit. Current read-back and cached retry both refuse that retained
+completion. They preserve its signed history and native bytes without a new
+intent, a second effect or a false success response.
+
 Outside operation requires a separately controlled host, keys, SQLite store,
 clock and retained checkpoint channel. The local run provides an executable
 service target and explicit measured controls for that deployment discussion.

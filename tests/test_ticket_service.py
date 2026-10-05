@@ -120,9 +120,38 @@ def test_http_body_fits_but_readback_does_not(case: dict[str, Any], tmp_path: Pa
     with running_server(oversized["store"]) as server:
         assert http_json(server.url + "/dispatch", oversized["candidate"])[0] == 409
         assert http_json(read_url(server))[1] == oversized["initial"]
-    with pytest.raises(VerificationError, match="completion read-back exceeds"):
+    with pytest.raises(VerificationError, match="native read-back exceeds"):
         oversized["store"].dispatch(oversized["candidate"])
     assert oversized["store"].readback() == oversized["initial"]
+
+
+def test_retained_unreadable_completion_refuses_without_mutation(case: dict[str, Any], tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Old admission can leave valid native state that cannot fit the GET budget."""
+    overhead = len(canonical(case["candidate"])) - len(case["candidate"]["contentHex"])
+    content = b"x" * ((MAX_BODY - overhead) // 2)
+    retained = payload_case(case, tmp_path / "retained-overflow.sqlite", content)
+    # Reproduce the previous admission rule while retaining real signatures,
+    # intent/effect history and SQLite bytes. Restore the current rule before
+    # reopening the retained store and exercising its supported interfaces.
+    with monkeypatch.context() as previous:
+        previous.setattr(retained["store"], "_require_readable_readback", lambda *args: None)
+        receipt = retained["store"].dispatch(retained["candidate"])
+        assert len(canonical(retained["store"].readback())) > MAX_BODY
+    assert receipt["payload"]["phase"] == "completed"
+    before = retained["store"].path.read_bytes()
+    restored = reopen(retained, retained_head=receipt)
+    with pytest.raises(VerificationError, match="native read-back exceeds"):
+        restored.readback()
+    with pytest.raises(VerificationError, match="native read-back exceeds"):
+        restored.dispatch(retained["candidate"])
+    with running_server(restored) as server:
+        for status, refusal in [http_json(server.url + "/dispatch", retained["candidate"]), http_json(read_url(server))]:
+            assert status == 409
+            assert refusal["status"] == "refused"
+    assert restored.path.read_bytes() == before
+    with sqlite3.connect(restored.path) as db:
+        assert db.execute("SELECT content,revision FROM tickets").fetchall() == [(content, 1)]
+        assert db.execute("SELECT COUNT(*) FROM events").fetchone() == (3,)
 
 
 def test_non_ascii_request_refuses_before_intent(case: dict[str, Any]) -> None:
