@@ -22,7 +22,7 @@ from typing import Any
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
-from .authorization import ActionRequest, AuthorizedAction, GrantPolicy, utc_clock, verify_grant
+from .authorization import ActionRequest, AuthorizedAction, GrantPolicy, utc_clock, validate_utc_time, verify_grant
 from .crypto import SigningKey, VerificationError, canonical, digest, strict_loads, verify_signature
 
 DOMAIN = "probity-http-ticket-v0"
@@ -32,21 +32,23 @@ RECEIPT_FIELDS = STATE_FIELDS | {"request", "authorityKey", "witnessScope", "cov
 READBACK_FIELDS = frozenset({"tenantId", "ticketId", "contentHex", "revision", "effectId", "receipt"})
 
 
-def _timestamp(value: datetime) -> str:
-    """Keep host reference times in the grant profile's exact UTC representation."""
-    return value.isoformat(timespec="seconds").replace("+00:00", "Z")
+def _timestamp(value: datetime, time_precision: Literal["seconds", "milliseconds"] = "seconds") -> str:
+    """Serialize the selected UTC observation precision without input rounding."""
+    reference = validate_utc_time(value, "ticket reference time", precision=time_precision)
+    return reference.isoformat(timespec=time_precision).replace("+00:00", "Z")
 
 
-def _time(value: Any) -> datetime:
+def _time(value: Any, time_precision: Literal["seconds", "milliseconds"] = "seconds") -> datetime:
     """Refuse noncanonical timestamps before checking historical authorization."""
     from datetime import timezone
     if not isinstance(value, str):
         raise VerificationError("ticket reference time is malformed")
     try:
-        result = datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+        format_string = "%Y-%m-%dT%H:%M:%SZ" if time_precision == "seconds" else "%Y-%m-%dT%H:%M:%S.%fZ"
+        result = datetime.strptime(value, format_string).replace(tzinfo=timezone.utc)
     except ValueError as error:
         raise VerificationError("ticket reference time is malformed") from error
-    if _timestamp(result) != value:
+    if _timestamp(result, time_precision) != value:
         raise VerificationError("ticket reference time is noncanonical")
     return result
 
@@ -56,7 +58,7 @@ def _hex(value: Any) -> bool:
     return isinstance(value, str) and len(value) == 64 and all(c in "0123456789abcdef" for c in value)
 
 
-def _state_schema(state: Any, *, receipt: bool = False) -> None:
+def _state_schema(state: Any, *, receipt: bool = False, time_precision: Literal["seconds", "milliseconds"] = "seconds") -> None:
     """Apply exact schemas and phase-dependent native relations to signed state."""
     fields = RECEIPT_FIELDS if receipt else STATE_FIELDS
     if not isinstance(state, dict) or set(state) != fields:
@@ -74,9 +76,9 @@ def _state_schema(state: Any, *, receipt: bool = False) -> None:
         return
     if not _hex(state["effectId"]) or not _hex(state["grantDigest"]):
         raise VerificationError("ticket intent identity differs")
-    intent_time = _time(state["intentTime"])
+    intent_time = _time(state["intentTime"], time_precision)
     if phase == "completed":
-        if state["revision"] != 1 or not _hex(state["contentDigest"]) or _time(state["effectTime"]) < intent_time:
+        if state["revision"] != 1 or not _hex(state["contentDigest"]) or _time(state["effectTime"], time_precision) < intent_time:
             raise VerificationError("ticket completed native relation differs")
     elif state["revision"] != 0 or state["contentDigest"] is not None or state["effectTime"] is not None:
         raise VerificationError("ticket incomplete state claims a completed effect")
@@ -98,8 +100,11 @@ def _checked(record: Any, public_key: str) -> dict[str, Any]:
 
 
 def _ticket_configuration(request: ActionRequest, policy: GrantPolicy, service_key: str,
-                          decision_digest: str | None) -> dict[str, Any]:
+                          decision_digest: str | None,
+                          time_precision: Literal["seconds", "milliseconds"] = "seconds") -> dict[str, Any]:
     """Validate one supported host selection before committing its configuration."""
+    if not isinstance(time_precision, str) or time_precision not in {"seconds", "milliseconds"}:
+        raise VerificationError("ticket selected time precision is unsupported")
     if request.tool_id != "ticket-update" or not isinstance(request.target_path, str) or not request.target_path.startswith("/work/tickets/"):
         raise VerificationError("ticket action or target is unsupported")
     ticket_id = request.target_path.removeprefix("/work/tickets/")
@@ -111,6 +116,8 @@ def _ticket_configuration(request: ActionRequest, policy: GrantPolicy, service_k
     if service_key == policy.issuer_key:
         raise VerificationError("service and issuer keys must differ")
     configuration = {"request": asdict(request), "policy": asdict(policy), "serviceKey": service_key}
+    if time_precision == "milliseconds":
+        configuration["timePrecision"] = time_precision
     if decision_digest is not None:
         if not _hex(decision_digest):
             raise VerificationError("ticket decision commitment differs")
@@ -235,6 +242,7 @@ def verify_ticket_capture(
     tickets: Sequence[tuple[str, str, bytes, int, str]], request: ActionRequest,
     policy: GrantPolicy, service_key: str, *, decision_digest: str | None = None,
     retained_head: dict[str, Any] | None = None,
+    time_precision: Literal["seconds", "milliseconds"] = "seconds",
 ) -> VerifiedTicketCapture:
     """Verify selected native populations with public keys and no storage mutation.
 
@@ -243,10 +251,10 @@ def verify_ticket_capture(
     history, retained prefix and actual row relation. Current grant authorization
     and external native decision replay remain separate consumer checks.
     """
-    configuration = _ticket_configuration(request, policy, service_key, decision_digest)
+    configuration = _ticket_configuration(request, policy, service_key, decision_digest, time_precision)
     configuration_digest = digest(DOMAIN + "-configuration", configuration)
     state = _checked(strict_loads(state_record), service_key)
-    _state_schema(state)
+    _state_schema(state, time_precision=time_precision)
     if state["configuration"] != configuration_digest:
         raise VerificationError("ticket configuration differs on restart")
     if state["phase"] != "ready" and state["effectId"] != digest(DOMAIN + "-effect", {
@@ -255,7 +263,7 @@ def verify_ticket_capture(
     retained = None
     if retained_head is not None:
         retained = _checked(retained_head, service_key)
-        _state_schema(retained, receipt=True)
+        _state_schema(retained, receipt=True, time_precision=time_precision)
         if retained["configuration"] != configuration_digest:
             raise VerificationError("retained ticket head configuration differs")
         if canonical(retained["request"]) != canonical(asdict(request)) or retained["authorityKey"] != policy.issuer_key or retained["witnessScope"] != "PEER" or retained["coverage"] != "one-native-ticket-row-and-service-events":
@@ -284,11 +292,13 @@ class TicketStore:
         crash_hook: Callable[[str], None] | None = None,
         retained_head: dict[str, Any] | None = None,
         decision_digest: str | None = None,
+        time_precision: Literal["seconds", "milliseconds"] = "seconds",
     ) -> None:
         self.path, self.request, self.policy, self.key = path, request, policy, key
         self.clock, self.crash_hook = clock, crash_hook
         self.retained_head = retained_head
-        self.configuration = _ticket_configuration(request, policy, key.public_hex, decision_digest)
+        self.time_precision = time_precision
+        self.configuration = _ticket_configuration(request, policy, key.public_hex, decision_digest, time_precision)
         self.ticket_id = request.target_path.removeprefix("/work/tickets/")
         self.configuration_digest = digest(DOMAIN + "-configuration", self.configuration)
 
@@ -349,12 +359,13 @@ class TicketStore:
             db.execute("SELECT sequence,record FROM events ORDER BY sequence").fetchall(),
             db.execute("SELECT tenant,ticket,content,revision,effect FROM tickets").fetchall(),
             self.request, self.policy, self.key.public_hex,
-            decision_digest=self.configuration.get("decisionDigest"), retained_head=self.retained_head)
+            decision_digest=self.configuration.get("decisionDigest"), retained_head=self.retained_head,
+            time_precision=self.time_precision)
         return capture.state, capture.content
 
     def _authorize(self, grant: Any, *, now: datetime) -> AuthorizedAction:
         """Check host authorization at the transaction's exact sampled reference time."""
-        return verify_grant(grant, self.request, self.policy, now=now)
+        return verify_grant(grant, self.request, self.policy, now=now, reference_precision=self.time_precision)
 
     def dispatch(self, candidate: Any) -> dict[str, Any]:
         """Authorize, persist an intent, then atomically mutate ticket and receipt."""
@@ -380,7 +391,7 @@ class TicketStore:
             if state["grantDigest"] not in (None, authorized.grant_digest):
                 raise VerificationError("ticket grant differs from committed intent")
             if state["phase"] == "completed":
-                if intent_time < _time(state["effectTime"]):
+                if intent_time < _time(state["effectTime"], self.time_precision):
                     raise VerificationError("ticket host clock predates cached effect")
                 self._require_readable_readback(state, None if stored_content is None else stored_content.hex())
                 return self._response(state)
@@ -388,7 +399,7 @@ class TicketStore:
                 raise VerificationError("ticket effect remains incomplete; automatic replay refused")
             self._require_readable_completion(state, encoded, authorized.grant_digest, intent_time)
             state["phase"], state["grantDigest"] = "pending", authorized.grant_digest
-            state["intentTime"] = _timestamp(intent_time)
+            state["intentTime"] = _timestamp(intent_time, self.time_precision)
             state["effectId"] = digest(DOMAIN + "-effect", {"configuration": self.configuration_digest, "requestId": self.request.request_id, "grantDigest": authorized.grant_digest})
             self._event(db, state, {"kind": "intent", "request": asdict(self.request), "grantDigest": authorized.grant_digest, "effectId": state["effectId"], "beforeRevision": 0, "intentTime": state["intentTime"]})
             self._save(db, state)
@@ -398,13 +409,13 @@ class TicketStore:
             # A revocation racing the gap between transactions wins admission.
             effect_time = self.clock()
             self._authorize(candidate["grant"], now=effect_time)
-            if effect_time < _time(state["intentTime"]):
+            if effect_time < _time(state["intentTime"], self.time_precision):
                 raise VerificationError("ticket host clock moved backwards before effect")
             if state["revoked"] or state["phase"] != "pending":
                 raise VerificationError("ticket pending authority or phase differs")
             db.execute("INSERT INTO tickets VALUES(?,?,?,?,?)", (self.request.tenant_id, self.ticket_id, content, 1, state["effectId"]))
             self._fault("inside-effect-transaction")
-            state.update(phase="completed", revision=1, contentDigest=self.request.content_sha256, effectTime=_timestamp(effect_time))
+            state.update(phase="completed", revision=1, contentDigest=self.request.content_sha256, effectTime=_timestamp(effect_time, self.time_precision))
             self._event(db, state, {"kind": "effect", "effectId": state["effectId"], "revision": 1, "contentDigest": self.request.content_sha256, "effectTime": state["effectTime"], "grantDigest": state["grantDigest"]})
             self._save(db, state)
         self._fault("after-effect")
@@ -429,13 +440,14 @@ class TicketStore:
 
     def _require_readable_completion(self, state: dict[str, Any], encoded: str, grant_digest: str, intent_time: datetime) -> None:
         """Refuse an unreadable native effect before its durable intent exists."""
-        completed = {**state, "phase": "completed", "revision": 1, "contentDigest": self.request.content_sha256, "effectId": "0" * 64, "grantDigest": grant_digest, "eventCount": state["eventCount"] + 2, "eventHead": "0" * 64, "intentTime": _timestamp(intent_time), "effectTime": _timestamp(intent_time)}
+        completed = {**state, "phase": "completed", "revision": 1, "contentDigest": self.request.content_sha256, "effectId": "0" * 64, "grantDigest": grant_digest, "eventCount": state["eventCount"] + 2, "eventHead": "0" * 64, "intentTime": _timestamp(intent_time, self.time_precision), "effectTime": _timestamp(intent_time, self.time_precision)}
         self._require_readable_readback(completed, encoded)
 
     def _require_readable_readback(self, state: dict[str, Any], encoded: str | None) -> None:
         """Apply one exact envelope bound to new and retained native state."""
-        # Every digest has 64 ASCII bytes; both timestamps have 20. Ed25519's
-        # 64-byte signature always has 88 base64 bytes. This unsigned shape
+        # Every digest has 64 ASCII bytes; an Ed25519 signature has 88 base64
+        # bytes. Selected timestamp precision determines their exact width.
+        # This unsigned shape
         # measures the future envelope without signing an unobserved effect.
         receipt = {"payload": self._receipt_payload(state), "keyid": self.key.public_hex, "signature": base64.b64encode(bytes(64)).decode("ascii")}
         if len(canonical(self._native_response(state, encoded, receipt))) > MAX_BODY:
@@ -572,6 +584,7 @@ def verify_ticket_result(
     request: ActionRequest, policy: GrantPolicy, service_key: str,
     grant: Mapping[str, Any], *, now: datetime,
     decision_digest: str | None = None,
+    time_precision: Literal["seconds", "milliseconds"] = "seconds",
 ) -> dict[str, Any]:
     """Join signed completion with separately retrieved native bytes and policy.
 
@@ -582,22 +595,22 @@ def verify_ticket_result(
     decision digest is a configuration binding; native decision recomputation
     belongs to the profile reader. Omitting it refuses records that carry it.
     """
-    authorized = verify_grant(grant, request, policy, now=now)
+    authorized = verify_grant(grant, request, policy, now=now, reference_precision=time_precision)
     if not isinstance(readback, Mapping) or set(readback) != READBACK_FIELDS or type(readback["revision"]) is not int:
         raise VerificationError("ticket native read-back fields or counter differ")
     carried = _checked(dict(receipt), service_key)
     current = _checked(readback["receipt"], service_key)
-    configuration_fields = _ticket_configuration(request, policy, service_key, decision_digest)
+    configuration_fields = _ticket_configuration(request, policy, service_key, decision_digest, time_precision)
     configuration = digest(DOMAIN + "-configuration", configuration_fields)
     for record in (carried, current):
-        _state_schema(record, receipt=True)
+        _state_schema(record, receipt=True, time_precision=time_precision)
         if record["request"] != asdict(request) or record["configuration"] != configuration or record["authorityKey"] != policy.issuer_key or record["grantDigest"] != authorized.grant_digest:
             raise VerificationError("ticket consumer binding differs")
         if record["phase"] != "completed" or record["revoked"] or record["revision"] != 1 or record["witnessScope"] != "PEER" or record["coverage"] != "one-native-ticket-row-and-service-events":
             raise VerificationError("ticket consumer requires unrevoked bounded completion")
         for field in ("intentTime", "effectTime"):
-            verify_grant(grant, request, policy, now=_time(record[field]))
-        if now < _time(record["effectTime"]):
+            verify_grant(grant, request, policy, now=_time(record[field], time_precision), reference_precision=time_precision)
+        if now < _time(record["effectTime"], time_precision):
             raise VerificationError("ticket consumer clock predates completed effect")
     if carried != current:
         raise VerificationError("ticket current state differs from retained completion")

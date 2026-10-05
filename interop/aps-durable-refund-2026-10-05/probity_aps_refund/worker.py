@@ -5,7 +5,6 @@ import json
 import os
 import sys
 from dataclasses import asdict
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -13,11 +12,14 @@ from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from probity_observer.authorization import ActionRequest, GrantPolicy
 from probity_observer.crypto import SigningKey, canonical
 
-from .service import ApsRefundStore
+from .service import ApsRefundStore, parse_native_clock
 
 
 def load_store(runtime: dict[str, Any], *, fault: str | None = None) -> ApsRefundStore:
     """Open existing host-owned state; initialization is a separate explicit operation."""
+    if runtime.get("timePrecision") != "milliseconds":
+        raise ValueError("native host time precision must be milliseconds")
+    reference = parse_native_clock(runtime["now"])
     def crash(point: str) -> None:
         """Terminate the actual process at a selected native transaction boundary."""
         if point == fault:
@@ -28,7 +30,7 @@ def load_store(runtime: dict[str, Any], *, fault: str | None = None) -> ApsRefun
                           tenant_id=runtime["tenantId"], node=Path(runtime["node"]),
                           verifier=Path(runtime["verifier"]), verifier_sha256=runtime["verifierSha256"],
                           sdk_sha256=runtime["sdkSha256"],
-                          clock=lambda: datetime.fromisoformat(runtime["now"]), crash_hook=crash)
+                          clock=lambda: reference, crash_hook=crash)
 
 
 def main() -> int:

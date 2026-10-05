@@ -12,24 +12,28 @@ from typing import Any
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
-from probity_observer.authorization import ActionRequest, GrantPolicy, issue_grant
+from probity_observer.authorization import ActionRequest, GrantPolicy, issue_grant, validate_utc_time
 from probity_observer.crypto import SigningKey, canonical
 
-from .service import refund_operation_id, sdk_digest, verify_aps
+from .service import parse_native_clock, refund_operation_id, sdk_digest, verify_aps
 
 NOW = datetime(2026, 10, 5, 20, 0, 0, tzinfo=timezone.utc)
 
 
 def provision(directory: Path, profile: Path, *, verdict: str = "permit",
-              constraints: list[str] | None = None, alternatives: bool = False) -> dict[str, Any]:
+              constraints: list[str] | None = None, alternatives: bool = False,
+              now: datetime = NOW, native_issued_at: datetime = NOW - timedelta(seconds=1),
+              native_valid_until: datetime = NOW + timedelta(seconds=60)) -> dict[str, Any]:
     """Create synthetic evidence; retain only service secrets in a protected runtime file."""
+    for value in (now, native_issued_at, native_valid_until):
+        validate_utc_time(value, "fixture native observation", precision="milliseconds")
     directory.mkdir(mode=0o700)
     node = Path(shutil.which("node") or "missing-node").resolve()
     verifier = profile / "verify-aps.mjs"
     verifier_pin = hashlib.sha256(verifier.read_bytes()).hexdigest()
     sdk_pin = sdk_digest(verifier)
-    options = {"issuedAt": (NOW - timedelta(seconds=1)).isoformat(timespec="milliseconds").replace("+00:00", "Z"),
-               "validUntil": (NOW + timedelta(seconds=60)).isoformat(timespec="milliseconds").replace("+00:00", "Z"),
+    options = {"issuedAt": native_issued_at.isoformat(timespec="milliseconds").replace("+00:00", "Z"),
+               "validUntil": native_valid_until.isoformat(timespec="milliseconds").replace("+00:00", "Z"),
                "verdict": verdict, "constraints": constraints or [], "alternatives": alternatives,
                "reissuedValidUntil": (NOW + timedelta(seconds=90)).isoformat(timespec="milliseconds").replace("+00:00", "Z")}
     issued = subprocess.run([str(node), str(profile / "fixture.mjs")], input=canonical(options),
@@ -49,7 +53,7 @@ def provision(directory: Path, profile: Path, *, verdict: str = "permit",
     runtime = {"storePath": str(directory / ("refund-" + operation + ".sqlite")), "request": asdict(request),
                "grantPolicy": asdict(policy), "tenantId": request.tenant_id, "evidence": evidence,
                "node": str(node), "verifier": str(verifier), "verifierSha256": verifier_pin, "sdkSha256": sdk_pin,
-               "now": NOW.isoformat().replace("+00:00", "Z"), "servicePublicKey": service.public_hex,
+               "now": now.isoformat(timespec="milliseconds").replace("+00:00", "Z"), "timePrecision": "milliseconds", "servicePublicKey": service.public_hex,
                "servicePrivateKey": service.private.private_bytes(serialization.Encoding.Raw,
                    serialization.PrivateFormat.Raw, serialization.NoEncryption()).hex(),
                "issuerPrivateKey": issuer.private.private_bytes(serialization.Encoding.Raw,
@@ -61,14 +65,14 @@ def provision(directory: Path, profile: Path, *, verdict: str = "permit",
         runtime_path.chmod(0o600)
         stream.write(canonical(runtime))
     if verdict == "permit" and not constraints:
-        verify_aps(evidence, node=node, verifier=verifier, verifier_sha256=verifier_pin, sdk_sha256=sdk_pin, now=NOW)
+        verify_aps(evidence, node=node, verifier=verifier, verifier_sha256=verifier_pin, sdk_sha256=sdk_pin, now=now)
     return runtime
 
 
 def select_action(runtime: dict[str, Any], evidence: dict[str, Any]) -> dict[str, Any]:
     """Issue a new genuine local grant for a host-selected synthetic action control."""
     report = verify_aps(evidence, node=Path(runtime["node"]), verifier=Path(runtime["verifier"]),
-                        verifier_sha256=runtime["verifierSha256"], sdk_sha256=runtime["sdkSha256"], now=NOW)
+                        verifier_sha256=runtime["verifierSha256"], sdk_sha256=runtime["sdkSha256"], now=parse_native_clock(runtime["now"]))
     operation = refund_operation_id(report["actionRef"], runtime["tenantId"])
     content = report["payloadCanonical"].encode("ascii")
     request = ActionRequest("refund-" + operation, "local-refund-record", operation,

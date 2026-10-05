@@ -17,7 +17,7 @@ from probity_observer.authorization import ActionRequest, GrantPolicy
 from probity_observer.crypto import VerificationError, canonical
 from probity_observer.ticket_service import http_json, running_server
 from probity_aps_refund.fixture import NOW, provision, select_action
-from probity_aps_refund.service import verify_aps, verify_refund_result
+from probity_aps_refund.service import parse_native_clock, verify_aps, verify_refund_result
 from probity_aps_refund.worker import load_store
 
 PROFILE = Path(__file__).resolve().parent
@@ -52,7 +52,7 @@ def verify(runtime: dict[str, Any], receipt: dict[str, Any], readback: dict[str,
     return verify_refund_result(runtime["evidence"], receipt, readback, ActionRequest(**runtime["request"]),
         GrantPolicy(**runtime["grantPolicy"]), runtime["servicePublicKey"], runtime["candidate"]["grant"],
         tenant_id=runtime["tenantId"], node=Path(runtime["node"]), verifier=Path(runtime["verifier"]),
-        verifier_sha256=runtime["verifierSha256"], sdk_sha256=runtime["sdkSha256"], now=NOW)
+        verifier_sha256=runtime["verifierSha256"], sdk_sha256=runtime["sdkSha256"], now=parse_native_clock(runtime["now"]))
 
 
 def test_exact_http_effect_and_public_readback(case: dict[str, Any]) -> None:
@@ -208,7 +208,7 @@ def test_local_effect_join_cannot_be_rebound(case: dict[str, Any], kind: str) ->
 @pytest.mark.parametrize("offset", [-2, 60, 61])
 def test_local_dispatch_clock_window(case: dict[str, Any], offset: int) -> None:
     """This local profile requires issuance <= now < expiry, including exact equality refusal."""
-    case["now"] = (NOW + timedelta(seconds=offset)).isoformat().replace("+00:00", "Z")
+    case["now"] = (NOW + timedelta(seconds=offset)).isoformat(timespec="milliseconds").replace("+00:00", "Z")
     with pytest.raises(VerificationError):
         load_store(case)
     assert counts(case) == (0, 0)
@@ -345,7 +345,7 @@ def retain_temporal_control(runtime: dict[str, Any], store: Any, output: Path, r
     for filename, item in (("receipt.json", readback["receipt"]), ("readback.json", readback), ("attempts.json", [record])):
         (output / filename).write_bytes(canonical(item))
     shutil.copyfile(runtime["storePath"], output / "service.sqlite")
-    public = {key: runtime[key] for key in ("request", "grantPolicy", "tenantId", "evidence", "verifierSha256", "sdkSha256", "now", "servicePublicKey")}
+    public = {key: runtime[key] for key in ("request", "grantPolicy", "tenantId", "evidence", "verifierSha256", "sdkSha256", "now", "timePrecision", "servicePublicKey")}
     admissions, effects = counts(runtime)
     public.update(grant=runtime["candidate"]["grant"], expected={"logicalAdmissions": admissions, "localEffects": effects}, alternateApproval=None)
     public["files"] = {name: hashlib.sha256((output / name).read_bytes()).hexdigest() for name in ("receipt.json", "readback.json", "attempts.json", "service.sqlite")}
@@ -382,10 +382,10 @@ def test_exact_transaction_native_clock_boundary(case: dict[str, Any], tmp_path:
     store.clock = clock
     if accepted:
         receipt = store.dispatch(case["candidate"])
-        assert receipt["payload"]["intentTime"] == observations[0].isoformat(timespec="seconds").replace("+00:00", "Z")
-        assert receipt["payload"]["effectTime"] == observations[1].isoformat(timespec="seconds").replace("+00:00", "Z")
+        assert receipt["payload"]["intentTime"] == observations[0].isoformat(timespec="milliseconds").replace("+00:00", "Z")
+        assert receipt["payload"]["effectTime"] == observations[1].isoformat(timespec="milliseconds").replace("+00:00", "Z")
         assert counts(case) == (1, 1) and len(reads) == 2
-        case["now"] = observations[1].isoformat().replace("+00:00", "Z")
+        case["now"] = observations[1].isoformat(timespec="milliseconds").replace("+00:00", "Z")
         refusal = None
     else:
         with pytest.raises(VerificationError, match="native APS approval verification refused") as failed:
@@ -420,7 +420,7 @@ def test_incomplete_capture_requires_current_local_authority(tmp_path: Path, off
     with pytest.raises(RuntimeError, match="controlled incomplete authority capture"):
         store.dispatch(runtime["candidate"])
     store.recover()
-    runtime["now"] = (NOW + timedelta(seconds=offset)).isoformat().replace("+00:00", "Z")
+    runtime["now"] = (NOW + timedelta(seconds=offset)).isoformat(timespec="milliseconds").replace("+00:00", "Z")
     retain_temporal_control(runtime, store, tmp_path / ("current-local-grant-" + str(offset)),
         {"kind": "current-local-grant-" + str(offset), "accepted": accepted,
          "nativeValidUntil": options["validUntil"], "localGrantValidUntil": (NOW + timedelta(seconds=120)).isoformat()},
@@ -439,4 +439,90 @@ def test_native_observations_require_actual_sdk_and_frozen_report(case: dict[str
         report["receiptId"] = "f" * 64
     with pytest.raises(VerificationError, match="observations are missing|observation differs from frozen decision"):
         verify_aps_observations(case["evidence"], observations, report, **arguments)
+    assert counts(case) == (0, 0)
+
+
+@pytest.mark.parametrize("stage", ["intent", "effect"])
+@pytest.mark.parametrize("milliseconds,accepted", [(249, False), (250, True), (749, True), (750, False), (751, False)])
+def test_fractional_native_transaction_boundaries(tmp_path: Path, stage: str, milliseconds: int, accepted: bool) -> None:
+    """Actual SDK issuance and exclusive expiry use the exact retained .sssZ transaction time."""
+    issued_at, expires_at = NOW + timedelta(milliseconds=250), NOW + timedelta(milliseconds=750)
+    runtime = provision(tmp_path / "host", PROFILE, now=issued_at, native_issued_at=issued_at, native_valid_until=expires_at)
+    store = load_store(runtime)
+    store.initialize()
+    reference = NOW + timedelta(milliseconds=milliseconds)
+    observations = [reference, reference] if stage == "intent" else [issued_at, reference]
+    read = iter(observations)
+    store.clock = lambda: next(read)
+    refusal = None
+    if accepted:
+        receipt = store.dispatch(runtime["candidate"])
+        assert counts(runtime) == (1, 1)
+        assert receipt["payload"]["intentTime"] == observations[0].isoformat(timespec="milliseconds").replace("+00:00", "Z")
+        assert receipt["payload"]["effectTime"] == observations[1].isoformat(timespec="milliseconds").replace("+00:00", "Z")
+        runtime["now"] = observations[1].isoformat(timespec="milliseconds").replace("+00:00", "Z")
+    else:
+        with pytest.raises(VerificationError, match="native APS approval verification refused") as failed:
+            store.dispatch(runtime["candidate"])
+        refusal = str(failed.value)
+        assert counts(runtime) == ((0, 0) if stage == "intent" else (1, 0))
+        if stage == "effect":
+            store.recover()
+    retain_temporal_control(runtime, store, tmp_path / (stage + "-" + str(milliseconds)),
+        {"kind": "fractional-" + stage + "-" + str(milliseconds), "accepted": accepted, "refusal": refusal,
+         "nativeIssuedAt": issued_at.isoformat(timespec="milliseconds").replace("+00:00", "Z"),
+         "nativeValidUntil": expires_at.isoformat(timespec="milliseconds").replace("+00:00", "Z"),
+         "observations": [value.isoformat(timespec="milliseconds").replace("+00:00", "Z") for value in observations]},
+        0 if accepted or stage == "effect" else 2)
+
+
+@pytest.mark.parametrize("stage", ["intent", "effect"])
+def test_native_refuses_finer_host_clock_without_rounding(case: dict[str, Any], tmp_path: Path, stage: str) -> None:
+    """An injected submillisecond clock cannot silently change native authorization time."""
+    store = load_store(case)
+    fine = NOW + timedelta(microseconds=500001)
+    observations = [fine, fine] if stage == "intent" else [NOW, fine]
+    read = iter(observations)
+    store.clock = lambda: next(read)
+    with pytest.raises(VerificationError, match="UTC millisecond precision"):
+        store.dispatch(case["candidate"])
+    assert counts(case) == ((0, 0) if stage == "intent" else (1, 0))
+    if stage == "effect":
+        store.recover()
+    retain_temporal_control(case, store, tmp_path / ("fine-" + stage),
+        {"kind": "fine-host-" + stage, "accepted": False, "refusal": "UTC millisecond precision",
+         "observations": [value.isoformat(timespec="microseconds").replace("+00:00", "Z") for value in observations]},
+        2 if stage == "intent" else 0)
+
+
+def test_declared_fractional_host_observation_is_preserved(case: dict[str, Any], tmp_path: Path) -> None:
+    """The original fractional-host refusal becomes a checkable declared millisecond effect."""
+    case["now"] = "2026-10-05T20:00:00.500Z"
+    store = load_store(case)
+    receipt = store.dispatch(case["candidate"])
+    assert receipt["payload"]["intentTime"] == receipt["payload"]["effectTime"] == case["now"]
+    assert verify(case, receipt, store.readback())["nativeRevision"] == 1
+    retain_temporal_control(case, store, tmp_path / "fractional-host",
+        {"kind": "fractional-host", "accepted": True, "observations": [case["now"], case["now"]]}, 0)
+
+
+def test_native_default_clock_samples_declared_millisecond_resolution() -> None:
+    """The live native clock selects millisecond resolution without modifying injected times."""
+    import time
+    from datetime import datetime, timezone
+    from probity_aps_refund.service import millisecond_clock
+    before = time.time_ns() // 1_000_000
+    observation = millisecond_clock()
+    after = time.time_ns() // 1_000_000
+    epoch = datetime(1970, 1, 1, tzinfo=timezone.utc)
+    assert before <= (observation - epoch) // timedelta(milliseconds=1) <= after
+    assert observation.microsecond % 1000 == 0 and observation.utcoffset() == timedelta(0)
+
+
+@pytest.mark.parametrize("precision", [None, "seconds", "Milliseconds", True])
+def test_native_runtime_precision_requires_explicit_selection(case: dict[str, Any], precision: Any) -> None:
+    """The native host selects one contract, without inferring or migrating timestamp forms."""
+    case["timePrecision"] = precision
+    with pytest.raises(ValueError, match="time precision must be milliseconds"):
+        load_store(case)
     assert counts(case) == (0, 0)

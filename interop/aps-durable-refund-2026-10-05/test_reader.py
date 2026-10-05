@@ -9,6 +9,7 @@ from contextlib import closing
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any
 
 import pytest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
@@ -275,7 +276,20 @@ def signed_hostile_capture(capture: Path, target: Path, kind: str) -> Path:
             for number, event in enumerate(events, 1):
                 event["sequence"] = number
         elif kind == "historical-native-intent":
-            state["intentTime"] = "2026-10-05T19:59:58Z"
+            state["intentTime"] = "2026-10-05T19:59:58.000Z"
+            events[1]["event"]["intentTime"] = state["intentTime"]
+        elif kind == "consistent-effect-identity":
+            state["effectId"] = "f" * 64
+            events[1]["event"]["effectId"] = events[2]["event"]["effectId"] = state["effectId"]
+            db.execute("UPDATE tickets SET effect=?", (state["effectId"],))
+        elif kind == "terminal-content-and-row":
+            altered = b'{"amount_minor":101,"currency":"USD","payment_id":"changed"}'
+            state["contentDigest"] = hashlib.sha256(altered).hexdigest()
+            db.execute("UPDATE tickets SET content=?", (altered,))
+        elif kind.startswith("signed-time-"):
+            suffix = {"signed-time-seconds": "Z", "signed-time-short": ".0Z",
+                "signed-time-long": ".0000Z", "signed-time-offset": ".000+00:00"}[kind]
+            state["intentTime"] = "2026-10-05T20:00:00" + suffix
             events[1]["event"]["intentTime"] = state["intentTime"]
         elif kind == "signed-state-revision":
             state["revision"] = False
@@ -324,10 +338,14 @@ def signed_hostile_capture(capture: Path, target: Path, kind: str) -> Path:
     elif kind == "signed-retained-digest":
         receipt["payload"]["contentDigest"] = "f" * 64
     elif kind == "signed-retained-time":
-        receipt["payload"]["effectTime"] = "2026-10-05T20:00:01Z"
+        receipt["payload"]["effectTime"] = "2026-10-05T20:00:01.000Z"
     receipt["signature"] = key.sign(DOMAIN, receipt["payload"])
     readback = json.loads((target / "readback.json").read_bytes())
     readback["receipt"] = json.loads(canonical(receipt))
+    if kind == "consistent-effect-identity":
+        readback["effectId"] = state["effectId"]
+    elif kind == "terminal-content-and-row":
+        readback["contentHex"] = altered.hex()
     if kind == "unsigned-copy-revision":
         readback["receipt"]["payload"]["revision"] = False
     elif kind == "incomplete-readback-revision":
@@ -357,6 +375,10 @@ def signed_hostile_capture(capture: Path, target: Path, kind: str) -> Path:
     ("signed-retained-phase", "retained state differs from native history"),
     ("signed-retained-digest", "retained state differs from native history"),
     ("signed-retained-time", "retained state differs from native history"),
+    ("consistent-effect-identity", "intent authority or effect identity differs"),
+    ("terminal-content-and-row", "native ticket bytes differ"),
+    ("signed-time-seconds", "canonical UTC milliseconds"), ("signed-time-short", "canonical UTC milliseconds"),
+    ("signed-time-long", "canonical UTC milliseconds"), ("signed-time-offset", "canonical UTC milliseconds"),
 ])
 def test_authentic_host_signatures_do_not_override_native_capture_rules(capture: Path, tmp_path: Path, kind: str, refusal: str) -> None:
     """Genuine SDK approval, valid host signatures and reselected pins still require native types and phases."""
@@ -375,4 +397,38 @@ def test_authentic_host_signatures_do_not_override_native_capture_rules(capture:
         "policySha256": policy_pin, "refusal": refusal, "SQLiteSha256": hashlib.sha256(before).hexdigest(),
         "independentCustody": False, "witnessScope": "PEER"}))
     assert refused.returncode == 2 and not refused.stdout and refusal.encode("ascii") in refused.stderr
+    assert (case / "service.sqlite").read_bytes() == before
+
+
+@pytest.mark.parametrize("kind,value", [("policy-precision-missing", None), ("policy-precision-seconds", "seconds"),
+    ("policy-precision-case", "Milliseconds"), ("policy-clock-seconds", "2026-10-05T20:00:00Z"),
+    ("policy-clock-fine", "2026-10-05T20:00:00.000001Z"), ("policy-clock-offset", "2026-10-05T20:00:00.000+00:00")])
+def test_public_native_precision_has_one_selected_contract(capture: Path, tmp_path: Path, kind: str, value: Any) -> None:
+    """Reselected host pins cannot make a different precision or timestamp alias valid."""
+    case = tmp_path / kind
+    shutil.copytree(capture / "restart", case)
+    policy = json.loads((case / "host-policy.json").read_bytes())
+    if kind == "policy-precision-missing":
+        del policy["timePrecision"]
+        refusal = "policy member population differs"
+    elif kind.startswith("policy-precision"):
+        policy["timePrecision"] = value
+        refusal = "native time precision must be milliseconds"
+    else:
+        policy["now"] = value
+        refusal = "clock is malformed"
+    (case / "host-policy.json").write_bytes(canonical(policy))
+    before = (case / "service.sqlite").read_bytes()
+    with pytest.raises(VerificationError, match=refusal):
+        consume(case)
+    pin = hashlib.sha256((case / "host-policy.json").read_bytes()).hexdigest()
+    result = subprocess.run([sys.executable, "-I", "-B", "-m", "probity_aps_refund.reader", str(case),
+        "--policy-sha256", pin, "--node", str(Path(shutil.which("node")).resolve()),
+        "--verifier", str(PROFILE / "verify-aps.mjs")], capture_output=True, timeout=20, check=False)
+    (case / "consumer-stdout.bin").write_bytes(result.stdout)
+    (case / "consumer-stderr.txt").write_bytes(result.stderr)
+    (case / "consumer-check.json").write_bytes(canonical({"kind": kind, "exit": result.returncode,
+        "policySha256": pin, "refusal": refusal, "SQLiteSha256": hashlib.sha256(before).hexdigest(),
+        "independentCustody": False, "witnessScope": "PEER"}))
+    assert result.returncode == 2 and not result.stdout and refusal.encode("ascii") in result.stderr
     assert (case / "service.sqlite").read_bytes() == before

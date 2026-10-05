@@ -14,7 +14,7 @@ from probity_observer.authorization import ActionRequest, GrantPolicy, verify_gr
 from probity_observer.crypto import VerificationError, canonical, digest, strict_loads, verify_signature
 from probity_observer.ticket_service import DOMAIN, READBACK_FIELDS, VerifiedTicketCapture, verify_ticket_capture
 
-from .service import refund_decision_digest, verify_aps, verify_aps_observations, verify_refund_result
+from .service import parse_native_clock, refund_decision_digest, verify_aps, verify_aps_observations, verify_refund_result
 
 
 @dataclass(frozen=True)
@@ -90,9 +90,11 @@ def _select_policy(case: Path, policy_sha256: str, node: Path, verifier: Path) -
         raise VerificationError("public host policy differs from consumer selection")
     policy = strict_loads(raw)
     required = {"request", "grantPolicy", "tenantId", "evidence", "verifierSha256", "sdkSha256", "now",
-                "servicePublicKey", "grant", "expected", "files", "alternateApproval"}
+                "servicePublicKey", "grant", "expected", "files", "alternateApproval", "timePrecision"}
     if not isinstance(policy, dict) or set(policy) != required:
         raise VerificationError("public policy member population differs")
+    if policy["timePrecision"] != "milliseconds":
+        raise VerificationError("public native time precision must be milliseconds")
     files = policy["files"]
     expected = _ExpectedCounts.from_json(policy["expected"])
     if not isinstance(files, dict) or set(files) != {"receipt.json", "readback.json", "attempts.json", "service.sqlite"}:
@@ -102,7 +104,7 @@ def _select_policy(case: Path, policy_sha256: str, node: Path, verifier: Path) -
             raise VerificationError("selected public capture bytes differ")
     try:
         return _SelectedPolicy(case, policy, expected, ActionRequest(**policy["request"]), GrantPolicy(**policy["grantPolicy"]),
-            datetime.fromisoformat(policy["now"]), node, verifier)
+            parse_native_clock(policy["now"]), node, verifier)
     except (TypeError, ValueError) as error:
         raise VerificationError("public host request, grant policy or clock is malformed") from error
 
@@ -127,14 +129,14 @@ def _bind_native(selected: _SelectedPolicy) -> _NativeBinding:
     commitment = refund_decision_digest(native, request, tenant_id=policy["tenantId"],
                                         verifier_sha256=policy["verifierSha256"], sdk_sha256=policy["sdkSha256"])
     configuration = digest(DOMAIN + "-configuration", {"request": asdict(request),
-        "policy": asdict(grant_policy), "serviceKey": policy["servicePublicKey"], "decisionDigest": commitment})
+        "policy": asdict(grant_policy), "serviceKey": policy["servicePublicKey"], "decisionDigest": commitment, "timePrecision": "milliseconds"})
     if state["format"] != DOMAIN or state["configuration"] != configuration or readback["tenantId"] != request.tenant_id or readback["ticketId"] != request.target_path.removeprefix("/work/tickets/"):
         raise VerificationError("public native configuration or readback identity differs")
-    verify_grant(policy["grant"], request, grant_policy, now=selected.now)
+    verify_grant(policy["grant"], request, grant_policy, now=selected.now, reference_precision="milliseconds")
     if state["intentTime"] is None:
         raise VerificationError("public native capture has no durable authorization observation")
-    intent_time = datetime.fromisoformat(state["intentTime"])
-    authorized = verify_grant(policy["grant"], request, grant_policy, now=intent_time)
+    intent_time = parse_native_clock(state["intentTime"])
+    authorized = verify_grant(policy["grant"], request, grant_policy, now=intent_time, reference_precision="milliseconds")
     verify_aps_observations(policy["evidence"], (intent_time,), native, node=selected.node,
         verifier=selected.verifier, verifier_sha256=policy["verifierSha256"], sdk_sha256=policy["sdkSha256"])
     effect_id = digest(DOMAIN + "-effect", {"configuration": configuration,
@@ -153,7 +155,7 @@ def _read_retained(selected: _SelectedPolicy, binding: _NativeBinding) -> Verifi
         events = db.execute("SELECT sequence,record FROM events ORDER BY sequence").fetchall()
         rows = db.execute("SELECT tenant,ticket,content,revision,effect FROM tickets").fetchall()
     retained = verify_ticket_capture(row[0], events, rows, selected.request, selected.grant_policy,
-        selected.document["servicePublicKey"], decision_digest=binding.decision_digest, retained_head=binding.receipt)
+        selected.document["servicePublicKey"], decision_digest=binding.decision_digest, retained_head=binding.receipt, time_precision="milliseconds")
     expected = {**retained.state, "request": asdict(selected.request), "authorityKey": selected.grant_policy.issuer_key,
                 "witnessScope": "PEER", "coverage": "one-native-ticket-row-and-service-events"}
     if canonical(expected) != canonical(binding.state) or canonical(binding.readback["receipt"]) != canonical(binding.receipt):

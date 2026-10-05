@@ -1524,3 +1524,23 @@ class TestVerifyAuthorizedPacket:
                 "history has no final seal",
                 caplog,
             )
+
+
+@pytest.mark.parametrize("precision,value,accepted", [
+    ("seconds", datetime(2026, 10, 5, tzinfo=timezone.utc), True),
+    ("seconds", datetime(2026, 10, 5, microsecond=1000, tzinfo=timezone.utc), False),
+    ("milliseconds", datetime(2026, 10, 5, microsecond=123000, tzinfo=timezone.utc), True),
+    ("milliseconds", datetime(2026, 10, 5, microsecond=123001, tzinfo=timezone.utc), False),
+    ("milliseconds", datetime(2026, 10, 5), False),
+    ("milliseconds", datetime(2026, 10, 5, tzinfo=timezone(timedelta(hours=1))), False),
+    ("milliseconds", None, False), ("microseconds", datetime(2026, 10, 5, tzinfo=timezone.utc), False),
+    ([], datetime(2026, 10, 5, tzinfo=timezone.utc), False),
+])
+def test_explicit_utc_observation_precision_is_never_inferred_or_rounded(precision: Any, value: Any, accepted: bool) -> None:
+    """The public boundary preserves selected times exactly and rejects finer or unsupported input."""
+    from probity_observer.authorization import validate_utc_time
+    if accepted:
+        assert validate_utc_time(value, "selected time", precision=precision) is value
+    else:
+        with pytest.raises(VerificationError):
+            validate_utc_time(value, "selected time", precision=precision)

@@ -13,8 +13,10 @@ state directory, clock and source bytes. The SDK checks the receipt signature
 and stage, action construction and payload digest. The consumer joins the
 receipt subject to the acting agent and the request to the local effect.
 Only a permit with no constraints is supported. The local time rule is
-issuance <= dispatch time < expiry; exact expiry is refused. Native validity
-is checked again after the durable intent and before the local effect.
+issuance <= dispatch time < expiry; exact expiry is refused. Each transaction samples its time inside SQLite ownership. The genuine
+SDK and local grant use that same time before intent admission and before
+the local effect. The public consumer checks current authority and replays
+the genuine SDK at both retained transaction observations.
 
 Host tenant plus the exact APS action reference selects one logical operation
 and its store filename. The action reference includes the signed nonce. An
@@ -36,7 +38,7 @@ no second intent or local row. An interrupted pending operation refuses
 automatic replay; explicit recovery records an incomplete terminal. These
 are process-crash controls on one host filesystem. They do not test power
 loss, filesystem corruption, a remote provider or distributed failover.
-The fixture uses the fixed control clock `2026-10-05T20:00:00Z`. This tests
+The fixture uses the fixed control clock `2026-10-05T20:00:00.000Z`. This tests
 the stated time boundaries, not freshness against an outside clock.
 
 The commitment uses SDK-verified receipt ID, action and payload references,
@@ -74,3 +76,22 @@ The originating scope remains in [vocabulary issue 193](https://github.com/aeoes
 This artifact makes no joint adapter or provider commitment. The upstream
 SDK and candidate are Apache-2.0 work by Tymofii Pidlisnyi; the SDK is used
 unchanged. No archived storage adapter or SDK compatibility alias is used.
+
+The native host explicitly selects `timePrecision: "milliseconds"` in its
+runtime, public policy and signed ticket configuration. Intent and effect
+times use exactly three fractional digits and UTC `Z`. A retained observation
+such as `2026-10-05T20:00:00.250Z` is replayed at that exact instant, including
+fractional SDK issuance and exclusive expiry boundaries. Timestamp aliases,
+missing precision selection and finer injected observations refuse. Input
+is never rounded. The default native clock samples wall time at millisecond
+resolution; it does not attest clock accuracy or an outside time source.
+
+Observer's generic ticket default remains the distinct seconds contract.
+Its configuration adds no precision field and its canonical timestamps and
+grants retain their existing bytes. Hosts that select milliseconds pass
+`time_precision="milliseconds"` to the ticket store and public validators.
+Grant issuance and expiry remain canonical whole seconds; the explicit
+`reference_precision="milliseconds"` selects observation precision only.
+The original second-precision development captures retain their source pins
+and history; this native profile accepts only its declared millisecond
+contract. It does not infer a migration from timestamp contents.

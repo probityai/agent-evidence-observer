@@ -768,3 +768,91 @@ def test_real_retained_prefix_preserves_later_completion(case: dict[str, Any], p
     assert result.logical_admissions == result.local_effects == 1
     assert reopen(case, retained_head=heads[prefix]).readback()["revision"] == 1
     assert case["store"].path.read_bytes() == before
+
+
+def test_default_second_capture_keeps_exact_configuration_and_signed_bytes(case: dict[str, Any]) -> None:
+    """The seconds default adds no field and retains its original signed lexical form."""
+    receipt = case["store"].dispatch(case["candidate"])
+    configuration = {"request": asdict(case["request"]), "policy": asdict(case["policy"]), "serviceKey": case["key"].public_hex}
+    assert case["store"].configuration == configuration
+    assert receipt["payload"]["configuration"] == digest(DOMAIN + "-configuration", configuration)
+    expected_time = case["now"].isoformat(timespec="seconds").replace("+00:00", "Z")
+    assert receipt["payload"]["intentTime"] == receipt["payload"]["effectTime"] == expected_time
+    assert len(expected_time) == 20
+    expected_receipt = {"payload": receipt["payload"], "keyid": case["key"].public_hex,
+        "signature": case["key"].sign(DOMAIN, receipt["payload"])}
+    assert canonical(receipt) == canonical(expected_receipt)
+    assert consume(case, receipt, case["store"].readback())["status"] == "verified"
+
+
+def test_selected_milliseconds_preserve_both_transaction_observations(case: dict[str, Any], tmp_path: Path) -> None:
+    """One declared configuration preserves exact observations through store and public APIs."""
+    observations = [case["now"] + timedelta(milliseconds=123), case["now"] + timedelta(milliseconds=456)]
+    clock = iter(observations)
+    store = TicketStore(tmp_path / "milliseconds.sqlite", case["request"], case["policy"], case["key"],
+        clock=lambda: next(clock), time_precision="milliseconds")
+    store.initialize()
+    selected = {**case, "store": store}
+    receipt = store.dispatch(case["candidate"])
+    assert store.configuration["timePrecision"] == "milliseconds"
+    assert receipt["payload"]["intentTime"].endswith(".123Z") and receipt["payload"]["effectTime"].endswith(".456Z")
+    capture = verify_ticket_capture(*captured_populations(selected), case["request"], case["policy"],
+        case["key"].public_hex, retained_head=receipt, time_precision="milliseconds")
+    assert capture.local_effects == capture.logical_admissions == 1
+    readback = store.readback()
+    assert verify_ticket_result(receipt, readback, case["request"], case["policy"], case["key"].public_hex,
+        case["grant"], now=observations[-1], time_precision="milliseconds")["status"] == "verified"
+    with pytest.raises(VerificationError, match="ticket reference time is malformed"):
+        verify_ticket_capture(*captured_populations(selected), case["request"], case["policy"], case["key"].public_hex)
+    assert case["grant"]["issuedAt"].endswith("Z") and "." not in case["grant"]["issuedAt"]
+
+
+@pytest.mark.parametrize("precision", ["microseconds", "Milliseconds", True, None, [], {}])
+def test_ticket_precision_selection_is_closed(case: dict[str, Any], tmp_path: Path, precision: Any) -> None:
+    """Unsupported host selections refuse before creating storage or admitting an intent."""
+    path = tmp_path / "unsupported.sqlite"
+    with pytest.raises(VerificationError, match="selected time precision is unsupported"):
+        TicketStore(path, case["request"], case["policy"], case["key"], time_precision=precision)
+    assert not path.exists()
+
+
+@pytest.mark.parametrize("stage", ["intent", "effect"])
+def test_millisecond_ticket_refuses_finer_injected_clock(case: dict[str, Any], tmp_path: Path, stage: str) -> None:
+    """Finer host observations are refused without rounding or committing an effect."""
+    precise = case["now"] + timedelta(microseconds=123001)
+    reads = iter([precise, precise] if stage == "intent" else [case["now"], precise])
+    store = TicketStore(tmp_path / "fine.sqlite", case["request"], case["policy"], case["key"],
+        clock=lambda: next(reads), time_precision="milliseconds")
+    store.initialize()
+    with pytest.raises(VerificationError, match="UTC millisecond precision"):
+        store.dispatch(case["candidate"])
+    state = store.readback()["receipt"]["payload"]
+    assert state["phase"] == ("ready" if stage == "intent" else "pending") and state["revision"] == 0
+    assert not captured_populations({**case, "store": store})[2]
+
+
+def test_selected_precision_is_a_configuration_relation_even_without_timestamps(case: dict[str, Any], tmp_path: Path) -> None:
+    """A ready state has no time lexemes, so refusal must reach the selected configuration join."""
+    store = TicketStore(tmp_path / "ready-ms.sqlite", case["request"], case["policy"], case["key"], time_precision="milliseconds")
+    store.initialize()
+    populations = captured_populations({**case, "store": store})
+    assert verify_ticket_capture(*populations, case["request"], case["policy"], case["key"].public_hex,
+        time_precision="milliseconds").logical_admissions == 0
+    with pytest.raises(VerificationError, match="configuration differs on restart"):
+        verify_ticket_capture(*populations, case["request"], case["policy"], case["key"].public_hex)
+
+
+@pytest.mark.parametrize("suffix", ["Z", ".1Z", ".1230Z", ".123+00:00", ".123001Z"])
+def test_signed_millisecond_state_requires_exact_selected_lexical_form(case: dict[str, Any], tmp_path: Path, suffix: str) -> None:
+    """A valid state signature cannot admit timestamp aliases or finer observations."""
+    store = TicketStore(tmp_path / "lexical-ms.sqlite", case["request"], case["policy"], case["key"],
+        clock=lambda: case["now"] + timedelta(milliseconds=123), time_precision="milliseconds")
+    store.initialize()
+    store.dispatch(case["candidate"])
+    populations = captured_populations({**case, "store": store})
+    state = strict_loads(populations[0])["payload"]
+    state["intentTime"] = case["now"].isoformat(timespec="seconds").removesuffix("+00:00") + suffix
+    encoded = canonical({"payload": state, "keyid": case["key"].public_hex, "signature": case["key"].sign(DOMAIN, state)})
+    with pytest.raises(VerificationError, match="ticket reference time is malformed|ticket reference time is noncanonical|UTC millisecond precision"):
+        verify_ticket_capture(encoded, populations[1], populations[2], case["request"], case["policy"],
+            case["key"].public_hex, time_precision="milliseconds")

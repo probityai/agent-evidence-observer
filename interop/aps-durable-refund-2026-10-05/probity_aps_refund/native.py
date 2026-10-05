@@ -49,7 +49,7 @@ def _save(output: Path, name: str, runtime: dict[str, Any], attempts: list[dict[
         (case_dir / filename).write_bytes(canonical(record))
     shutil.copyfile(runtime["storePath"], case_dir / "service.sqlite")
     public_policy = {key: runtime[key] for key in ("request", "grantPolicy", "tenantId", "evidence",
-                                                  "verifierSha256", "sdkSha256", "now", "servicePublicKey")}
+                                                  "verifierSha256", "sdkSha256", "now", "timePrecision", "servicePublicKey")}
     public_policy.update(grant=runtime["candidate"]["grant"], expected=measured, alternateApproval=alternate)
     public_policy["files"] = {path.name: hashlib.sha256(path.read_bytes()).hexdigest() for path in sorted(case_dir.iterdir())}
     (case_dir / "host-policy.json").write_bytes(canonical(public_policy))

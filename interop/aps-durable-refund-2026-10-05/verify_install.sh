@@ -72,9 +72,9 @@ export APS_CORE_COVERAGE_FILE="$evidence/.core-coverage"
 import json, pathlib, sys
 path = pathlib.Path(sys.argv[1])
 report = json.loads(path.read_bytes())
-files = {name: item["summary"] for name, item in report["files"].items() if name.endswith("/ticket_service.py")}
+files = {name: item["summary"] for name, item in report["files"].items() if name.endswith(("/ticket_service.py", "/authorization.py"))}
 path.with_name("core-coverage-changed-file.json").write_text(json.dumps({"threshold": 80, "files": files}, sort_keys=True) + "\n")
-if len(files) != 1 or any(item["percent_covered"] < 80 for item in files.values()):
+if len(files) != 2 or any(item["percent_covered"] < 80 for item in files.values()):
     raise SystemExit("changed core file coverage incomplete or below 80")
 CORE_PY
 export APS_REFUND_COVERAGE_FILE="$evidence/.coverage"
@@ -86,7 +86,10 @@ expected = {"signed-event-sequence", "signed-intent-revision", "signed-effect-re
     "unsupported-effect", "missing-initialize", "signed-state-revision", "signed-state-count",
     "integer-revocation", "sql-row-real", "sql-sequence-real", "incomplete-readback-revision",
     "completed-readback-revision", "unsigned-copy-revision", "signed-public-revision", "signed-witness-scope",
-    "historical-native-intent", "signed-retained-revocation", "signed-retained-phase", "signed-retained-digest", "signed-retained-time"}
+    "historical-native-intent", "signed-retained-revocation", "signed-retained-phase", "signed-retained-digest", "signed-retained-time",
+    "consistent-effect-identity", "terminal-content-and-row", "signed-time-seconds", "signed-time-short",
+    "signed-time-long", "signed-time-offset", "policy-precision-missing", "policy-precision-seconds",
+    "policy-precision-case", "policy-clock-seconds", "policy-clock-fine", "policy-clock-offset"}
 members = ("host-policy.json", "receipt.json", "readback.json", "attempts.json", "service.sqlite",
     "consumer-stdout.bin", "consumer-stderr.txt", "consumer-check.json")
 checks = {}
@@ -116,6 +119,58 @@ if set(checks) != expected:
 (destination / "inventory.json").write_text(json.dumps({"caseCount": len(checks), "cases": checks,
     "independentCustody": False, "witnessScope": "PEER"}, sort_keys=True) + "\n")
 HOSTILE_PY
+"$evidence/operator/bin/python" -I -B - "$private_state/profile-tests" "$evidence/public-temporal-controls" <<'TEMPORAL_PY'
+import hashlib, json, pathlib, shutil, sqlite3, sys
+from contextlib import closing
+source, destination = map(pathlib.Path, sys.argv[1:])
+expected = {"transaction-" + stage + "-" + str(offset) for stage in ("intent", "effect") for offset in (-2, -1, 59, 60, 61)}
+expected.update("current-local-grant-" + str(offset) for offset in (119, 120, 121))
+expected.update("fractional-" + stage + "-" + str(offset) for stage in ("intent", "effect") for offset in (249, 250, 749, 750, 751))
+expected.update({"fine-host-intent", "fine-host-effect", "fractional-host"})
+members = ("host-policy.json", "receipt.json", "readback.json", "attempts.json", "service.sqlite",
+    "consumer-stdout.bin", "consumer-stderr.txt", "temporal-check.json")
+checks = {}
+for check in sorted(source.rglob("temporal-check.json")):
+    record = json.loads(check.read_bytes())
+    kind, case = record["kind"], check.parent
+    if kind not in expected or kind in checks or record["readerExit"] not in (0, 2):
+        raise SystemExit("unexpected or duplicate temporal control")
+    if record["independentCustody"] is not False or record["witnessScope"] != "PEER":
+        raise SystemExit("temporal capture scope differs")
+    policy = json.loads((case / "host-policy.json").read_bytes())
+    if policy["timePrecision"] != "milliseconds":
+        raise SystemExit("temporal precision differs")
+    for name, pin in policy["files"].items():
+        if hashlib.sha256((case / name).read_bytes()).hexdigest() != pin:
+            raise SystemExit("temporal member selection differs")
+    with closing(sqlite3.connect((case / "service.sqlite").resolve().as_uri() + "?mode=ro", uri=True)) as db:
+        effects = db.execute("SELECT count(*) FROM tickets").fetchone()[0]
+        events = [json.loads(row[0]) for row in db.execute("SELECT record FROM events")]
+    admissions = sum(item["payload"]["event"]["kind"] == "intent" for item in events)
+    if (record["logicalAdmissions"], record["localEffects"]) != (admissions, effects) or policy["expected"] != {"logicalAdmissions": admissions, "localEffects": effects}:
+        raise SystemExit("temporal actual native population differs")
+    stdout, stderr = (case / "consumer-stdout.bin").read_bytes(), (case / "consumer-stderr.txt").read_bytes()
+    if record["readerExit"] == 2:
+        if stdout or not stderr:
+            raise SystemExit("temporal refusal output differs")
+    elif stderr or json.loads(stdout)["localEffects"] != effects:
+        raise SystemExit("temporal accepted output differs")
+    target = destination / kind
+    target.mkdir(parents=True)
+    checks[kind] = {}
+    for name in members:
+        member = case / name
+        if not member.is_file() or member.is_symlink():
+            raise SystemExit("temporal member is not a regular file")
+        shutil.copyfile(member, target / name)
+        checks[kind][name] = hashlib.sha256(member.read_bytes()).hexdigest()
+    if checks[kind]["host-policy.json"] != record["policySha256"] or checks[kind]["service.sqlite"] != record["SQLiteSha256"]:
+        raise SystemExit("temporal selected bytes differ")
+if set(checks) != expected:
+    raise SystemExit("temporal capture population incomplete")
+(destination / "inventory.json").write_text(json.dumps({"caseCount": len(checks), "cases": checks,
+    "independentCustody": False, "witnessScope": "PEER"}, sort_keys=True) + "\n")
+TEMPORAL_PY
 "$evidence/operator/bin/python" -I -B -m coverage combine --rcfile="$profile/pyproject.toml"
 "$evidence/operator/bin/python" -I -B -m coverage json --rcfile="$profile/pyproject.toml" -o "$evidence/profile-coverage.json"
 "$evidence/operator/bin/python" -I -B - "$evidence/profile-coverage.json" <<'PY'

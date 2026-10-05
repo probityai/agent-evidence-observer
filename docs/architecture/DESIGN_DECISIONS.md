@@ -82,3 +82,22 @@ field must match the state reconstructed from the validated history prefix.
 Matching signatures or prefix hashes alone do not establish those relations.
 The public APS consumer checks current local and native authority plus genuine
 SDK replay at each retained intent/effect observation.
+
+
+## Select an observation precision explicitly
+
+The public `validate_utc_time` function validates an aware UTC observation
+against a closed seconds or milliseconds selection. It preserves the input
+and rejects finer observations. Grant issuance and expiry remain canonical
+whole seconds. `verify_grant(reference_precision="milliseconds")` changes
+only the observation contract.
+
+The ticket store and both public validators accept an explicit
+`time_precision`. The default seconds configuration and timestamp bytes stay
+unchanged. The selected milliseconds configuration includes
+`timePrecision: "milliseconds"`, and its exact timestamps use `.sssZ`.
+That declaration is part of the signed configuration, including ready states
+that have no timestamps. There is no timestamp inference or alternate input
+spelling. The new APS profile selects milliseconds so a fractional approval
+window remains checkable at both retained transaction times. Its default
+clock samples wall time at that resolution; an injected finer clock refuses.

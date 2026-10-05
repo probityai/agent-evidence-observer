@@ -11,12 +11,13 @@ import json
 import math
 import re
 import subprocess
+import time
 from collections.abc import Callable
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-from probity_observer.authorization import ActionRequest, AuthorizedAction, GrantPolicy, utc_clock
+from probity_observer.authorization import ActionRequest, AuthorizedAction, GrantPolicy, validate_utc_time
 from probity_observer.crypto import SigningKey, VerificationError, canonical, digest, strict_loads
 from probity_observer.ticket_service import MAX_BODY, TicketStore, verify_ticket_result
 
@@ -24,6 +25,24 @@ PROFILE = "probity-aps-refund-record-v0"
 OPERATION_DOMAIN = "probity-aps-refund-operation-v0"
 REPORT_FIELDS = frozenset({"profile", "receiptId", "actionRef", "payloadRef", "payloadCanonical",
                            "boundaryIdentity", "workerIdentity", "keyId", "publicKey", "issuedAt", "validUntil"})
+
+
+def millisecond_clock() -> datetime:
+    """Sample CLOCK_REALTIME at the native profile's declared millisecond resolution."""
+    return datetime(1970, 1, 1, tzinfo=timezone.utc) + timedelta(milliseconds=time.time_ns() // 1_000_000)
+
+
+def parse_native_clock(value: Any) -> datetime:
+    """Accept only the native host contract's exact UTC .sssZ representation."""
+    if not isinstance(value, str):
+        raise VerificationError("APS host clock must use canonical UTC milliseconds")
+    try:
+        reference = validate_utc_time(datetime.fromisoformat(value), "APS host clock", precision="milliseconds")
+    except ValueError as error:
+        raise VerificationError("APS host clock must use canonical UTC milliseconds") from error
+    if reference.isoformat(timespec="milliseconds").replace("+00:00", "Z") != value:
+        raise VerificationError("APS host clock must use canonical UTC milliseconds")
+    return reference
 
 
 def sdk_digest(verifier: Path) -> str:
@@ -82,6 +101,7 @@ def _payload(raw: str) -> dict[str, Any]:
 def verify_aps(evidence: dict[str, Any], *, node: Path, verifier: Path,
                verifier_sha256: str, sdk_sha256: str, now: datetime) -> dict[str, Any]:
     """Run host-selected native SDK bytes after preserving the raw payload boundary."""
+    validate_utc_time(now, "native reference time", precision="milliseconds")
     if not isinstance(evidence, dict) or set(evidence) != {"actionRaw", "payloadRaw", "approvalRaw", "policy"}:
         raise VerificationError("APS refund input fields differ")
     payload = _payload(evidence["payloadRaw"])
@@ -172,7 +192,7 @@ class ApsRefundStore(TicketStore):
 
     def __init__(self, path: Path, request: ActionRequest, policy: GrantPolicy, key: SigningKey,
                  *, evidence: dict[str, Any], tenant_id: str, node: Path, verifier: Path,
-                 verifier_sha256: str, sdk_sha256: str, clock: Callable[[], datetime] = utc_clock,
+                 verifier_sha256: str, sdk_sha256: str, clock: Callable[[], datetime] = millisecond_clock,
                  crash_hook: Callable[[str], None] | None = None) -> None:
         self._evidence = json.dumps(evidence, sort_keys=True, ensure_ascii=True, separators=(",", ":")).encode("ascii")
         self._node, self._verifier, self._verifier_pin = node, verifier, verifier_sha256
@@ -184,7 +204,8 @@ class ApsRefundStore(TicketStore):
         self._native_report = canonical(report)
         commitment = refund_decision_digest(report, request, tenant_id=tenant_id,
                                             verifier_sha256=verifier_sha256, sdk_sha256=sdk_sha256)
-        super().__init__(path, request, policy, key, clock=clock, crash_hook=crash_hook, decision_digest=commitment)
+        super().__init__(path, request, policy, key, clock=clock, crash_hook=crash_hook, decision_digest=commitment,
+            time_precision="milliseconds")
 
     def _authorize(self, grant: Any, *, now: datetime) -> AuthorizedAction:
         """Join genuine native approval and local grant at one transaction clock."""
@@ -205,7 +226,7 @@ def verify_refund_result(evidence: dict[str, Any], receipt: dict[str, Any], read
     commitment = refund_decision_digest(report, request, tenant_id=tenant_id,
                                         verifier_sha256=verifier_sha256, sdk_sha256=sdk_sha256)
     result = verify_ticket_result(receipt, readback, request, policy, service_key, grant,
-                                  now=now, decision_digest=commitment)
+                                  now=now, decision_digest=commitment, time_precision="milliseconds")
     verify_aps_observations(evidence, tuple(datetime.fromisoformat(receipt["payload"][name])
         for name in ("intentTime", "effectTime")), report, node=node, verifier=verifier,
         verifier_sha256=verifier_sha256, sdk_sha256=sdk_sha256)

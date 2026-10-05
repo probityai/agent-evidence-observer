@@ -18,8 +18,9 @@ bash interop/aps-durable-refund-2026-10-05/verify_install.sh ./aps-refund-run
 ```
 
 The script builds and installs both wheels, installs locked npm bytes, runs
-native and hostile controls, retains eight development control captures and runs a
-separate installed public reader twice. Private runtime files stay outside
+all core and profile tests, retains eight native development captures,
+32 hostile public consumer captures and 26 transaction/time captures. It
+runs a separate installed public reader twice on each native capture. Private runtime files stay outside
 the capture and are removed after the run. [Source selection](source-selection.json)
 and [the protocol](PROTOCOL.md) define the inputs, trust and claim limits.
 The first completion and approval-reissue captures share one operation.
