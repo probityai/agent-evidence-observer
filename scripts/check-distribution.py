@@ -9,11 +9,23 @@ import tomllib
 from zipfile import ZipFile
 
 
+def profile_guides(root: Path) -> dict[Path, Path]:
+    """Select the maintained guide for each separately installed source unit."""
+    overrides = {"langgraph-crash-window-2026-10-03": "PROFILE.md"}
+    return {
+        manifest: manifest.parent / overrides.get(manifest.parent.name, "README.md")
+        for manifest in sorted((root / "interop").glob("*/pyproject.toml"))
+    }
+
+
 def check(wheel: Path) -> None:
     root = Path(__file__).resolve().parent.parent
     project = tomllib.loads((root / "pyproject.toml").read_text())["project"]
     guide = (root / "docs/INSTALLATION.md").read_text()
-    for manifest in sorted((root / "interop").glob("*/pyproject.toml")):
+    routes = profile_guides(root)
+    rows = [line for line in guide.splitlines() if line.startswith("| [")]
+    assert len(rows) == len(routes), "profile route population"
+    for manifest, profile_guide in routes.items():
         profile = tomllib.loads(manifest.read_text())["project"]
         prefix = f"| [{manifest.parent.name}]"
         rows = [line for line in guide.splitlines() if line.startswith(prefix)]
@@ -21,7 +33,10 @@ def check(wheel: Path) -> None:
         row = rows[0]
         assert f"`{profile['name']}`" in row, f"distribution identity: {manifest}"
         assert f"`{profile['requires-python']}`" in row, f"Python constraint: {manifest}"
-        assert (manifest.parent / "README.md").is_file(), f"profile guide: {manifest}"
+        assert profile_guide.is_file(), f"profile guide: {manifest}"
+        url = "https://github.com/probityai/agent-evidence-observer/blob/main/"
+        url += profile_guide.relative_to(root).as_posix()
+        assert f"{prefix}({url})" in row, f"profile guide URL: {manifest}"
         for command in profile.get("scripts", {}):
             assert f"`{command}`" in row, f"console command: {manifest}"
 

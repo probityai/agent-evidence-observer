@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
+import runpy
 import shutil
 import subprocess
 import sys
@@ -21,11 +22,12 @@ def run(wheel: Path) -> None:
             shutil.copyfile(root / name, selected / name)
         for name in ("src", "scripts", "docs"):
             shutil.copytree(root / name, selected / name, ignore=shutil.ignore_patterns("__pycache__"))
-        for manifest in (root / "interop").glob("*/pyproject.toml"):
+        routes = runpy.run_path(str(root / "scripts/check-distribution.py"))["profile_guides"](root)
+        for manifest, profile_guide in routes.items():
             target = selected / manifest.relative_to(root).parent
             target.mkdir(parents=True)
-            for name in ("pyproject.toml", "README.md"):
-                shutil.copyfile(manifest.parent / name, target / name)
+            shutil.copyfile(manifest, target / manifest.name)
+            shutil.copyfile(profile_guide, selected / profile_guide.relative_to(root))
         command = [sys.executable, str(selected / "scripts/check-distribution.py")]
 
         def expect(name: str, artifact: Path, passed: bool) -> None:
@@ -42,6 +44,7 @@ def run(wheel: Path) -> None:
             ("wrong-profile-python", "`>=3.12`", "`>=3.13`"),
             ("wrong-profile-name", "`probity-adk-user-responses`", "`unrelated-package`"),
             ("missing-profile-command", "`probity-adk-responses-read`", "`unrelated-command`"),
+            ("dead-profile-guide", "/README.md)", "/MISSING.md)"),
         ):
             assert before in row
             guide.write_text(original.replace(row, row.replace(before, after)))
@@ -61,7 +64,7 @@ def run(wheel: Path) -> None:
                 for filename, (info, raw) in members.items():
                     archive.writestr(info, raw + b"\nsubstituted bytes\n" if filename == changed else raw)
             expect(name, controlled, False)
-        print("six distribution substitutions refused")
+        print("seven distribution substitutions refused")
 
 
 if __name__ == "__main__":
