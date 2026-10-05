@@ -376,7 +376,7 @@ def signed_hostile_capture(capture: Path, target: Path, kind: str) -> Path:
     ("signed-retained-digest", "retained state differs from native history"),
     ("signed-retained-time", "retained state differs from native history"),
     ("consistent-effect-identity", "intent authority or effect identity differs"),
-    ("terminal-content-and-row", "native ticket bytes differ"),
+    ("terminal-content-and-row", "retained state differs from native history"),
     ("signed-time-seconds", "canonical UTC milliseconds"), ("signed-time-short", "canonical UTC milliseconds"),
     ("signed-time-long", "canonical UTC milliseconds"), ("signed-time-offset", "canonical UTC milliseconds"),
 ])
