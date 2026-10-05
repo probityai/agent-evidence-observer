@@ -99,7 +99,9 @@ class TestLedgerHead:
             assert claim["witnessScope"] == "PEER"
             assert claim["coverage"]["unmediatedEffects"] == "not-established"
 
-        @settings(max_examples=30, suppress_health_check=[HealthCheck.function_scoped_fixture])
+        # This bounded population property checks correctness. Durable filesystem
+        # work on a shared host has no per-example wall-clock requirement.
+        @settings(max_examples=30, deadline=None, suppress_health_check=[HealthCheck.function_scoped_fixture])
         @given(terminals=st.lists(st.booleans(), min_size=0, max_size=8))
         def test_interval_summary_matches_registered_population(self, tmp_path: Path, terminals: list[bool]) -> None:
             with TemporaryDirectory(dir=tmp_path) as directory:
