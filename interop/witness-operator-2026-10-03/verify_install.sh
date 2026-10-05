@@ -28,7 +28,7 @@ for role in operator producer reader; do
   uv pip freeze --python "${environments[$role]}/bin/python" > "$evidence/$role-install.txt"
 done
 "$evidence/operator/bin/python" -I -B -m pytest -c /dev/null "$source_root/tests" -q -p no:cacheprovider --junitxml="$evidence/core-tests.xml"
-"$evidence/operator/bin/python" -I -B -m pytest -c /dev/null "$profile/test_operator.py" "$profile/test_retention.py" --import-mode=importlib -q -p no:cacheprovider --junitxml="$evidence/operator-tests.xml"
+"$evidence/operator/bin/python" -I -B -m pytest -c /dev/null "$profile/test_operator.py" "$profile/test_retention.py" "$profile/test_reader_fork.py" --import-mode=importlib -q -p no:cacheprovider --junitxml="$evidence/operator-tests.xml"
 "$evidence/operator/bin/python" -I -B "$profile/check_complexity.py" > "$evidence/complexity.json"
 sudo "$evidence/operator/bin/python" -I -B -m probity_witness_operator.native run "$evidence/native" --private-state "$native_runtime/private" --producer-python "${environments[producer]}/bin/python" --reader-python "$evidence/reader/bin/python"
 policy_sha=$(sha256sum "$evidence/native/host-policy.json" | cut -d' ' -f1)

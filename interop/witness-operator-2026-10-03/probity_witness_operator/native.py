@@ -285,7 +285,10 @@ def _fork(case: NativeCase, private: Path) -> bytes:
     witness = LedgerWitness(directory / "fork.jsonl", load_key(case.configuration), case.observer.public_hex)
     broker = Broker(workspace, directory / "history.jsonl", {"intervalId": "alternate", "scope": "/work", "operation": "write-file"}, case.observer, witness)
     broker.begin()
-    return witness.state_path.read_bytes()
+    ledger = witness.state_path.read_bytes()
+    (case.directory / "fork-ledger.jsonl").write_bytes(ledger)
+    (case.directory / "fork-head.json").write_bytes(canonical(witness.signed_head()))
+    return ledger
 
 
 def _missing(case: NativeCase) -> dict[str, bool]:
@@ -366,6 +369,7 @@ def run(directory: Path, private: Path, producer_python: str, reader_python: str
         socket_root.chmod(0o755)
         policies, lost = _cases(packet, private, socket_root, producer_python)
         controls = _fault_controls(lost, private)
+        policies[lost.name] = _case_policy(lost)
     faults = packet / "fault-controls.json"
     faults.write_bytes(canonical(controls))
     policy = {"format": FORMAT, "cases": policies, "source": source, "faultControls": sha(faults.read_bytes())}

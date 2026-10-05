@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import argparse
+import subprocess
 import sys
+import tempfile
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -132,7 +134,40 @@ def read(directory: Path, policy: dict[str, Any]) -> dict[str, Any]:
     records = [_case(directory / name, policy["cases"][name]) for name in CASES]
     return {"profile": FORMAT, "witnessScope": "PEER", "independentCustody": False, "modelInferenceCalls": 0,
             "selectedSourceFiles": len(policy["source"]), "records": records,
+            "forkControl": _replay_fork(directory / "lost-ack", policy["cases"]["lost-ack"]),
             "committedTargetEffects": sum(item["committedTargetEffects"] for item in records)}
+
+
+def _retain_command(ledger: Path, candidate: Path, retained: Path, key: str, pins: dict[str, str], selection: list[str]) -> subprocess.CompletedProcess[bytes]:
+    """Exercise the installed public retention CLI under exact public input pins."""
+    return subprocess.run([sys.executable, "-I", "-B", "-m", "probity_witness_operator.retention",
+                           str(ledger), str(candidate), str(retained), "--witness-key", key,
+                           "--ledger-sha256", pins[ledger.name], "--candidate-sha256", pins[candidate.name],
+                           *selection], capture_output=True, timeout=10)
+
+
+def _replay_fork(directory: Path, policy: dict[str, Any]) -> dict[str, Any]:
+    """Refuse an authentic same-key alternate log in fresh public-key-only custody."""
+    key = policy["witnessKey"]
+    candidate = directory / "fork-head.json"
+    ledger = directory / "fork-ledger.jsonl"
+    head = load(candidate)
+    summary = verify_ledger_head(ledger, head, key)
+    original = directory / "head.json"
+    original_head = load(original)
+    require((summary["count"], summary["head"]) == (head["count"], head["head"]), "fork candidate is not the complete ledger head")
+    require(head["count"] == original_head["count"] and head["head"] != original_head["head"], "fork control is not an equal-count alternate history")
+    with tempfile.TemporaryDirectory(prefix="witness-reader-retention-") as temporary:
+        retained = Path(temporary) / "head.json"
+        initial = _retain_command(directory / "ledger.jsonl", original, retained, key, policy["files"], ["--initial"])
+        require((initial.returncode, initial.stdout) == (0, original.read_bytes() + b"\n"), "public retention of authentic history failed")
+        previous = retained.read_bytes()
+        refused = _retain_command(ledger, candidate, retained, key, policy["files"], ["--previous-sha256", sha(previous)])
+        require((refused.returncode, refused.stdout) == (2, b""), "public same-key fork retention was accepted")
+        require(b"ledger does not extend the retained witness head" in refused.stderr and refused.stderr.endswith(b"retained head command refused\n"), "fork retention refused for a different reason")
+        require(retained.read_bytes() == previous, "fork refusal changed retained consumer head")
+    return {"sameKey": True, "receiptCount": head["count"], "returncode": refused.returncode,
+            "stdoutHex": refused.stdout.hex(), "stderrHex": refused.stderr.hex(), "retainedHeadUnchanged": True}
 
 
 def _faults(path: Path, expected_sha256: str) -> None:
