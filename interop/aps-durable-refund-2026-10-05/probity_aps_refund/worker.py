@@ -28,7 +28,7 @@ def load_store(runtime: dict[str, Any], *, fault: str | None = None) -> ApsRefun
                           tenant_id=runtime["tenantId"], node=Path(runtime["node"]),
                           verifier=Path(runtime["verifier"]), verifier_sha256=runtime["verifierSha256"],
                           sdk_sha256=runtime["sdkSha256"],
-                          clock=lambda: datetime.fromisoformat(runtime["now"].replace("Z", "+00:00")), crash_hook=crash)
+                          clock=lambda: datetime.fromisoformat(runtime["now"]), crash_hook=crash)
 
 
 def main() -> int:

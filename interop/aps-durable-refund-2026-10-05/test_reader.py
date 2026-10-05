@@ -254,7 +254,7 @@ def test_selected_alternate_requires_same_action_and_changed_approval(capture: P
 def signed_hostile_capture(capture: Path, target: Path, kind: str) -> Path:
     """Re-sign controlled host faults; the actual consumer still receives only public keys."""
     incomplete = kind in {"signed-state-revision", "signed-state-count", "integer-revocation",
-        "incomplete-readback-revision", "unsigned-copy-revision", "signed-public-revision", "missing-initialize"}
+        "incomplete-readback-revision", "unsigned-copy-revision", "signed-public-revision", "missing-initialize", "historical-native-intent"}
     name = "after-intent" if incomplete else "restart"
     shutil.copytree(capture / name, target)
     runtime = json.loads((capture.parent / "private" / name / "runtime.json").read_bytes())
@@ -274,6 +274,9 @@ def signed_hostile_capture(capture: Path, target: Path, kind: str) -> Path:
             events = events[1:]
             for number, event in enumerate(events, 1):
                 event["sequence"] = number
+        elif kind == "historical-native-intent":
+            state["intentTime"] = "2026-10-05T19:59:58Z"
+            events[1]["event"]["intentTime"] = state["intentTime"]
         elif kind == "signed-state-revision":
             state["revision"] = False
         elif kind == "signed-state-count":
@@ -292,7 +295,7 @@ def signed_hostile_capture(capture: Path, target: Path, kind: str) -> Path:
                 db.execute("INSERT INTO events SELECT * FROM old_events")
                 db.execute("DROP TABLE old_events")
         elif kind not in {"incomplete-readback-revision", "completed-readback-revision", "unsigned-copy-revision",
-                           "signed-public-revision", "signed-witness-scope"}:
+                           "signed-public-revision", "signed-witness-scope", "signed-retained-revocation", "signed-retained-phase", "signed-retained-digest", "signed-retained-time"}:
             raise AssertionError("unknown signed host control")
         db.execute("DELETE FROM events")
         previous = "0" * 64
@@ -314,6 +317,14 @@ def signed_hostile_capture(capture: Path, target: Path, kind: str) -> Path:
         receipt["payload"]["revision"] = False
     elif kind == "signed-witness-scope":
         receipt["payload"]["witnessScope"] = "INDEPENDENT"
+    elif kind == "signed-retained-revocation":
+        receipt["payload"]["revoked"] = True
+    elif kind == "signed-retained-phase":
+        receipt["payload"].update(phase="incomplete", revision=0, contentDigest=None, effectTime=None)
+    elif kind == "signed-retained-digest":
+        receipt["payload"]["contentDigest"] = "f" * 64
+    elif kind == "signed-retained-time":
+        receipt["payload"]["effectTime"] = "2026-10-05T20:00:01Z"
     receipt["signature"] = key.sign(DOMAIN, receipt["payload"])
     readback = json.loads((target / "readback.json").read_bytes())
     readback["receipt"] = json.loads(canonical(receipt))
@@ -341,6 +352,11 @@ def signed_hostile_capture(capture: Path, target: Path, kind: str) -> Path:
     ("incomplete-readback-revision", "revision type"), ("completed-readback-revision", "revision type"),
     ("unsigned-copy-revision", "state differs from selected signed readback"),
     ("signed-public-revision", "counters or revocation"), ("signed-witness-scope", "retained ticket head profile"),
+    ("historical-native-intent", "native APS approval verification refused"),
+    ("signed-retained-revocation", "retained state differs from native history"),
+    ("signed-retained-phase", "retained state differs from native history"),
+    ("signed-retained-digest", "retained state differs from native history"),
+    ("signed-retained-time", "retained state differs from native history"),
 ])
 def test_authentic_host_signatures_do_not_override_native_capture_rules(capture: Path, tmp_path: Path, kind: str, refusal: str) -> None:
     """Genuine SDK approval, valid host signatures and reselected pins still require native types and phases."""

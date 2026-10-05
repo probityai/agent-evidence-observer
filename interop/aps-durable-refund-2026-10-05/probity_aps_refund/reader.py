@@ -14,7 +14,7 @@ from probity_observer.authorization import ActionRequest, GrantPolicy, verify_gr
 from probity_observer.crypto import VerificationError, canonical, digest, strict_loads, verify_signature
 from probity_observer.ticket_service import DOMAIN, READBACK_FIELDS, VerifiedTicketCapture, verify_ticket_capture
 
-from .service import refund_decision_digest, verify_aps, verify_refund_result
+from .service import refund_decision_digest, verify_aps, verify_aps_observations, verify_refund_result
 
 
 @dataclass(frozen=True)
@@ -130,8 +130,13 @@ def _bind_native(selected: _SelectedPolicy) -> _NativeBinding:
         "policy": asdict(grant_policy), "serviceKey": policy["servicePublicKey"], "decisionDigest": commitment})
     if state["format"] != DOMAIN or state["configuration"] != configuration or readback["tenantId"] != request.tenant_id or readback["ticketId"] != request.target_path.removeprefix("/work/tickets/"):
         raise VerificationError("public native configuration or readback identity differs")
-    authorized = verify_grant(policy["grant"], request, grant_policy,
-                              now=datetime.fromisoformat(state["intentTime"]))
+    verify_grant(policy["grant"], request, grant_policy, now=selected.now)
+    if state["intentTime"] is None:
+        raise VerificationError("public native capture has no durable authorization observation")
+    intent_time = datetime.fromisoformat(state["intentTime"])
+    authorized = verify_grant(policy["grant"], request, grant_policy, now=intent_time)
+    verify_aps_observations(policy["evidence"], (intent_time,), native, node=selected.node,
+        verifier=selected.verifier, verifier_sha256=policy["verifierSha256"], sdk_sha256=policy["sdkSha256"])
     effect_id = digest(DOMAIN + "-effect", {"configuration": configuration,
         "requestId": request.request_id, "grantDigest": authorized.grant_digest})
     if state["grantDigest"] != authorized.grant_digest or state["effectId"] != effect_id or readback["effectId"] != effect_id:

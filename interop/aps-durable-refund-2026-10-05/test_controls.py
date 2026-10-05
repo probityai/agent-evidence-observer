@@ -334,3 +334,109 @@ def test_signed_permit_with_unenforced_constraints_is_refused(tmp_path: Path) ->
     with pytest.raises(VerificationError):
         load_store(runtime)
     assert not Path(runtime["storePath"]).exists()
+
+
+def retain_temporal_control(runtime: dict[str, Any], store: Any, output: Path, record: dict[str, Any], expected_reader_exit: int) -> None:
+    """Preserve actual public native state and installed CLI results without fixture keys."""
+    import hashlib
+    import shutil
+    output.mkdir()
+    readback = store.readback()
+    for filename, item in (("receipt.json", readback["receipt"]), ("readback.json", readback), ("attempts.json", [record])):
+        (output / filename).write_bytes(canonical(item))
+    shutil.copyfile(runtime["storePath"], output / "service.sqlite")
+    public = {key: runtime[key] for key in ("request", "grantPolicy", "tenantId", "evidence", "verifierSha256", "sdkSha256", "now", "servicePublicKey")}
+    admissions, effects = counts(runtime)
+    public.update(grant=runtime["candidate"]["grant"], expected={"logicalAdmissions": admissions, "localEffects": effects}, alternateApproval=None)
+    public["files"] = {name: hashlib.sha256((output / name).read_bytes()).hexdigest() for name in ("receipt.json", "readback.json", "attempts.json", "service.sqlite")}
+    (output / "host-policy.json").write_bytes(canonical(public))
+    pin = hashlib.sha256((output / "host-policy.json").read_bytes()).hexdigest()
+    before = (output / "service.sqlite").read_bytes()
+    result = subprocess.run([sys.executable, "-I", "-B", "-m", "probity_aps_refund.reader", str(output), "--policy-sha256", pin,
+        "--node", runtime["node"], "--verifier", runtime["verifier"]], capture_output=True, check=False, timeout=30)
+    (output / "consumer-stdout.bin").write_bytes(result.stdout)
+    (output / "consumer-stderr.txt").write_bytes(result.stderr)
+    (output / "temporal-check.json").write_bytes(canonical({**record, "readerExit": result.returncode,
+        "policySha256": pin, "SQLiteSha256": hashlib.sha256(before).hexdigest(), "logicalAdmissions": admissions,
+        "localEffects": effects, "witnessScope": "PEER", "independentCustody": False}))
+    assert result.returncode == expected_reader_exit, result.stderr
+    assert (output / "service.sqlite").read_bytes() == before
+    if result.returncode:
+        assert not result.stdout
+    else:
+        assert json.loads(result.stdout)["localEffects"] == effects
+
+
+@pytest.mark.parametrize("stage,offset,accepted", [("intent", -2, False), ("intent", -1, True), ("intent", 59, True),
+    ("intent", 60, False), ("intent", 61, False), ("effect", -2, False), ("effect", -1, True),
+    ("effect", 59, True), ("effect", 60, False), ("effect", 61, False)])
+def test_exact_transaction_native_clock_boundary(case: dict[str, Any], tmp_path: Path, stage: str, offset: int, accepted: bool) -> None:
+    """The same sampled transaction time governs genuine SDK approval and local authority."""
+    store = load_store(case)
+    observations = [NOW + timedelta(seconds=offset)] * 2 if stage == "intent" else [NOW - timedelta(seconds=1), NOW + timedelta(seconds=offset)]
+    reads = []
+    def clock():
+        value = observations[len(reads)]
+        reads.append(value)
+        return value
+    store.clock = clock
+    if accepted:
+        receipt = store.dispatch(case["candidate"])
+        assert receipt["payload"]["intentTime"] == observations[0].isoformat(timespec="seconds").replace("+00:00", "Z")
+        assert receipt["payload"]["effectTime"] == observations[1].isoformat(timespec="seconds").replace("+00:00", "Z")
+        assert counts(case) == (1, 1) and len(reads) == 2
+        case["now"] = observations[1].isoformat().replace("+00:00", "Z")
+        refusal = None
+    else:
+        with pytest.raises(VerificationError, match="native APS approval verification refused") as failed:
+            store.dispatch(case["candidate"])
+        refusal = str(failed.value)
+        assert counts(case) == ((0, 0) if stage == "intent" else (1, 0))
+        assert len(reads) == (1 if stage == "intent" else 2)
+        if stage == "effect":
+            store.recover()
+    retain_temporal_control(case, store, tmp_path / (stage + "-" + str(offset)), {"kind": "transaction-" + stage + "-" + str(offset),
+        "accepted": accepted, "refusal": refusal, "observations": [value.isoformat() for value in reads]},
+        0 if accepted or stage == "effect" else 2)
+
+
+@pytest.mark.parametrize("offset,accepted", [(119, True), (120, False), (121, False)])
+def test_incomplete_capture_requires_current_local_authority(tmp_path: Path, offset: int, accepted: bool) -> None:
+    """A longer-lived genuine APS approval does not extend an expired local grant."""
+    runtime = provision(tmp_path / "host", PROFILE)
+    options = {"issuedAt": (NOW - timedelta(seconds=1)).isoformat(timespec="milliseconds").replace("+00:00", "Z"),
+        "validUntil": (NOW + timedelta(seconds=180)).isoformat(timespec="milliseconds").replace("+00:00", "Z"),
+        "verdict": "permit", "constraints": [], "alternatives": False,
+        "reissuedValidUntil": (NOW + timedelta(seconds=200)).isoformat(timespec="milliseconds").replace("+00:00", "Z")}
+    issued = subprocess.run([runtime["node"], str(PROFILE / "fixture.mjs")], input=canonical(options),
+        capture_output=True, check=True, timeout=10)
+    runtime = select_action(runtime, json.loads(issued.stdout))
+    store = load_store(runtime)
+    store.initialize()
+    def interrupted(point: str) -> None:
+        if point == "after-intent":
+            raise RuntimeError("controlled incomplete authority capture")
+    store.crash_hook = interrupted
+    with pytest.raises(RuntimeError, match="controlled incomplete authority capture"):
+        store.dispatch(runtime["candidate"])
+    store.recover()
+    runtime["now"] = (NOW + timedelta(seconds=offset)).isoformat().replace("+00:00", "Z")
+    retain_temporal_control(runtime, store, tmp_path / ("current-local-grant-" + str(offset)),
+        {"kind": "current-local-grant-" + str(offset), "accepted": accepted,
+         "nativeValidUntil": options["validUntil"], "localGrantValidUntil": (NOW + timedelta(seconds=120)).isoformat()},
+        0 if accepted else 2)
+
+
+@pytest.mark.parametrize("kind", ["empty-observations", "changed-frozen-report"])
+def test_native_observations_require_actual_sdk_and_frozen_report(case: dict[str, Any], kind: str) -> None:
+    """Historical checks cannot silently accept no observations or another SDK decision."""
+    from probity_aps_refund.service import verify_aps_observations
+    arguments = {"node": Path(case["node"]), "verifier": Path(case["verifier"]),
+        "verifier_sha256": case["verifierSha256"], "sdk_sha256": case["sdkSha256"]}
+    report = verify_aps(case["evidence"], now=NOW, **arguments)
+    observations = () if kind == "empty-observations" else (NOW,)
+    if kind == "changed-frozen-report":
+        report["receiptId"] = "f" * 64
+    with pytest.raises(VerificationError, match="observations are missing|observation differs from frozen decision"):
+        verify_aps_observations(case["evidence"], observations, report, **arguments)
+    assert counts(case) == (0, 0)

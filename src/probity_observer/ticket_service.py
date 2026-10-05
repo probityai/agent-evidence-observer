@@ -22,7 +22,7 @@ from typing import Any
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
-from .authorization import ActionRequest, GrantPolicy, utc_clock, verify_grant
+from .authorization import ActionRequest, AuthorizedAction, GrantPolicy, utc_clock, verify_grant
 from .crypto import SigningKey, VerificationError, canonical, digest, strict_loads, verify_signature
 
 DOMAIN = "probity-http-ticket-v0"
@@ -191,8 +191,17 @@ def _verify_ticket_history(events: Sequence[tuple[int, bytes]], state: dict[str,
             raise VerificationError("ticket history differs")
         progress = _ticket_history_transition(number, event["event"], state, request, policy, progress)
         head = event["hash"]
-        if retained is not None and number == retained["eventCount"] and head != retained["eventHead"]:
-            raise VerificationError("ticket history changed retained prefix")
+        if retained is not None and number == retained["eventCount"]:
+            if head != retained["eventHead"]:
+                raise VerificationError("ticket history changed retained prefix")
+            prefix = {**state, "phase": progress.phase, "revoked": progress.revoked,
+                "eventCount": number, "eventHead": head, "revision": int(progress.phase == "completed"),
+                "contentDigest": request.content_sha256 if progress.phase == "completed" else None,
+                "effectTime": state["effectTime"] if progress.phase == "completed" else None}
+            if progress.phase == "ready":
+                prefix.update(effectId=None, grantDigest=None, intentTime=None)
+            if canonical({name: retained[name] for name in STATE_FIELDS}) != canonical(prefix):
+                raise VerificationError("ticket retained state differs from native history")
     if len(events) != state["eventCount"] or head != state["eventHead"]:
         raise VerificationError("ticket history is incomplete")
     if progress.phase != state["phase"] or progress.revoked != state["revoked"]:
@@ -216,7 +225,7 @@ def _verify_ticket_rows(tickets: Sequence[tuple[str, str, bytes, int, str]],
         raise VerificationError("native ticket row types differ")
     if (tenant, ticket, revision, effect) != (request.tenant_id, request.target_path.removeprefix("/work/tickets/"), state["revision"], state["effectId"]):
         raise VerificationError("native ticket relation differs")
-    if hashlib.sha256(content).hexdigest() != state["contentDigest"]:
+    if state["contentDigest"] != request.content_sha256 or hashlib.sha256(content).hexdigest() != request.content_sha256:
         raise VerificationError("native ticket bytes differ")
     return content
 
@@ -240,6 +249,9 @@ def verify_ticket_capture(
     _state_schema(state)
     if state["configuration"] != configuration_digest:
         raise VerificationError("ticket configuration differs on restart")
+    if state["phase"] != "ready" and state["effectId"] != digest(DOMAIN + "-effect", {
+            "configuration": configuration_digest, "requestId": request.request_id, "grantDigest": state["grantDigest"]}):
+        raise VerificationError("ticket deterministic effect identity differs")
     retained = None
     if retained_head is not None:
         retained = _checked(retained_head, service_key)
@@ -340,6 +352,10 @@ class TicketStore:
             decision_digest=self.configuration.get("decisionDigest"), retained_head=self.retained_head)
         return capture.state, capture.content
 
+    def _authorize(self, grant: Any, *, now: datetime) -> AuthorizedAction:
+        """Check host authorization at the transaction's exact sampled reference time."""
+        return verify_grant(grant, self.request, self.policy, now=now)
+
     def dispatch(self, candidate: Any) -> dict[str, Any]:
         """Authorize, persist an intent, then atomically mutate ticket and receipt."""
         if not isinstance(candidate, dict) or set(candidate) != {"request", "grant", "contentHex"}:
@@ -358,7 +374,7 @@ class TicketStore:
             state, stored_content = self._load(db)
             # Fresh grant validity and host revocation apply to cached retries too.
             intent_time = self.clock()
-            authorized = verify_grant(candidate["grant"], self.request, self.policy, now=intent_time)
+            authorized = self._authorize(candidate["grant"], now=intent_time)
             if state["revoked"]:
                 raise VerificationError("ticket authority is revoked")
             if state["grantDigest"] not in (None, authorized.grant_digest):
@@ -381,7 +397,7 @@ class TicketStore:
             state, _ = self._load(db)
             # A revocation racing the gap between transactions wins admission.
             effect_time = self.clock()
-            verify_grant(candidate["grant"], self.request, self.policy, now=effect_time)
+            self._authorize(candidate["grant"], now=effect_time)
             if effect_time < _time(state["intentTime"]):
                 raise VerificationError("ticket host clock moved backwards before effect")
             if state["revoked"] or state["phase"] != "pending":

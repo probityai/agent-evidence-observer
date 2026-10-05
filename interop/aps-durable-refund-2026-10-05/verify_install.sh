@@ -85,7 +85,8 @@ source, destination = map(pathlib.Path, sys.argv[1:])
 expected = {"signed-event-sequence", "signed-intent-revision", "signed-effect-revision",
     "unsupported-effect", "missing-initialize", "signed-state-revision", "signed-state-count",
     "integer-revocation", "sql-row-real", "sql-sequence-real", "incomplete-readback-revision",
-    "completed-readback-revision", "unsigned-copy-revision", "signed-public-revision", "signed-witness-scope"}
+    "completed-readback-revision", "unsigned-copy-revision", "signed-public-revision", "signed-witness-scope",
+    "historical-native-intent", "signed-retained-revocation", "signed-retained-phase", "signed-retained-digest", "signed-retained-time"}
 members = ("host-policy.json", "receipt.json", "readback.json", "attempts.json", "service.sqlite",
     "consumer-stdout.bin", "consumer-stderr.txt", "consumer-check.json")
 checks = {}

@@ -688,3 +688,83 @@ def test_public_and_store_selected_configuration_share_constraints(case: dict[st
         verify_ticket_capture(*captured_populations(case), request, policy, case["key"].public_hex)
     with pytest.raises(VerificationError, match=refusal):
         TicketStore(case["store"].path, request, policy, case["key"])
+
+
+@pytest.mark.parametrize("kind", ["content-digest-and-row", "consistent-effect-id"])
+def test_signed_state_history_and_rows_require_selected_relations(case: dict[str, Any], kind: str) -> None:
+    """Matching host signatures cannot replace the selected payload or deterministic effect."""
+    case["store"].dispatch(case["candidate"])
+    key = case["key"]
+    with closing(sqlite3.connect(case["store"].path)) as db:
+        state = strict_loads(db.execute("SELECT record FROM state WHERE singleton=1").fetchone()[0])["payload"]
+        if kind == "content-digest-and-row":
+            content = b"different native content"
+            state["contentDigest"] = hashlib.sha256(content).hexdigest()
+            db.execute("UPDATE tickets SET content=?", (content,))
+        else:
+            state["effectId"] = "f" * 64
+            events = [strict_loads(raw)["payload"] for (raw,) in db.execute("SELECT record FROM events ORDER BY sequence")]
+            db.execute("DELETE FROM events")
+            previous = "0" * 64
+            for event in events:
+                if "effectId" in event["event"]:
+                    event["event"]["effectId"] = state["effectId"]
+                body = {"sequence": event["sequence"], "previous": previous, "event": event["event"]}
+                body["hash"] = digest(DOMAIN + "-event", body)
+                db.execute("INSERT INTO events VALUES(?,?)", (body["sequence"], canonical({"payload": body,
+                    "keyid": key.public_hex, "signature": key.sign(DOMAIN, body)})))
+                previous = body["hash"]
+            state["eventHead"] = previous
+            db.execute("UPDATE tickets SET effect=?", (state["effectId"],))
+        db.execute("UPDATE state SET record=? WHERE singleton=1", (canonical({"payload": state,
+            "keyid": key.public_hex, "signature": key.sign(DOMAIN, state)}),))
+        db.commit()
+    before = case["store"].path.read_bytes()
+    refusal = "native ticket bytes" if kind == "content-digest-and-row" else "deterministic effect identity"
+    with pytest.raises(VerificationError, match=refusal):
+        verify_ticket_capture(*captured_populations(case), case["request"], case["policy"], key.public_hex)
+    with pytest.raises(VerificationError, match=refusal):
+        reopen(case).readback()
+    assert case["store"].path.read_bytes() == before
+
+
+@pytest.mark.parametrize("kind", ["revocation", "phase", "content", "effect", "grant", "intent-time", "effect-time"])
+def test_signed_retained_state_requires_replayed_prefix(case: dict[str, Any], kind: str) -> None:
+    """An unchanged retained event hash cannot authenticate contradictory state fields."""
+    receipt = case["store"].dispatch(case["candidate"])
+    payload = receipt["payload"]
+    if kind == "phase":
+        payload.update(phase="incomplete", revision=0, contentDigest=None, effectTime=None)
+    elif kind == "revocation":
+        payload["revoked"] = True
+    elif kind in {"intent-time", "effect-time"}:
+        field = "intentTime" if kind == "intent-time" else "effectTime"
+        offset = -1 if kind == "intent-time" else 1
+        payload[field] = (case["now"] + timedelta(seconds=offset)).isoformat(timespec="seconds").replace("+00:00", "Z")
+    else:
+        payload[{"content": "contentDigest", "effect": "effectId", "grant": "grantDigest"}[kind]] = "f" * 64
+    receipt["signature"] = case["key"].sign(DOMAIN, payload)
+    before = case["store"].path.read_bytes()
+    with pytest.raises(VerificationError, match="retained state differs from native history"):
+        verify_ticket_capture(*captured_populations(case), case["request"], case["policy"],
+            case["key"].public_hex, retained_head=receipt)
+    with pytest.raises(VerificationError, match="retained state differs from native history"):
+        reopen(case, retained_head=receipt).readback()
+    assert case["store"].path.read_bytes() == before
+
+
+@pytest.mark.parametrize("prefix", ["ready", "pending"])
+def test_real_retained_prefix_preserves_later_completion(case: dict[str, Any], prefix: str) -> None:
+    """Genuine ready and pending heads remain valid prefixes of an actual completed operation."""
+    heads = {"ready": case["store"].readback()["receipt"]}
+    def retain(point: str) -> None:
+        if point == "after-intent":
+            heads["pending"] = case["store"].readback()["receipt"]
+    case["store"].crash_hook = retain
+    case["store"].dispatch(case["candidate"])
+    before = case["store"].path.read_bytes()
+    result = verify_ticket_capture(*captured_populations(case), case["request"], case["policy"],
+        case["key"].public_hex, retained_head=heads[prefix])
+    assert result.logical_admissions == result.local_effects == 1
+    assert reopen(case, retained_head=heads[prefix]).readback()["revision"] == 1
+    assert case["store"].path.read_bytes() == before

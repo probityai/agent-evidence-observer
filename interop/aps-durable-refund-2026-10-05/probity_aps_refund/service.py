@@ -16,7 +16,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from probity_observer.authorization import ActionRequest, GrantPolicy, utc_clock
+from probity_observer.authorization import ActionRequest, AuthorizedAction, GrantPolicy, utc_clock
 from probity_observer.crypto import SigningKey, VerificationError, canonical, digest, strict_loads
 from probity_observer.ticket_service import MAX_BODY, TicketStore, verify_ticket_result
 
@@ -111,6 +111,19 @@ def verify_aps(evidence: dict[str, Any], *, node: Path, verifier: Path,
     return report
 
 
+def verify_aps_observations(evidence: dict[str, Any], observations: tuple[datetime, ...],
+                            expected_report: dict[str, Any], *, node: Path, verifier: Path,
+                            verifier_sha256: str, sdk_sha256: str) -> None:
+    """Replay genuine native approval at retained authorization observations."""
+    if not observations:
+        raise VerificationError("native APS authorization observations are missing")
+    for observation in dict.fromkeys(observations):
+        report = verify_aps(evidence, node=node, verifier=verifier,
+            verifier_sha256=verifier_sha256, sdk_sha256=sdk_sha256, now=observation)
+        if canonical(report) != canonical(expected_report):
+            raise VerificationError("native APS observation differs from frozen decision")
+
+
 def _join(report: dict[str, Any], request: ActionRequest) -> None:
     """Bind APS subject, exact canonical payload and approval identity to the local effect."""
     receipt_id = report["receiptId"]
@@ -173,24 +186,14 @@ class ApsRefundStore(TicketStore):
                                             verifier_sha256=verifier_sha256, sdk_sha256=sdk_sha256)
         super().__init__(path, request, policy, key, clock=clock, crash_hook=crash_hook, decision_digest=commitment)
 
-    def _authorize(self) -> None:
-        """Reverify fresh native approval at dispatch and immediately before the local effect."""
+    def _authorize(self, grant: Any, *, now: datetime) -> AuthorizedAction:
+        """Join genuine native approval and local grant at one transaction clock."""
         report = verify_aps(json.loads(self._evidence), node=self._node, verifier=self._verifier,
-                            verifier_sha256=self._verifier_pin, sdk_sha256=self._sdk_pin, now=self.clock())
+                            verifier_sha256=self._verifier_pin, sdk_sha256=self._sdk_pin, now=now)
         _join(report, self.request)
         if canonical(report) != self._native_report:
             raise VerificationError("APS refund frozen native join differs")
-
-    def dispatch(self, candidate: Any) -> dict[str, Any]:
-        """Verify the unchanged SDK approval before fresh admission or a completed retry."""
-        self._authorize()
-        return super().dispatch(candidate)
-
-    def _fault(self, point: str) -> None:
-        """Apply the host fault control, then recheck native expiry before effect."""
-        super()._fault(point)
-        if point == "after-intent":
-            self._authorize()
+        return super()._authorize(grant, now=now)
 
 
 def verify_refund_result(evidence: dict[str, Any], receipt: dict[str, Any], readback: dict[str, Any],
@@ -203,6 +206,9 @@ def verify_refund_result(evidence: dict[str, Any], receipt: dict[str, Any], read
                                         verifier_sha256=verifier_sha256, sdk_sha256=sdk_sha256)
     result = verify_ticket_result(receipt, readback, request, policy, service_key, grant,
                                   now=now, decision_digest=commitment)
+    verify_aps_observations(evidence, tuple(datetime.fromisoformat(receipt["payload"][name])
+        for name in ("intentTime", "effectTime")), report, node=node, verifier=verifier,
+        verifier_sha256=verifier_sha256, sdk_sha256=sdk_sha256)
     return {**result, "nativeSdkVersion": "7.2.1", "approvalActionBinding": "verified",
             "execution": "recorded-local-sqlite-refund-row", "independentCustody": False,
             "doesNotAssert": ["merchant legitimacy", "delegation authority", "PIC integration",

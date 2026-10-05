@@ -66,3 +66,19 @@ Read-only SQL connections use `contextlib.closing`. A SQLite transaction
 context alone does not close its connection. This corrects the new profile's
 count/readback helpers; the existing core transaction already closes its
 connection in `finally` and has no corresponding lifecycle defect.
+
+## Authorize inside each native transaction
+
+`TicketStore._authorize` receives the already sampled intent/effect time and
+returns the authenticated `AuthorizedAction`. The default checks the local
+grant. The APS override checks the genuine installed native approval and
+frozen join at that same instant, then checks the local grant. Fault callbacks
+remain separate from authorization. Waiting for the second transaction cannot
+reuse an earlier native approval check.
+
+Shared capture validation requires the selected payload digest and deterministic
+effect identity. At a retained head's event count, every retained native state
+field must match the state reconstructed from the validated history prefix.
+Matching signatures or prefix hashes alone do not establish those relations.
+The public APS consumer checks current local and native authority plus genuine
+SDK replay at each retained intent/effect observation.
