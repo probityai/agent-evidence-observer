@@ -8,7 +8,7 @@
     "name": "agent-passport-system",
     "version": "7.2.1"
   },
-  "observerBase": "fc9dbe2d673be35fc2be20d0a9e7e97bc2af3057",
+  "observerBase": "6c031250928c1e2be0ae2b896b188f2a0b8c5f6e",
   "originatingCandidate": {
     "boundarySha256": "424262e2d01dfad157402eb746b079ae92ff23fa1fcc311a39c46fa090469041",
     "commit": "c31d94aad86713ae9b2e4cbc811deeab4b5d91ed",
