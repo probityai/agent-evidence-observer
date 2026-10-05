@@ -1,0 +1,8 @@
+{
+  "name": "probity-aps-durable-refund-controls",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "agent-passport-system": "7.2.1"
+  }
+}
