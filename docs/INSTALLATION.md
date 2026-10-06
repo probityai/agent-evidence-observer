@@ -5,6 +5,9 @@ with Python 3.12 or later and Apache-2.0 terms. A version string does not select
 the source: install an immutable revision or a wheel whose bytes you reviewed.
 The profile distributions below are separate source install units, not registry releases.
 
+For a source-pinned joint installation of Observer and Verify, use the
+[joint-install controls](JOINT-INSTALL.md).
+
 ## Try the installed broker
 
 With Python 3.12 and [uv](https://docs.astral.sh/uv/):
