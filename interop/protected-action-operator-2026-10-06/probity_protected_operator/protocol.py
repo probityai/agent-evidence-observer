@@ -60,7 +60,7 @@ def _prior(event: Any, configuration: dict[str, Any]) -> None:
     require(timestamp.tzinfo is not None, "authorization prior time lacks an offset")
     checkpoint = payload["nativeStartCheckpoint"]
     exact_fields(checkpoint, CHECKPOINT_FIELDS | {"ledgerReceipt"}, "authorization native checkpoint differs")
-    require(checkpoint["keyid"] == configuration["witnessKey"] and checkpoint["count"] == 1, "authorization native begin pin differs")
+    require(checkpoint["keyid"] == configuration["witnessKey"] and type(checkpoint["count"]) is int and checkpoint["count"] == 1, "authorization native begin pin differs")
     require(isinstance(checkpoint["head"], str) and HEX_DIGEST.fullmatch(checkpoint["head"]) is not None, "authorization native head differs")
     verify_signature(configuration["witnessKey"], "probity-checkpoint-v0", {"count": 1, "head": checkpoint["head"]}, checkpoint["signature"])
     receipt = checkpoint["ledgerReceipt"]

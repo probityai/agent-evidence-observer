@@ -18,8 +18,9 @@ from cryptography.hazmat.primitives import serialization
 from probity_observer.authorization import ActionRequest, GrantPolicy, issue_grant, utc_clock
 from probity_observer.broker import tree_root
 from probity_observer.crypto import SigningKey, VerificationError, canonical, digest, strict_loads
-from probity_observer.history import append_history
-from probity_observer.protected_dispatch import CONFIG_DOMAIN, ProtectedDispatcher, verify_dispatch_bundle
+from probity_observer.history import GENESIS, append_history
+from probity_observer.ledger import RECEIPT_DOMAIN
+from probity_observer.protected_dispatch import CONFIG_DOMAIN, PRIOR_DOMAIN, ProtectedDispatcher, verify_dispatch_bundle
 from probity_observer.witness_port import DispatchWitnessPorts
 from probity_witness_operator.client import WitnessClient
 from probity_witness_operator.protocol import FORMAT as NATIVE_FORMAT, sha
@@ -27,7 +28,7 @@ from probity_witness_operator.server import OperatorServer
 from probity_witness_operator.store import Configuration, OperatorStore, initialize as initialize_native, write_private
 
 from probity_protected_operator.client import AuthorizationClient
-from probity_protected_operator.protocol import FORMAT, checkpoint_prefix, request_bytes
+from probity_protected_operator.protocol import FORMAT, _prior, checkpoint_prefix, request_bytes
 from probity_protected_operator.store import AuthorizationConfiguration, AuthorizationStore, initialize
 from probity_protected_operator.worker import _workload
 
@@ -202,3 +203,33 @@ def test_workload_accepts_exact_canonical_lf_frame(tmp_path: Path, reply: bytes,
     assert result["protocolError"] == error
     assert result["acknowledged"] is (error is None)
     assert result["response"] == ({"ok": accepted} if error is None else None)
+
+
+@pytest.mark.parametrize("count,signed_count", [(1, 1), (True, True), (1.0, 1)])
+def test_native_prior_requires_integer_despite_integer_signature(case: dict[str, Any], count, signed_count) -> None:
+    """Check signed Boolean substitution and an unsigned floating substitution."""
+    witness = case["witness"]
+    checkpoint = {"count": signed_count, "head": "1" * 64, "keyid": witness.public_hex,
+                  "signature": witness.sign("probity-checkpoint-v0", {"count": 1, "head": "1" * 64})}
+    request = case["dispatch"]["request"]
+    authority = {"intervalId": request["run_id"], "scope": "/work", "operation": "write-file"}
+    body = {"sequence": 1, "previous": GENESIS, "intervalId": request["run_id"],
+            "authorityDigest": digest("probity-authority-v0", authority), "observerKey": case["observer"].public_hex,
+            "phase": "begin", "checkpoint": checkpoint}
+    receipt = {**body, "hash": digest(RECEIPT_DOMAIN, body), "keyid": witness.public_hex,
+               "signature": witness.sign(RECEIPT_DOMAIN, body)}
+    payload = {"profile": PRIOR_DOMAIN, "configurationDigest": digest(CONFIG_DOMAIN, case["dispatch"]),
+               "grantDigest": "2" * 64, "request": request, "nativeCommitmentDigest": "3" * 64,
+               "nativeStartCheckpoint": {**checkpoint, "ledgerReceipt": receipt}, "authorizedAt": "2026-10-06T00:00:00Z"}
+    prior = {"payload": payload, "keyid": case["observer"].public_hex,
+             "signature": case["observer"].sign(PRIOR_DOMAIN, payload)}
+    # The canonical signer refuses floats before signing. Check direct admission
+    # with an ordinary integer signature and a later malformed field instead.
+    if type(count) is float:
+        payload["nativeStartCheckpoint"]["count"] = count
+    event = {"kind": "grant-before-dispatch", "prior": prior}
+    if type(count) is int:
+        _prior(event, case["dispatch"])
+    else:
+        with pytest.raises(VerificationError):
+            _prior(event, case["dispatch"])
