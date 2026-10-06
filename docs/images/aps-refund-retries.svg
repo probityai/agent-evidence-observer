@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="510" viewBox="0 0 1120 510" role="img" aria-labelledby="title description">
+  <title id="title">One retained local operation across an approval retry</title>
+  <desc id="description">The producer checks the native APS approval and its separate local grant at the sampled intent and effect transaction times. Host tenant plus signed action reference selects one retained SQLite operation. A completed retry returns its local row; changed frozen authorization refuses; an interrupted intent remains incomplete. A separately installed reader receives only public keys, selected policy, signed history and the captured database. Both installations share one operator and PEER scope. No payment provider is called.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#334155"/></marker>
+    <style>text{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;fill:#17233b}.heading{font-size:26px;font-weight:700}.label{font-size:19px;font-weight:650}.body{font-size:17px}.small{font-size:15px}.flow{fill:none;stroke:#334155;stroke-width:2.5;marker-end:url(#arrow)}</style>
+  </defs>
+  <rect width="1120" height="510" rx="16" fill="#f8fafc"/>
+  <text x="32" y="44" class="heading">An approval is evidence. The signed action selects the operation.</text>
+  <rect x="24" y="70" width="1072" height="230" rx="12" fill="#eaf2ff" stroke="#9db7df"/>
+  <text x="44" y="102" class="label">Host producer: retained private state and transaction ownership</text>
+  <rect x="44" y="124" width="282" height="138" rx="10" fill="white" stroke="#9db7df"/>
+  <text x="62" y="154" class="label">Check both authorities</text>
+  <text x="62" y="183" class="body">APS SDK approval + local grant</text>
+  <text x="62" y="209" class="body">Same sampled transaction time</text>
+  <text x="62" y="236" class="small">Intent admission and local effect</text>
+  <path d="M328 193H368" class="flow"/>
+  <rect x="380" y="124" width="302" height="138" rx="10" fill="white" stroke="#9db7df"/>
+  <text x="398" y="154" class="label">Keep the operation identity</text>
+  <text x="398" y="183" class="body">Host tenant + signed actionRef</text>
+  <text x="398" y="209" class="body">One selected protected store</text>
+  <text x="398" y="236" class="small">Receipt identity is authorization evidence</text>
+  <path d="M684 193H724" class="flow"/>
+  <rect x="736" y="124" width="338" height="138" rx="10" fill="white" stroke="#9db7df"/>
+  <text x="754" y="154" class="label">Retain the actual local result</text>
+  <text x="754" y="183" class="body">Completed retry: the original row</text>
+  <text x="754" y="209" class="body">Changed approval: refuse</text>
+  <text x="754" y="236" class="body">Interrupted intent: incomplete</text>
+  <path d="M905 265V340" class="flow"/>
+  <rect x="590" y="352" width="484" height="104" rx="10" fill="#ffffff" stroke="#94a3b8"/>
+  <text x="610" y="382" class="label">Retained public capture</text>
+  <text x="610" y="411" class="body">Selected policy, public keys, signed history</text>
+  <text x="610" y="436" class="body">Captured SQLite bytes and source bindings</text>
+  <path d="M588 405H534" class="flow"/>
+  <rect x="44" y="352" width="478" height="104" rx="10" fill="#e9f7f0" stroke="#87b5a0"/>
+  <text x="62" y="382" class="label">Separately installed reader</text>
+  <text x="62" y="411" class="body">Check authority, history, counts and local row</text>
+  <text x="62" y="436" class="body">No producer signing key; no state mutation</text>
+  <text x="44" y="487" class="small">Same operator / PEER scope. Local SQLite rows only. No provider refund or independent custody claim.</text>
+</svg>
