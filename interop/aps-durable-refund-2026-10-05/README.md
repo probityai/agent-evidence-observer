@@ -5,6 +5,10 @@ This consumer checks an exact synthetic refund approval with installed
 Observer's existing ticket gate. It retains separate process attempts,
 durable logical admissions and local effects.
 
+Start with the [worked retry guide](../../docs/APS-REFUND-RETRIES.md) for a pinned
+install, readable results, a separately installed consumer and an actual policy
+refusal. Its diagram follows the local storage and public-reader boundaries.
+
 The [published APS candidate](https://github.com/agent-passport-system/agent-passport-system/tree/c31d94aad86713ae9b2e4cbc811deeab4b5d91ed/examples/interop/refund-exact-approval)
 supplies the motivating exact-refund profile. Its ten original cases pass.
 Additional controls reproduce admission after restart and across instances,

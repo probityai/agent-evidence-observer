@@ -47,6 +47,7 @@ exposed. Running an unmodified agent that way, and a separately operated witness
 | [Installation and profile selection](https://github.com/probityai/agent-evidence-observer/blob/main/docs/INSTALLATION.md) | choose the root wheel, a separate profile wheel or a selected source reader; runtime requirements and installed examples |
 | [Atomic native reader](https://github.com/probityai/agent-evidence-observer/blob/main/docs/ATOMIC-NATIVE-READER.md) | install an offline reader for selected native delegation runs and their refusal controls |
 | [Witnessed run selection](https://github.com/probityai/agent-evidence-observer/blob/main/docs/WITNESSED-RUN-SELECTION.md) | check a selected run against consumer-retained opening and closing checkpoints |
+| [Approved refund retries](https://github.com/probityai/agent-evidence-observer/blob/main/docs/APS-REFUND-RETRIES.md) | run the APS approval and local SQLite example, then check retries and refusals with a separately installed reader |
 
 ## License
 

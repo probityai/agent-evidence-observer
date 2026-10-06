@@ -96,6 +96,11 @@ entry point means the manifest declares no console command; use its guide.
 | [target-recovery-2026-10-02](https://github.com/probityai/agent-evidence-observer/blob/main/interop/target-recovery-2026-10-02/README.md) | `probity-target-recovery-reader` | `>=3.12` | `probity-read-target-recovery` |
 | [witness-operator-2026-10-03](https://github.com/probityai/agent-evidence-observer/blob/main/interop/witness-operator-2026-10-03/README.md) | `probity-witness-operator-reference` | `>=3.12` | `agent-evidence-witness` |
 
+For APS approvals, the [worked refund-retry guide](APS-REFUND-RETRIES.md) runs the
+local SQLite fixture and reads its reissue, lost-acknowledgement and interrupted
+intent captures from a separate installation. The root wheel alone does not
+install this profile. The example records no provider payment and retains PEER scope.
+
 ## Source workflows and refusal
 
 Profiles without a separate package manifest remain source workflows. Start with
