@@ -181,8 +181,11 @@ class TestProtectedDispatcher:
             assert checked["witnessScope"] == "PEER"
             assert checked["authorization"]["currentWorkspaceCompared"] is True
 
+        # This property checks durable bytes and replay. Disk latency is not its contract.
         @settings(
-            max_examples=40, suppress_health_check=[HealthCheck.function_scoped_fixture]
+            max_examples=40,
+            deadline=None,
+            suppress_health_check=[HealthCheck.function_scoped_fixture],
         )
         @given(content=st.binary(max_size=256))
         def test_arbitrary_exact_replacement_bytes(
