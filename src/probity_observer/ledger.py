@@ -336,6 +336,28 @@ class LedgerWitness(Witness):
             raise VerificationError("the prior witness checkpoint is missing")
         return {**found[0]["checkpoint"], "ledgerReceipt": found[0]}
 
+    def receipt_log(self, history_path: Path) -> bytes:
+        """Return public receipts only for an already acknowledged exact history.
+
+        This read takes the same lock as append. It does not add a receipt or
+        initialize a missing log. Separate consumers still need their own key
+        selection and retained head to detect rollback or a signed fork.
+        """
+        with self._locked():
+            entries = read_history(history_path)
+            interval, authority = _begin_identity(entries, self.observer_key)
+            receipts = read_ledger(self.state_path, self.public_hex)
+            matching = [
+                receipt for receipt in receipts
+                if receipt["intervalId"] == interval
+                and receipt["authorityDigest"] == authority
+                and receipt["checkpoint"]["count"] == len(entries)
+                and receipt["checkpoint"]["head"] == entries[-1]["hash"]
+            ]
+            if len(matching) != 1:
+                raise VerificationError("native history lacks its recorded witness receipt")
+            return self.state_path.read_bytes()
+
 
 def verify_ledger_receipts(
     ledger_path: Path,

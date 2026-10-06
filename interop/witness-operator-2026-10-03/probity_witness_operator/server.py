@@ -9,14 +9,30 @@ import socket
 import socketserver
 import stat
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
 
 from probity_observer.crypto import VerificationError, canonical
 
 from .protocol import peer_uid, receive, require, send
-from .store import OperatorStore
 
 LOGGER = logging.getLogger(__name__)
+
+
+class EndpointConfiguration(Protocol):
+    """Host-selected transport choices shared by finite witness services."""
+
+    socket_path: Path
+    client_uid: int
+
+
+class WitnessStorePort(Protocol):
+    """A durable service owns its grammar; transport owns framing and peer checks."""
+
+    configuration: EndpointConfiguration
+
+    def handle(self, raw: bytes) -> bytes:
+        """Return a finite response after service-specific validation."""
+        ...
 
 
 def socket_parent(path: Path) -> None:
@@ -47,7 +63,7 @@ class OperatorServer(socketserver.ThreadingUnixStreamServer):
 
     Parameters
     ----------
-    store : OperatorStore
+    store : WitnessStorePort
         Host-selected signer, durable store and external retained head.
 
     Notes
@@ -59,7 +75,7 @@ class OperatorServer(socketserver.ThreadingUnixStreamServer):
     daemon_threads = True
     block_on_close = False
 
-    def __init__(self, store: OperatorStore) -> None:
+    def __init__(self, store: WitnessStorePort) -> None:
         """Bind only the host-selected Unix endpoint after state verification."""
         self.store = store
         self._bound_inode: int | None = None

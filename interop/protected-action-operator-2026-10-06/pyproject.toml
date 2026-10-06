@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "probity-protected-operator-reference"
+version = "0.0.1"
+description = "Separate authorization witness and protected-action operator recipe"
+requires-python = ">=3.12"
+dependencies = ["agent-evidence-observer==0.0.1", "probity-witness-operator-reference==0.0.1"]
+
+[project.scripts]
+agent-evidence-authorization-witness = "probity_protected_operator.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["probity_protected_operator*"]

@@ -2,13 +2,12 @@
 
 from __future__ import annotations
 
-import socket
 from pathlib import Path
 from typing import Any
 
 from probity_observer.crypto import VerificationError, canonical, strict_loads
 
-from .protocol import peer_uid, receive, request_bytes, require, send, verify_reply
+from .protocol import exchange, request_bytes, require, verify_reply
 from .store import absolute_path, public_key
 
 
@@ -46,6 +45,7 @@ class WitnessClient:
         self._server_uid = server_uid
         self._retained = canonical(retained_head)
         self._timeout = timeout
+        self._receipt_log: bytes | None = None
 
     @property
     def public_hex(self) -> str:
@@ -65,15 +65,7 @@ class WitnessClient:
 
     def _exchange(self, raw: bytes) -> bytes:
         """Authenticate the kernel server before sending history bytes."""
-        try:
-            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as stream:
-                stream.settimeout(self._timeout)
-                stream.connect(str(self._socket_path))
-                require(peer_uid(stream) == self._server_uid, "IPC server UID differs")
-                send(stream, raw)
-                return receive(stream)
-        except OSError as exc:
-            raise VerificationError("witness IPC unavailable") from exc
+        return exchange(self._socket_path, self._server_uid, self._timeout, raw)
 
     def _operation(self, operation: str, history_path: Path) -> dict[str, Any]:
         """Verify exact history, key, registered receipt and retained prefix."""
@@ -82,6 +74,7 @@ class WitnessClient:
         payload = verify_reply(reply, operation, history, self.public_hex, self._observer_key, self.retained_head)
         require(history_path.read_bytes() == history, "history changed during witness request")
         self._retained = canonical(payload["ledgerHead"])
+        self._receipt_log = bytes.fromhex(payload["ledgerHex"])
         return payload["checkpoint"]
 
     def checkpoint(self, history_path: Path) -> dict[str, Any]:
@@ -91,3 +84,15 @@ class WitnessClient:
     def latest_checkpoint(self, history_path: Path) -> dict[str, Any]:
         """Return the verified retained begin for interrupted broker recovery."""
         return self._operation("latest", history_path)
+
+    def receipt_log(self, history_path: Path) -> bytes:
+        """Refresh an exact durable checkpoint and return verified public receipts.
+
+        The operator returns an existing receipt for an identical checkpoint
+        retry. The refresh checks its current signed log against this client's
+        retained prefix. No private signer or operator pathname is exported.
+        """
+        self._operation("checkpoint", history_path)
+        if self._receipt_log is None:
+            raise VerificationError("witness receipt proof is missing")
+        return self._receipt_log
