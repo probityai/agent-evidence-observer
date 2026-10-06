@@ -159,14 +159,15 @@ def _workload(config: dict[str, Any], lost_ack: bool) -> dict[str, Any]:
     """Submit only public action inputs; record a lost reply without guessing its effect."""
     response = None
     transport = None
+    protocol_error = None
+    received = bytearray()
     with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as stream:
         stream.settimeout(15)
         try:
             stream.connect(config["gatewaySocket"])
             stream.sendall(canonical(config["candidate"]) + b"\n")
             if lost_ack:
-                return {"acknowledged": False, "requestedLostAcknowledgment": True}
-            received = bytearray()
+                return {"acknowledged": False, "requestedLostAcknowledgment": True, "replyHex": ""}
             while not received.endswith(b"\n"):
                 part = stream.recv(65536 - len(received))
                 if not part:
@@ -174,10 +175,16 @@ def _workload(config: dict[str, Any], lost_ack: bool) -> dict[str, Any]:
                 received.extend(part)
                 require(len(received) < 65536 or received.endswith(b"\n"), "gateway reply exceeds finite limit")
             if received:
-                response = strict_loads(bytes(received))
+                require(received.endswith(b"\n"), "gateway reply lacks its LF frame byte")
+                candidate = strict_loads(bytes(received[:-1]))
+                require(type(candidate) is dict and type(candidate.get("ok")) is bool, "gateway reply result differs")
+                response = candidate
         except OSError as error:
             transport = type(error).__name__
-    return {"response": response, "acknowledged": response is not None, "transportError": transport}
+        except VerificationError as error:
+            protocol_error = str(error)
+    return {"response": response, "acknowledged": response is not None, "transportError": transport,
+            "protocolError": protocol_error, "replyHex": bytes(received).hex()}
 
 
 def _peer_probe(config: dict[str, Any]) -> dict[str, Any]:

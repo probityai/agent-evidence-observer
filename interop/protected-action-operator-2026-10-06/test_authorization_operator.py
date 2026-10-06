@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import os
+import socket
 import subprocess
 import sys
 import threading
@@ -28,6 +29,7 @@ from probity_witness_operator.store import Configuration, OperatorStore, initial
 from probity_protected_operator.client import AuthorizationClient
 from probity_protected_operator.protocol import FORMAT, checkpoint_prefix, request_bytes
 from probity_protected_operator.store import AuthorizationConfiguration, AuthorizationStore, initialize
+from probity_protected_operator.worker import _workload
 
 
 @pytest.fixture
@@ -152,3 +154,51 @@ def test_wrong_role_operation_refused_without_bootstrap(tmp_path: Path, role: st
     assert result.stdout == b""
     assert b"role operation differs" in result.stderr
     assert set(item.name for item in tmp_path.iterdir()) == {"host.json"}
+
+
+@pytest.mark.parametrize("reply,accepted,error", [
+    (b'{"ok":false}\n', False, None),
+    (b'{"ok":true}\n', True, None),
+    (b'{"ok": false}\n', None, "JSON document is not canonical"),
+    (b'{"ok":false}', None, "gateway reply lacks its LF frame byte"),
+    (b'{"ok":"yes"}\n', None, "gateway reply result differs"),
+    (b'{"ok":false}\n\n', None, "JSON document is not canonical"),
+])
+def test_workload_accepts_exact_canonical_lf_frame(tmp_path: Path, reply: bytes, accepted: bool | None, error: str | None) -> None:
+    """An actual socket reply removes one frame byte and retains every received byte."""
+    endpoint = tmp_path / "action.sock"
+    candidate = {"public": "action"}
+    request = bytearray()
+    failures = []
+    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as server:
+        server.bind(str(endpoint))
+        server.listen(1)
+        server.settimeout(5)
+
+        def answer() -> None:
+            try:
+                with server.accept()[0] as stream:
+                    stream.settimeout(5)
+                    while not request.endswith(b"\n"):
+                        part = stream.recv(65536)
+                        if not part:
+                            return
+                        request.extend(part)
+                    stream.sendall(reply)
+            except BaseException as failure:
+                failures.append(failure)
+
+        thread = threading.Thread(target=answer)
+        thread.start()
+        try:
+            result = _workload({"gatewaySocket": str(endpoint), "candidate": candidate}, False)
+        finally:
+            thread.join(timeout=10)
+        assert not thread.is_alive()
+    assert failures == []
+    assert request == canonical(candidate) + b"\n"
+    assert result["replyHex"] == reply.hex()
+    assert result["transportError"] is None
+    assert result["protocolError"] == error
+    assert result["acknowledged"] is (error is None)
+    assert result["response"] == ({"ok": accepted} if error is None else None)
