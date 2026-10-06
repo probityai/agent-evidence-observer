@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import hashlib
 import os
+import subprocess
+import sys
 import threading
 from dataclasses import asdict
 from datetime import timedelta
@@ -138,3 +140,15 @@ def test_remote_ports_complete_replay_and_offline_reader(case: dict[str, Any]) -
             server.shutdown()
             thread.join()
             server.server_close()
+
+
+@pytest.mark.parametrize("role,operation", [("issuer", "serve"), ("gateway", "run"), ("consumer", "serve"), ("native-witness", "admit")])
+def test_wrong_role_operation_refused_without_bootstrap(tmp_path: Path, role: str, operation: str) -> None:
+    """An unsupported operation cannot become a hidden key/store or service action."""
+    path = tmp_path / "host.json"
+    path.write_bytes(b"{}")
+    result = subprocess.run([sys.executable, "-I", "-B", "-m", "probity_protected_operator.worker", role, "--operation", operation, "--config", str(path), "--config-sha256", sha(path.read_bytes())], capture_output=True, timeout=10)
+    assert result.returncode == 2
+    assert result.stdout == b""
+    assert b"role operation differs" in result.stderr
+    assert set(item.name for item in tmp_path.iterdir()) == {"host.json"}

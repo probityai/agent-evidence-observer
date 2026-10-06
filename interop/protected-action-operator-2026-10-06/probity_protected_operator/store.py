@@ -18,7 +18,7 @@ from probity_observer.protected_dispatch import CONFIG_DOMAIN
 from probity_witness_operator.protocol import HEX_DIGEST, exact_fields, require, sha
 from probity_witness_operator.store import absolute_path, flush_directory, load_key, public_key, secure_file, write_private
 
-from .protocol import FORMAT, REPLY_DOMAIN, checkpoint_prefix, decode_request, journal_entries
+from .protocol import FORMAT, MAX_JOURNAL, REPLY_DOMAIN, checkpoint_prefix, decode_request, journal_entries
 
 
 @dataclass(frozen=True)
@@ -113,7 +113,9 @@ class AuthorizationStore:
         metadata = directory.lstat()
         require(stat.S_ISDIR(metadata.st_mode) and metadata.st_uid == os.getuid(), "authorization store owner or type differs")
         require(metadata.st_mode & 0o077 == 0, "authorization store permissions differ")
-        value = strict_loads(secure_file(directory / "state.json"))
+        raw_state = secure_file(directory / "state.json")
+        require(len(raw_state) <= 2 * MAX_JOURNAL + 4096, "authorization store exceeds finite limit")
+        value = strict_loads(raw_state)
         exact_fields(value, {"format", "configurationSha256", "historyHex", "checkpoint"}, "authorization store fields differ")
         require(value["format"] == FORMAT and value["configurationSha256"] == self.configuration.digest, "authorization restart configuration differs")
         raw = bytes.fromhex(value["historyHex"])

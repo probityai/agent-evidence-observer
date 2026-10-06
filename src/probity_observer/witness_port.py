@@ -2,9 +2,18 @@
 
 from dataclasses import dataclass
 from pathlib import Path
+import re
 from typing import Any, Protocol
 
 from .crypto import VerificationError
+
+PUBLIC_KEY = re.compile(r"[0-9a-f]{64}\Z")
+
+
+def _check_public_key(value: str) -> None:
+    """Require the literal lowercase encoding of one selected Ed25519 public key."""
+    if not isinstance(value, str) or PUBLIC_KEY.fullmatch(value) is None:
+        raise VerificationError("dispatch witness public key differs")
 
 
 class WitnessPort(Protocol):
@@ -57,12 +66,7 @@ class DispatchWitnessPorts:
 
     def __post_init__(self) -> None:
         """Refuse inferred or mismatched role pins before any target action."""
-        if (
-            not isinstance(self.public_key, str)
-            or len(self.public_key) != 64
-            or any(character not in "0123456789abcdef" for character in self.public_key)
-        ):
-            raise VerificationError("dispatch witness public key differs")
+        _check_public_key(self.public_key)
         if (
             self.authorization.public_hex != self.public_key
             or self.native.public_hex != self.public_key

@@ -176,6 +176,7 @@ class Broker:
         self.authority = dict(authority)
         self.observer_key = observer_key
         self.witness = witness
+        self._witness_key = witness.public_hex
         self._check_configuration()
         self._authority_digest = digest("probity-authority-v0", self.authority)
         self._started = False
@@ -230,7 +231,7 @@ class Broker:
             "status": "incomplete",
             "event": event,
             "startCheckpoint": self._start_checkpoint,
-            "checkpoint": self.witness.checkpoint(self.history_path),
+            "checkpoint": self._checkpoint(),
         }
 
     def begin(self) -> dict[str, Any]:
@@ -267,9 +268,17 @@ class Broker:
             "commitmentDigest": digest("probity-prior-commitment-v0", payload),
             "commitment": self._begin,
         })
-        self._start_checkpoint = self.witness.checkpoint(self.history_path)
+        self._start_checkpoint = self._checkpoint()
         self._started = True
         return {"commitment": self._begin, "checkpoint": self._start_checkpoint}
+
+    def _checkpoint(self) -> dict[str, Any]:
+        """Authenticate exact submitted history under the selected public role key."""
+        if self.witness.public_hex != self._witness_key:
+            raise VerificationError("witness key differs from the selected role")
+        checkpoint = self.witness.checkpoint(self.history_path)
+        verify_checkpoint(read_history(self.history_path), checkpoint, self._witness_key)
+        return checkpoint
 
     def write(self, request_id: str, path: str, content: bytes) -> WriteResult:
         """Mediate a file replacement and record each accepted or denied call.
@@ -353,6 +362,8 @@ class Broker:
     def _require_active(self) -> None:
         if not self._started or self._sealed:
             raise CoverageError("interval must be open for writes")
+        if self.witness.public_hex != self._witness_key:
+            raise VerificationError("witness key differs from the selected role")
 
     def _require_resolved_history(self) -> None:
         if unresolved_intents(read_history(self.history_path)):
@@ -398,7 +409,7 @@ class Broker:
             "sealedAt": utc_now(),
         }
         append_history(self.history_path, {"kind": "seal", "claimDigest": digest("probity-claim-v0", claim)})
-        final_checkpoint = self.witness.checkpoint(self.history_path)
+        final_checkpoint = self._checkpoint()
         self._sealed = True
         return {
             "authority": self.authority,
@@ -413,6 +424,7 @@ class Broker:
 
 def recover_interrupted(history_path: Path, workspace: Path, witness: WitnessPort) -> dict[str, Any]:
     """Witness an incomplete interval after a broker died during a write."""
+    witness_key = witness.public_hex
     entries = read_history(history_path)
     if not entries or entries[0]["event"]["kind"] != "begin":
         raise VerificationError("interrupted history has no begin event")
@@ -422,7 +434,7 @@ def recover_interrupted(history_path: Path, workspace: Path, witness: WitnessPor
     if not pending:
         raise VerificationError("interrupted history has no unresolved write")
     prior_checkpoint = witness.latest_checkpoint(history_path)
-    verify_checkpoint(entries[:1], prior_checkpoint, witness.public_hex)
+    verify_checkpoint(entries[:1], prior_checkpoint, witness_key)
     try:
         recovery_root = tree_root(workspace)
         snapshot_error = None
@@ -437,9 +449,11 @@ def recover_interrupted(history_path: Path, workspace: Path, witness: WitnessPor
         "snapshotError": snapshot_error,
     }
     append_history(history_path, event)
+    checkpoint = witness.checkpoint(history_path)
+    verify_checkpoint(read_history(history_path), checkpoint, witness_key)
     return {
         "status": "incomplete",
         "event": event,
         "startCheckpoint": prior_checkpoint,
-        "checkpoint": witness.checkpoint(history_path),
+        "checkpoint": checkpoint,
     }

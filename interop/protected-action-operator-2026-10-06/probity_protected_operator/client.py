@@ -18,6 +18,7 @@ class AuthorizationClient:
 
     def __init__(self, socket_path: Path, witness_key: str, server_uid: int,
                  configuration_digest: str, retained_checkpoint: dict[str, Any], timeout: float = 5) -> None:
+        """Capture explicit public pins without opening an operator key or store."""
         self._socket_path = absolute_path(str(socket_path))
         self._public_hex = public_key(witness_key)
         require(type(server_uid) is int and 0 <= server_uid < 2**32, "authorization server UID differs")

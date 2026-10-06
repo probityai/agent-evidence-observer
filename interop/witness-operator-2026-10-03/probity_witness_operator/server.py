@@ -21,14 +21,24 @@ LOGGER = logging.getLogger(__name__)
 class EndpointConfiguration(Protocol):
     """Host-selected transport choices shared by finite witness services."""
 
-    socket_path: Path
-    client_uid: int
+    @property
+    def socket_path(self) -> Path:
+        """Return the immutable host-selected endpoint."""
+        ...
+
+    @property
+    def client_uid(self) -> int:
+        """Return the immutable kernel peer selection."""
+        ...
 
 
 class WitnessStorePort(Protocol):
     """A durable service owns its grammar; transport owns framing and peer checks."""
 
-    configuration: EndpointConfiguration
+    @property
+    def configuration(self) -> EndpointConfiguration:
+        """Return the store's selected endpoint and peer policy."""
+        ...
 
     def handle(self, raw: bytes) -> bytes:
         """Return a finite response after service-specific validation."""

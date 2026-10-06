@@ -8,6 +8,7 @@ from typing import Any
 import pytest
 
 from probity_observer.authorization import ActionRequest, GrantPolicy, issue_grant, utc_clock
+from probity_observer.broker import Broker, CoverageError
 from probity_observer.crypto import SigningKey, VerificationError, digest, strict_loads
 from probity_observer.history import Witness
 from probity_observer.ledger import LedgerWitness
@@ -91,4 +92,32 @@ def test_receipt_proof_missing_current_history_refused(ports_case: dict[str, Any
     monkeypatch.setattr(case["native"], "receipt_log", lambda _: b"")
     with pytest.raises(VerificationError, match="finite limit"):
         case["dispatcher"].write(case["request"], case["grant"], case["content"])
+    assert not (case["workspace"] / "result.txt").exists()
+
+
+@pytest.mark.parametrize("mutation", ["count", "head", "keyid", "signature"])
+def test_native_broker_rejects_unbound_begin_before_effect(ports_case: dict[str, Any], monkeypatch: pytest.MonkeyPatch, mutation: str) -> None:
+    """A malformed public port must not open any native write interval."""
+    case = ports_case
+    original = case["native"].checkpoint
+    def wrong(path: Path) -> dict[str, Any]:
+        checkpoint = original(path)
+        checkpoint[mutation] = 2 if mutation == "count" else "0" * (128 if mutation == "signature" else 64)
+        return checkpoint
+    monkeypatch.setattr(case["native"], "checkpoint", wrong)
+    broker = Broker(case["workspace"], case["workspace"].parent / "broker-history.jsonl", {"intervalId": "broker-run", "scope": "/work", "operation": "write-file"}, case["observer"], case["native"])
+    with pytest.raises(VerificationError):
+        broker.begin()
+    with pytest.raises(CoverageError, match="open"):
+        broker.write("write", "/work/result.txt", case["content"])
+    assert not (case["workspace"] / "result.txt").exists()
+
+
+def test_native_broker_refuses_role_key_change_before_effect(ports_case: dict[str, Any]) -> None:
+    case = ports_case
+    broker = Broker(case["workspace"], case["workspace"].parent / "broker-history.jsonl", {"intervalId": "broker-run", "scope": "/work", "operation": "write-file"}, case["observer"], case["native"])
+    broker.begin()
+    case["native"].signing_key = SigningKey.generate()
+    with pytest.raises(VerificationError, match="selected role"):
+        broker.write("write", "/work/result.txt", case["content"])
     assert not (case["workspace"] / "result.txt").exists()
