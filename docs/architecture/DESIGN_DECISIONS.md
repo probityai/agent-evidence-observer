@@ -101,3 +101,35 @@ that have no timestamps. There is no timestamp inference or alternate input
 spelling. The new APS profile selects milliseconds so a fractional approval
 window remains checkable at both retained transaction times. Its default
 clock samples wall time at that resolution; an injected finer clock refuses.
+
+## Dispatch through selected public witness ports
+
+The existing dispatcher owns grant validation, prior retention, target execution,
+native receipt capture and completion. A pair of typed public ports supplies the
+authorization checkpoint and native receipt operations. The local signer route
+constructs local ports and uses that same dispatcher. Both ports must match the
+explicit selected witness key before an effect. There is no second orchestration,
+inferred identity or private witness path in a remote client.
+
+The generic broker now verifies each returned checkpoint against the exact
+submitted history and its selected key. It also refuses a changed port key before
+an active write. A valid transport signature does not replace that binding check.
+The dispatcher retains a verified public receipt mirror before target execution;
+the witness keeps its private authoritative store.
+
+The new authorization configuration and journal validators have intrinsic closed
+schema and signed-relation predicates. They bind the selected action, issuer,
+observer, witness, prior native interval and recorded completion. Complexity above
+10 in those validators is accepted for that finite cryptographic join. The worker's
+consumer operation selects explicit initialization, retention, admission and fork
+controls; its closed type dispatch is intrinsic. The native harness and held-slot
+administrator coordinator isolate failures and retain actual child outputs across
+the declared service cases. Their complexity above 10 is process orchestration and
+fault isolation, not a second runtime policy. The installed qualification records
+their unmodified complexity values. No predicate wrappers or aliases hide them.
+
+Bootstrap is explicit. Restart uses an existing key, authoritative store and
+separately retained signed prefix. Missing stores never reset history. The fixed
+different-UID run tests private reads, peer checks, duplicate effects and real
+process failures under one administrator. It establishes no independent human
+operator, customer workload or independent custody.

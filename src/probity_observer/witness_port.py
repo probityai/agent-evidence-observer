@@ -1,7 +1,19 @@
 """Public witness operations without a private signing key in the client."""
 
+from dataclasses import dataclass
 from pathlib import Path
+import re
 from typing import Any, Protocol
+
+from .crypto import VerificationError
+
+PUBLIC_KEY = re.compile(r"[0-9a-f]{64}\Z")
+
+
+def _check_public_key(value: str) -> None:
+    """Require the literal lowercase encoding of one selected Ed25519 public key."""
+    if not isinstance(value, str) or PUBLIC_KEY.fullmatch(value) is None:
+        raise VerificationError("dispatch witness public key differs")
 
 
 class WitnessPort(Protocol):
@@ -26,5 +38,37 @@ class WitnessPort(Protocol):
         ...
 
     def latest_checkpoint(self, history_path: Path) -> dict[str, Any]:
-        """Authenticate the retained begin used for interrupted recovery."""
+        """Authenticate the selected profile's existing retained checkpoint."""
         ...
+
+
+class LedgerWitnessPort(WitnessPort, Protocol):
+    """Supply full public receipt bytes for an acknowledged native history."""
+
+    def receipt_log(self, history_path: Path) -> bytes:
+        """Check the selected checkpoint and return its full signed receipt log."""
+        ...
+
+
+@dataclass(frozen=True)
+class DispatchWitnessPorts:
+    """Select one public witness key and two separately supplied checkpoint ports.
+
+    The authorization port retains the grant-before-effect journal. The native
+    port retains broker intervals and supplies their public receipt proof.
+    Neither client needs a private signing key or a private witness pathname.
+    These ports describe runtime boundaries, not independent operator custody.
+    """
+
+    public_key: str
+    authorization: WitnessPort
+    native: LedgerWitnessPort
+
+    def __post_init__(self) -> None:
+        """Refuse inferred or mismatched role pins before any target action."""
+        _check_public_key(self.public_key)
+        if (
+            self.authorization.public_hex != self.public_key
+            or self.native.public_hex != self.public_key
+        ):
+            raise VerificationError("dispatch witness ports differ from the selected key")

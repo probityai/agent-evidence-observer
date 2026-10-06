@@ -9,7 +9,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Callable, Iterator
+from typing import Any, Callable, Iterator, Protocol
 
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 from cryptography.hazmat.primitives import serialization
@@ -19,6 +19,20 @@ from probity_observer.ledger import LedgerWitness, _verify_terminal_intents, rea
 from .protocol import FORMAT, MAX_HISTORY, REPLY_DOMAIN, checked_identity, decode_request, exact_fields, history_entries, require, sha
 
 CONFIG_FIELDS = {"format", "keyPath", "storePath", "socketPath", "observerKey", "witnessKey", "clientUid"}
+
+
+class KeyConfiguration(Protocol):
+    """Expose only the immutable role key choices needed by the secret loader."""
+
+    @property
+    def key_path(self) -> Path:
+        """Return the exact host-selected private key file."""
+        ...
+
+    @property
+    def witness_key(self) -> str:
+        """Return the selected public pin for that role key."""
+        ...
 
 
 def absolute_path(value: Any) -> Path:
@@ -93,7 +107,7 @@ def secure_file(path: Path) -> bytes:
         os.close(descriptor)
 
 
-def load_key(configuration: Configuration) -> SigningKey:
+def load_key(configuration: KeyConfiguration) -> SigningKey:
     """Load the host's selected 32-byte secret without generating a replacement."""
     raw = secure_file(configuration.key_path)
     require(len(raw) == 32, "operator private key length differs")

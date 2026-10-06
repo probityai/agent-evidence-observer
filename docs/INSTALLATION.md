@@ -64,6 +64,8 @@ selects its own reader unit and Python 3.12 runtime.
 
 The following source manifests declare separate distributions. A module/script
 entry point means the manifest declares no console command; use its guide.
+The guide is the file declared by `[project].readme`. A manifest without that
+field uses its directory's `README.md`, the convention for the existing profiles.
 
 | Profile source | Distribution | Python constraint | Declared console commands |
 | --- | --- | --- | --- |
@@ -90,6 +92,7 @@ entry point means the manifest declares no console command; use its guide.
 | [local-model-tasks-2026-10-02](https://github.com/probityai/agent-evidence-observer/blob/main/interop/local-model-tasks-2026-10-02/README.md) | `probity-local-cpu-task-matrix` | `>=3.11` | Module/script entry points; follow the profile guide |
 | [local-model-vocabulary-2026-10-02](https://github.com/probityai/agent-evidence-observer/blob/main/interop/local-model-vocabulary-2026-10-02/README.md) | `probity-local-cpu-vocabulary` | `>=3.11` | Module/script entry points; follow the profile guide |
 | [openai-agents-ticket-2026-10-02](https://github.com/probityai/agent-evidence-observer/blob/main/interop/openai-agents-ticket-2026-10-02/README.md) | `probity-openai-agents-reference` | `>=3.13` | `probity-openai-run`, `probity-openai-read` |
+| [protected-action-operator-2026-10-06](https://github.com/probityai/agent-evidence-observer/blob/main/interop/protected-action-operator-2026-10-06/PROFILE.md) | `probity-protected-operator-reference` | `>=3.12` | `agent-evidence-authorization-witness` |
 | [pydantic-ai-native-2026-10-02](https://github.com/probityai/agent-evidence-observer/blob/main/interop/pydantic-ai-native-2026-10-02/README.md) | `probity-pydantic-reference` | `>=3.12` | `probity-pydantic-run`, `probity-pydantic-read` |
 | [pydantic-recovery-2026-10-03](https://github.com/probityai/agent-evidence-observer/blob/main/interop/pydantic-recovery-2026-10-03/README.md) | `probity-pydantic-recovery-reader` | `>=3.12` | `probity-read-pydantic-recovery` |
 | [smolagents-native-2026-10-03](https://github.com/probityai/agent-evidence-observer/blob/main/interop/smolagents-native-2026-10-03/README.md) | `probity-smolagents-reference` | `>=3.12` | `probity-smolagents-produce`, `probity-smolagents-read` |

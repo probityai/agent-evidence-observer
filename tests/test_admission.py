@@ -144,8 +144,12 @@ class TestAdmissionStore:
                 == packet["checkpoint"]["ledgerReceipt"]["hash"]
             )
 
+        # This property checks durable bytes and retained state. Real fsync calls
+        # have no per-example wall-clock requirement on a shared host.
         @settings(
-            max_examples=25, suppress_health_check=[HealthCheck.function_scoped_fixture]
+            max_examples=25,
+            deadline=None,
+            suppress_health_check=[HealthCheck.function_scoped_fixture],
         )
         @given(content=st.binary(max_size=128))
         def test_arbitrary_durable_bytes_survive_admission(

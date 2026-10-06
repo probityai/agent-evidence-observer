@@ -1,0 +1,38 @@
+name: Protected action operator
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  installed-operator:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e # v6
+        with:
+          version: '0.12.8'
+      - name: Installed source and real operator controls
+        run: bash interop/protected-action-operator-2026-10-06/verify_install.sh "$RUNNER_TEMP/protected-operator"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: protected-action-operator
+          retention-days: 90
+          path: |
+            ${{ runner.temp }}/protected-operator/native
+            ${{ runner.temp }}/protected-operator/existing-native
+            ${{ runner.temp }}/protected-operator/http-target-companion
+            ${{ runner.temp }}/protected-operator/wheels
+            ${{ runner.temp }}/protected-operator/*-tests.xml
+            ${{ runner.temp }}/protected-operator/*-install.txt
+            ${{ runner.temp }}/protected-operator/*-source-*.json
+            ${{ runner.temp }}/protected-operator/existing-witness-complexity.json
+            ${{ runner.temp }}/protected-operator/protected-operator-complexity.json
+            ${{ runner.temp }}/protected-operator/existing-reader-report.json
+            ${{ runner.temp }}/protected-operator/existing-reader-repeat-report.json

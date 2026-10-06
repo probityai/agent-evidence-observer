@@ -5,6 +5,11 @@ probe. The child can send an invocation to one host-owned socket. It cannot
 call the native broker directly, initialize or recover the store, select a
 clock, access the target tree, or read signing keys through this interface.
 
+The [separate operator route](../interop/protected-action-operator-2026-10-06/PROFILE.md)
+uses this same dispatcher with public authorization and native witness ports.
+Both ports must match the selected witness key. Its witness signer and stores
+run outside the gateway; its consumer retains public heads in separate storage.
+
 Run with Python 3.12 or later on a Linux host that permits bubblewrap:
 
 ```sh
@@ -99,4 +104,7 @@ The socket checks signed principal and tenant labels for the configured child;
 it does not prove possession of a principal's key or authenticate a remote
 caller. A copied valid grant can invoke the same exact action while it remains
 valid, but cannot select a different action or trigger another completed write.
-Native APS, MCP and A2A signing and dispatch paths remain separate adapter work.
+The [APS refund route](APS-REFUND-RETRIES.md) checks native approvals around a
+local SQLite operation. The [A2A SDK route](../interop/a2a-native-2026-10-02/README.md)
+retains native protocol exchanges. Each route declares its own action, authority
+and evidence boundary.

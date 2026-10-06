@@ -38,13 +38,15 @@ from .crypto import (
     verify_signature,
 )
 from .history import Witness, append_history, read_history, verify_checkpoint
-from .ledger import LedgerWitness, verify_ledger_receipts
+from .ledger import LedgerWitness, read_ledger, verify_ledger_receipts
+from .witness_port import DispatchWitnessPorts, WitnessPort
 
 LOGGER = logging.getLogger(__name__)
 STATE_DOMAIN = "probity-protected-dispatch-state-v0"
 PRIOR_DOMAIN = "probity-protected-dispatch-prior-v0"
 CONFIG_DOMAIN = "probity-protected-dispatch-config-v0"
 MAX_REQUEST = 65536
+MAX_RECEIPTS = 262144
 STATE_FIELDS = frozenset(
     {
         "format",
@@ -182,9 +184,12 @@ class ProtectedDispatcher:
         action; use a separate externally selected interval for another action.
     policy : GrantPolicy
         Externally selected issuer key and grant duration limit.
-    observer_key, witness_key : SigningKey
-        Distinct role signers, also distinct from the issuer. Native history,
-        authorization history, and keys remain on the host side of the socket.
+    observer_key : SigningKey
+        Host observer signer, distinct from the issuer and witness.
+    witness_key : SigningKey or DispatchWitnessPorts
+        Existing local signer, or an explicit public-key-only pair of native
+        and authorization ports. Both ports must match the selected witness
+        key before any target effect. Local signing retains same-operator scope.
     clock : Callable[[], datetime], optional
         Trusted host UTC second-precision clock, checked on every invocation
         including cached retries. The child cannot supply a reference time.
@@ -220,7 +225,7 @@ class ProtectedDispatcher:
         expected_request: ActionRequest,
         policy: GrantPolicy,
         observer_key: SigningKey,
-        witness_key: SigningKey,
+        witness_key: SigningKey | DispatchWitnessPorts,
         *,
         clock: Callable[[], datetime] = utc_clock,
         retained_authorization_head: dict[str, Any] | None = None,
@@ -233,6 +238,7 @@ class ProtectedDispatcher:
         self.policy = policy
         self.observer_key = observer_key
         self.witness_key = witness_key
+        self._witness_ports = self._select_witness_ports(witness_key)
         self.clock = clock
         self.execution_digest = execution_digest
         self.decision_digest = decision_digest
@@ -242,6 +248,32 @@ class ProtectedDispatcher:
         self._check_configuration()
         self._configuration = self._configuration_payload()
         self._configuration_digest = digest(CONFIG_DOMAIN, self._configuration)
+
+    def _select_witness_ports(
+        self, selected: SigningKey | DispatchWitnessPorts
+    ) -> DispatchWitnessPorts:
+        """Adapt the existing local API or select exact public checkpoint ports."""
+        if isinstance(selected, DispatchWitnessPorts):
+            return selected
+        if not isinstance(selected, SigningKey):
+            _refuse("dispatch witness selection must be a signer or explicit ports")
+        return DispatchWitnessPorts(
+            selected.public_hex,
+            Witness(self.state_dir / "authorization-witness.json", selected),
+            LedgerWitness(
+                self.state_dir / "witness-ledger.jsonl",
+                selected,
+                self.observer_key.public_hex,
+            ),
+        )
+
+    def _check_witness_pins(self) -> None:
+        """Recheck mutable clients against the immutable selected role key."""
+        if (
+            self._witness_ports.authorization.public_hex != self._witness_ports.public_key
+            or self._witness_ports.native.public_hex != self._witness_ports.public_key
+        ):
+            _refuse("dispatch witness ports differ from the selected key")
 
     def _check_configuration(self) -> None:
         """Refuse overlapping trust domains and non-distinct role keys."""
@@ -254,10 +286,18 @@ class ProtectedDispatcher:
         keys = {
             self.policy.issuer_key,
             self.observer_key.public_hex,
-            self.witness_key.public_hex,
+            self._witness_ports.public_key,
         }
         if len(keys) != 3:
             _refuse("issuer, observer, and witness keys must differ")
+        self._check_witness_pins()
+        for port, name in (
+            (self._witness_ports.authorization, "authorization.jsonl"),
+            (self._witness_ports.native, "history.jsonl"),
+        ):
+            error = port.configuration_error(self.workspace, self.state_dir / name)
+            if error is not None:
+                _refuse(error)
         self._check_execution_digest()
         if self.decision_digest is not None:
             _decision_configuration(self.decision_digest)
@@ -282,19 +322,16 @@ class ProtectedDispatcher:
             "request": asdict(self.expected_request),
             "policy": asdict(self.policy),
             "observerKey": self.observer_key.public_hex,
-            "witnessKey": self.witness_key.public_hex,
+            "witnessKey": self._witness_ports.public_key,
             "executionDigest": self.execution_digest,
             **_decision_configuration(self.decision_digest),
         }
 
-    def _paths(self) -> tuple[Path, Path, Witness]:
+    def _paths(self) -> tuple[Path, Path, WitnessPort]:
         """Return the protected journal, state, and monotonic witness store."""
         journal = self.state_dir / "authorization.jsonl"
         state = self.state_dir / "dispatch-state.json"
-        witness = Witness(
-            self.state_dir / "authorization-witness.json", self.witness_key
-        )
-        return journal, state, witness
+        return journal, state, self._witness_ports.authorization
 
     def initialize(self) -> dict[str, Any]:
         """Create an empty, witnessed store exactly once before any invocation.
@@ -312,6 +349,7 @@ class ProtectedDispatcher:
         """
         self.state_dir.mkdir(parents=True, exist_ok=True)
         with _locked(self.state_dir / "dispatch.lock"):
+            self._check_witness_pins()
             if set(item.name for item in self.state_dir.iterdir()) != {"dispatch.lock"}:
                 _refuse("dispatch store must be initialized in an empty directory")
             journal, path, witness = self._paths()
@@ -325,6 +363,7 @@ class ProtectedDispatcher:
                 },
             )
             checkpoint = witness.checkpoint(journal)
+            verify_checkpoint(read_history(journal), checkpoint, self._witness_ports.public_key)
             state = {
                 "format": STATE_DOMAIN,
                 "configuration": self._configuration,
@@ -343,7 +382,9 @@ class ProtectedDispatcher:
     def _read(self) -> dict[str, Any]:
         """Authenticate durable state and refuse missing or inconsistent data."""
         journal, path, witness = self._paths()
-        if not path.is_file() or not witness.state_path.is_file():
+        if not path.is_file() or (
+            isinstance(witness, Witness) and not witness.state_path.is_file()
+        ):
             _refuse("dispatch state or retained authorization witness is missing")
         state = _state_payload(
             strict_loads(path.read_bytes()), self.observer_key.public_hex
@@ -352,12 +393,12 @@ class ProtectedDispatcher:
             _refuse("dispatch configuration differs from the retained action")
         entries = read_history(journal)
         verify_checkpoint(
-            entries, witness.latest_checkpoint(journal), self.witness_key.public_hex
+            entries, witness.latest_checkpoint(journal), self._witness_ports.public_key
         )
-        verify_checkpoint(entries, state["checkpoint"], self.witness_key.public_hex)
+        verify_checkpoint(entries, state["checkpoint"], self._witness_ports.public_key)
         if self._retained_authorization_head is not None:
             _check_prefix(
-                entries, self._retained_authorization_head, self.witness_key.public_hex
+                entries, self._retained_authorization_head, self._witness_ports.public_key
             )
         self._check_phase(state, entries)
         return state
@@ -424,6 +465,7 @@ class ProtectedDispatcher:
         """
         if request != self.expected_request:
             _refuse("invocation differs from the expected action")
+        self._check_witness_pins()
         _content(request, content)
         candidate = strict_loads(canonical(dict(grant)))
         verify_grant(candidate, request, self.policy, now=self.clock())
@@ -439,13 +481,9 @@ class ProtectedDispatcher:
                 return self._replay(state, candidate, reference)
             return self._execute(state, candidate, content)
 
-    def _native(self) -> tuple[Broker, LedgerWitness]:
-        """Construct a fresh minimal native interval under the host-held keys."""
-        witness = LedgerWitness(
-            self.state_dir / "witness-ledger.jsonl",
-            self.witness_key,
-            self.observer_key.public_hex,
-        )
+    def _native(self) -> tuple[Broker, WitnessPort]:
+        """Construct the native interval through the selected public witness port."""
+        witness = self._witness_ports.native
         broker = Broker(
             self.workspace,
             self.state_dir / "history.jsonl",
@@ -459,11 +497,58 @@ class ProtectedDispatcher:
         )
         return broker, witness
 
+    def _retain_receipts(self) -> None:
+        """Save verified public proof bytes without touching a remote private log."""
+        history = self.state_dir / "history.jsonl"
+        submitted = history.read_bytes()
+        raw = self._witness_ports.native.receipt_log(history)
+        if history.read_bytes() != submitted:
+            _refuse("native history changed during receipt retention")
+        if not isinstance(raw, bytes) or not 0 < len(raw) <= MAX_RECEIPTS:
+            _refuse("native witness receipt proof exceeds its finite limit")
+        path = self.state_dir / "witness-ledger.jsonl"
+        descriptor, name = tempfile.mkstemp(prefix=".witness-receipts-", dir=self.state_dir)
+        temporary = Path(name)
+        try:
+            with os.fdopen(descriptor, "wb") as stream:
+                stream.write(raw)
+                stream.flush()
+                os.fsync(stream.fileno())
+            receipts = read_ledger(temporary, self._witness_ports.public_key)
+            entries = read_history(history)
+            preimage = entries[0]["event"]["commitment"]["preimage"]
+            found = [
+                receipt for receipt in receipts
+                if receipt["intervalId"] == self.expected_request.run_id
+                and receipt["observerKey"] == self.observer_key.public_hex
+                and receipt["authorityDigest"] == preimage["authorityDigest"]
+                and receipt["checkpoint"]["count"] == len(entries)
+                and receipt["checkpoint"]["head"] == entries[-1]["hash"]
+            ]
+            if len(found) != 1:
+                _refuse("native witness receipt proof does not bind the current history")
+            if path.exists():
+                previous = path.read_bytes()
+                if not raw.startswith(previous):
+                    _refuse("native witness receipt proof does not extend its retained bytes")
+                if raw == previous:
+                    return
+            os.replace(temporary, path)
+            _sync_directory(path.parent)
+        finally:
+            temporary.unlink(missing_ok=True)
+
     def _prepare(
         self, state: dict[str, Any], grant: dict[str, Any], broker: Broker
     ) -> AuthorizedBroker:
         """Durably witness the exact grant relation before the native effect path."""
         begun = broker.begin()
+        verify_checkpoint(
+            read_history(self.state_dir / "history.jsonl"),
+            begun["checkpoint"],
+            self._witness_ports.public_key,
+        )
+        self._retain_receipts()
         if begun["commitment"]["preimage"]["beforeRoot"] != state["beforeRoot"]:
             _refuse("native before root differs from the retained initialization")
         reference = self.clock()
@@ -486,6 +571,7 @@ class ProtectedDispatcher:
         journal, path, witness = self._paths()
         append_history(journal, {"kind": "grant-before-dispatch", "prior": prior})
         checkpoint = witness.checkpoint(journal)
+        verify_checkpoint(read_history(journal), checkpoint, self._witness_ports.public_key)
         state.update(
             phase="pending",
             grant=grant,
@@ -513,8 +599,10 @@ class ProtectedDispatcher:
         """Complete the native effect and only then persist a reusable response."""
         broker, _ = self._native()
         authorized = self._prepare(state, grant, broker)
+        self._check_witness_pins()
         result = authorized.write(self.expected_request, content)
         packet = authorized.seal()
+        self._retain_receipts()
         journal, path, witness = self._paths()
         _save(self.state_dir / "packet.json", packet)
         append_history(
@@ -525,11 +613,13 @@ class ProtectedDispatcher:
                 "result": asdict(result),
             },
         )
+        checkpoint = witness.checkpoint(journal)
+        verify_checkpoint(read_history(journal), checkpoint, self._witness_ports.public_key)
         state.update(
             phase="complete",
             packet=packet,
             result=asdict(result),
-            checkpoint=witness.checkpoint(journal),
+            checkpoint=checkpoint,
         )
         _save(path, _envelope(state, self.observer_key, STATE_DOMAIN))
         return result
@@ -540,6 +630,7 @@ class ProtectedDispatcher:
         """Authenticate the completed result, retained order, and target tree."""
         if candidate != state["grant"]:
             _refuse("retry grant differs from the completed action")
+        self._retain_receipts()
         completed_at = datetime.fromisoformat(
             state["packet"]["authorizationBinding"]["payload"]["authorizedAt"].replace(
                 "Z", "+00:00"
@@ -553,7 +644,7 @@ class ProtectedDispatcher:
             self.expected_request,
             self.policy,
             self.observer_key.public_hex,
-            self.witness_key.public_hex,
+            self._witness_ports.public_key,
             self.workspace,
         )
         return WriteResult(**{**state["result"], "replayed": True})

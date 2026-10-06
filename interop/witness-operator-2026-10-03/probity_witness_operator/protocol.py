@@ -126,6 +126,19 @@ def peer_uid(stream: socket.socket) -> int:
     return struct.unpack("3i", stream.getsockopt(socket.SOL_SOCKET, socket.SO_PEERCRED, 12))[1]
 
 
+def exchange(socket_path: Path, server_uid: int, timeout: float, raw: bytes) -> bytes:
+    """Authenticate a selected local server before exchanging one finite frame."""
+    try:
+        with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as stream:
+            stream.settimeout(timeout)
+            stream.connect(str(socket_path))
+            require(peer_uid(stream) == server_uid, "IPC server UID differs")
+            send(stream, raw)
+            return receive(stream)
+    except OSError as exc:
+        raise VerificationError("witness IPC unavailable") from exc
+
+
 def _checked_payload(reply: Any, public_key: str) -> dict[str, Any]:
     """Authenticate the exact response envelope under the host-selected key."""
     exact_fields(reply, {"payload", "keyid", "signature"}, "reply envelope differs")

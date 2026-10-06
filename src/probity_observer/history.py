@@ -16,6 +16,9 @@ from .crypto import SigningKey, VerificationError, canonical, digest, strict_loa
 
 GENESIS = "0" * 64
 LOGGER = logging.getLogger(__name__)
+_HISTORY_FIELDS = frozenset({"sequence", "previous", "event", "hash"})
+_CHECKPOINT_FIELDS = frozenset({"count", "head", "keyid", "signature"})
+_NATIVE_CHECKPOINT_FIELDS = _CHECKPOINT_FIELDS | {"ledgerReceipt"}
 
 
 def read_history(path: Path) -> list[dict[str, Any]]:
@@ -34,7 +37,7 @@ def read_history(path: Path) -> list[dict[str, Any]]:
     Raises
     ------
     VerificationError
-        If a line was changed, removed from the middle, or reordered.
+        If an entry is malformed, changed, removed from the middle, or reordered.
     """
     if not path.exists():
         return []
@@ -44,6 +47,10 @@ def read_history(path: Path) -> list[dict[str, Any]]:
     entries: list[dict[str, Any]] = []
     for line in raw.splitlines():
         entry = strict_loads(line)
+        if not isinstance(entry, dict) or entry.keys() != _HISTORY_FIELDS:
+            raise VerificationError("history entry shape is unsupported")
+        if type(entry["sequence"]) is not int:
+            raise VerificationError("history sequence is not an integer")
         expected_prev = entries[-1]["hash"] if entries else GENESIS
         if entry["sequence"] != len(entries) + 1 or entry["previous"] != expected_prev:
             raise VerificationError("history sequence or predecessor differs")
@@ -246,6 +253,13 @@ class Witness:
 
 def verify_checkpoint(entries: list[dict[str, Any]], checkpoint: dict[str, Any], pinned_key: str) -> None:
     """Verify a checkpoint binds exactly the supplied history under a pinned key."""
+    if (
+        not isinstance(checkpoint, dict)
+        or checkpoint.keys() not in (_CHECKPOINT_FIELDS, _NATIVE_CHECKPOINT_FIELDS)
+        or type(checkpoint["count"]) is not int
+        or checkpoint["count"] < 0
+    ):
+        raise VerificationError("checkpoint has invalid fields or count")
     if checkpoint["keyid"] != pinned_key:
         raise VerificationError("checkpoint key is not the pinned witness key")
     expected_head = entries[-1]["hash"] if entries else GENESIS
