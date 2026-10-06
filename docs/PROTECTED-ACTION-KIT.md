@@ -12,6 +12,12 @@ pytest -q
 
 The output directory must be new or empty. The example creates issuer, observer, and witness keys in memory and saves only their public keys. One operator controls all three. For an outside run, the consumer needs independently obtained key pins and its own policy; keys included in a received packet cannot authenticate that packet on their own.
 
+For separate witness services, protected restart state, actual key/store access
+denials and a separate consumer process, use the
+[protected operator route](../interop/protected-action-operator-2026-10-06/PROFILE.md).
+It uses the same dispatcher through public witness ports and retains its own
+installed-source and fault evidence.
+
 ## How it works
 
 An issuer signs the run, attempt, request, tenant, principal, tool, target path, and content SHA-256. Before dispatch, `AuthorizedBroker.write` checks the issuer key, signed request, validity window and duration limit, file bytes, and broker authority and keys. Changed requests or content are refused. An identical retry returns the earlier result while the same broker instance is running.
@@ -42,9 +48,13 @@ agent-evidence-observer boundary-probe ./boundary-run
 
 Passing that probe does not mean this reference wrapper ran inside its sandbox. A failed isolation launch produces an incomplete result. The separate [protected socket integration](PROTECTED-DISPATCH.md) checks signed exact requests on the host dispatch path and runs altered requests from an isolated child; it has its own measured gate and retained result.
 
-## Planned integrations
+## Native routes and further comparisons
 
-APS's MCP signed-request profile is the first planned authority adapter. It will preserve APS signing bytes, historical key rules, replay checks, and authority callbacks. The MCP adapter also needs method and tool-name agreement between headers and bodies, plus retry and continuation identity checks. A2A will have its own task, context, message, audience, and tenant mapping. None of these native protocol paths has run in this kit yet.
+The [native APS refund route](APS-REFUND-RETRIES.md) separately exercises APS
+signing bytes, current host authority and a durable local target. The
+[native A2A route](../interop/a2a-native-2026-10-02/) has its own task, context,
+message and protocol checks. These are separate installed routes with their
+own retained outcomes; this in-memory example remains the local grant profile.
 
 Sandbox comparisons will use the same controlled target and effect checks under Anthropic sandbox-runtime and NVIDIA OpenShell. Reports will record source versions, commands, policies, measured behavior, and observation gaps. Sandbox enforcement and independently retained target observations are separate parts of the comparison.
 

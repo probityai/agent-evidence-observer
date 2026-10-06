@@ -13,7 +13,8 @@ selection = {
     "probity-witness-operator-reference": (root / "interop/witness-operator-2026-10-03", "probity_witness_operator"),
     "probity-protected-operator-reference": (root / "interop/protected-action-operator-2026-10-06", "probity_protected_operator"),
 }
-result = {"sourceHead": subprocess.check_output(["git", "-C", str(root), "rev-parse", "HEAD"], text=True).strip(), "python": sys.version, "packages": {}}
+result = {"sourceHead": subprocess.check_output(["git", "-C", str(root), "rev-parse", "HEAD"], text=True).strip(),
+          "python": sys.version, "pythonExecutableSha256": hashlib.sha256(Path(sys.executable).resolve().read_bytes()).hexdigest(), "packages": {}}
 for name, (base, package) in selection.items():
     distribution = metadata.distribution(name)
     expected = {str(path.relative_to(base)): path for path in (base / package).rglob("*.py")}
