@@ -12,7 +12,7 @@ license-files = ["LICENSE"]
 authors = [{name = "Sankalp Gilda"}]
 keywords = ["ai-agents", "observability", "audit-logs", "provenance", "attestation"]
 requires-python = ">=3.12"
-dependencies = ["cryptography>=46,<47"]
+dependencies = ["cryptography>=46,<51"]
 
 [project.urls]
 Documentation = "https://github.com/probityai/agent-evidence-observer/blob/main/docs/INSTALLATION.md"
