@@ -1,0 +1,25 @@
+{
+  "commit": "68054425873b9b373ce07359f8e994b817bee210",
+  "files": [
+    {
+      "path": "core/agent-core/src/core/content/publication_jobs.py",
+      "bytes": 23722,
+      "sha256": "3a928ff97f2eb13d2138809d1aebbacd645a07210663d74e2d77bae7fa1002df"
+    },
+    {
+      "path": "core/agent-core/src/core/content/publisher/native.py",
+      "bytes": 5653,
+      "sha256": "82ca60d02678599dc9b35b1f087df052201c47c541296e5780f8a40ff1a93df5"
+    },
+    {
+      "path": "core/agent-core/src/core/content/telegram_publish.py",
+      "bytes": 24949,
+      "sha256": "7421d9295f4b63868d8d8dd0f845d531ac443392a5361f6e06f796c0d0d8015d"
+    },
+    {
+      "path": "core/agent-core/tests/unit/test_publication_jobs.py",
+      "bytes": 21367,
+      "sha256": "9264a92ca3a9dd1219990da12701df7b66e9288a6a58c9416e20445a2ddd6efc"
+    }
+  ]
+}

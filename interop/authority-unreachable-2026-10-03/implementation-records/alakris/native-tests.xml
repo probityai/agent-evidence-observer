@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites><testsuite name="pytest" errors="0" failures="2" skipped="0" tests="37" time="13.562" timestamp="2026-10-04T05:18:14.631313" hostname="6a90f469318e"><testcase classname="tests.unit.test_publication_jobs" name="test_approve_tick_published" time="1.352" /><testcase classname="tests.unit.test_publication_jobs" name="test_dispatch_cas_lock" time="0.170" /><testcase classname="tests.unit.test_publication_jobs" name="test_fingerprint_mismatch_fails" time="0.201" /><testcase classname="tests.unit.test_publication_jobs" name="test_approve_twice_conflict" time="0.142" /><testcase classname="tests.unit.test_publication_jobs" name="test_retry_waits_for_next_attempt_at" time="0.168" /><testcase classname="tests.unit.test_publication_jobs" name="test_stale_dispatching_repair" time="0.170" /><testcase classname="tests.unit.test_publication_jobs" name="test_retry_after_failed_attempt_keeps_fingerprint" time="0.184" /><testcase classname="tests.unit.test_publication_jobs" name="test_patch_packaging_with_active_job_409" time="0.146" /><testcase classname="tests.unit.test_publication_jobs" name="test_approve_manual_brand_422" time="0.131" /><testcase classname="tests.unit.test_publication_jobs" name="test_scope_guards_precede_body" time="0.104" /><testcase classname="tests.unit.test_publication_jobs" name="test_cancel_and_reschedule" time="0.171" /><testcase classname="tests.unit.test_publication_jobs" name="test_flag_off_and_expired" time="0.152" /><testcase classname="tests.unit.test_publication_jobs" name="test_list_jobs_and_filter" time="0.157" /><testcase classname="tests.unit.test_publication_jobs" name="test_reconcile_deletes_only_matching_duplicate[item_id]" time="0.152" /><testcase classname="tests.unit.test_publication_jobs" name="test_reconcile_deletes_only_matching_duplicate[platform]" time="0.172" /><testcase classname="tests.unit.test_publication_jobs" name="test_reconcile_deletes_only_matching_duplicate[lang]" time="0.174" /><testcase classname="tests.unit.test_publication_jobs" name="test_reconcile_deletes_only_matching_duplicate[tenant_id]" time="0.135" /><testcase classname="tests.unit.test_publication_jobs" name="test_reconcile_deletes_only_matching_duplicate[created_at]" time="0.135" /><testcase classname="tests.unit.test_publication_jobs" name="test_reconcile_deletes_only_matching_duplicate[None]" time="0.147" /><testcase classname="tests.unit.test_publication_jobs" name="test_error_redaction" time="0.001" /><testcase classname="tests.unit.test_publication_jobs" name="test_invalid_schedule[2026-01-01-VALIDATION_ERROR]" time="0.001" /><testcase classname="tests.unit.test_publication_jobs" name="test_invalid_schedule[None-VALIDATION_ERROR]" time="0.001" /><testcase classname="tests.unit.test_publication_jobs" name="test_schedule_out_of_bounds_rejected[delta0-SCHEDULED_AT_PAST]" time="0.001" /><testcase classname="tests.unit.test_publication_jobs" name="test_schedule_out_of_bounds_rejected[delta1-SCHEDULED_AT_TOO_SOON]" time="0.001" /><testcase classname="tests.unit.test_publication_jobs" name="test_schedule_out_of_bounds_rejected[delta2-VALIDATION_ERROR]" time="0.001" /><testcase classname="tests.unit.test_publication_jobs" name="test_schedule_inside_bounds_accepted[delta0]" time="0.001" /><testcase classname="tests.unit.test_publication_jobs" name="test_schedule_inside_bounds_accepted[delta1]" time="0.001" /><testcase classname="tests.unit.test_publication_jobs" name="test_schedule_bounds_apply_to_the_iso_string_form" time="0.001" /><testcase classname="tests.unit.test_publication_jobs" name="test_approve_to_native_applier_with_mock_http" time="4.361"><failure message="AssertionError: Status code 204 must not have a response body">tests/unit/test_publication_jobs.py:304: in test_approve_to_native_applier_with_mock_http
+    from src.core.content import telegram_publish, autonomy
+src/core/content/telegram_publish.py:26: in &lt;module&gt;
+    from src.core.content import media as media_svc
+src/core/content/media.py:29: in &lt;module&gt;
+    from src.core.content import items as items_svc
+src/core/content/items.py:17: in &lt;module&gt;
+    from src.api.merchant_llm_config_api import load_tenant_llm_credentials
+src/api/merchant_llm_config_api.py:805: in &lt;module&gt;
+    @router.delete("/surfaces/{surface}", status_code=204)
+/usr/local/lib/python3.13/site-packages/fastapi/routing.py:944: in decorator
+    self.add_api_route(
+/usr/local/lib/python3.13/site-packages/fastapi/routing.py:883: in add_api_route
+    route = route_class(
+/usr/local/lib/python3.13/site-packages/fastapi/routing.py:468: in __init__
+    assert is_body_allowed_for_status_code(
+E   AssertionError: Status code 204 must not have a response body</failure></testcase><testcase classname="tests.unit.test_publication_jobs" name="test_paused_job_waits_then_dispatches" time="0.183" /><testcase classname="tests.unit.test_publication_jobs" name="test_suggested_dispatch_sets_manual_pending" time="0.151" /><testcase classname="tests.unit.test_publication_jobs" name="test_retry_limit_is_terminal" time="0.157" /><testcase classname="tests.unit.test_publication_jobs" name="test_stale_action_repair[queued-published]" time="0.158" /><testcase classname="tests.unit.test_publication_jobs" name="test_stale_action_repair[applied-published]" time="0.178" /><testcase classname="tests.unit.test_publication_jobs" name="test_stale_action_repair[failed-failed]" time="0.342" /><testcase classname="tests.unit.test_publication_jobs" name="test_stale_action_repair[dismissed-failed]" time="0.148" /><testcase classname="tests.unit.test_publication_jobs" name="test_api_scope_guard_with_invalid_body" time="1.240"><failure message="AssertionError: Status code 204 must not have a response body">tests/unit/test_publication_jobs.py:385: in test_api_scope_guard_with_invalid_body
+    from src.api import content_agent_api as api
+src/api/content_agent_api.py:45: in &lt;module&gt;
+    from src.core.content import facebook_publish as facebook_publish_svc
+src/core/content/facebook_publish.py:35: in &lt;module&gt;
+    from src.core.content import media as media_svc
+src/core/content/media.py:29: in &lt;module&gt;
+    from src.core.content import items as items_svc
+src/core/content/items.py:17: in &lt;module&gt;
+    from src.api.merchant_llm_config_api import load_tenant_llm_credentials
+src/api/merchant_llm_config_api.py:805: in &lt;module&gt;
+    @router.delete("/surfaces/{surface}", status_code=204)
+/usr/local/lib/python3.13/site-packages/fastapi/routing.py:944: in decorator
+    self.add_api_route(
+/usr/local/lib/python3.13/site-packages/fastapi/routing.py:883: in add_api_route
+    route = route_class(
+/usr/local/lib/python3.13/site-packages/fastapi/routing.py:468: in __init__
+    assert is_body_allowed_for_status_code(
+E   AssertionError: Status code 204 must not have a response body</failure></testcase></testsuite></testsuites>

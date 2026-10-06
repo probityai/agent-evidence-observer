@@ -1,0 +1,114 @@
+{
+  "implementations": {
+    "alakris": {
+      "commit": "ebd9dcf43977d425e5e80d9fc073a3998c61fcb5",
+      "files": {
+        "README.md": {
+          "bytes": 3946,
+          "sha256": "031dedf2225419757406bc6299f3fce7a8bbf98fc708e9278e5d3a7da408a427",
+          "url": "https://git.elibot.ru/agent-bot/aaif-publication-reference/raw/commit/ebd9dcf43977d425e5e80d9fc073a3998c61fcb5/runs/2026-10-04/README.md"
+        },
+        "SHA256SUMS": {
+          "bytes": 511,
+          "sha256": "f736adae1f2f4292a28753d6f6e6f3b0362994ee4d87d2d1d928d91575d0401b",
+          "url": "https://git.elibot.ru/agent-bot/aaif-publication-reference/raw/commit/ebd9dcf43977d425e5e80d9fc073a3998c61fcb5/runs/2026-10-04/SHA256SUMS"
+        },
+        "native-tests.xml": {
+          "bytes": 6928,
+          "sha256": "b717776a07e56c520ab48d4b606ad78faa4662928507e395a6bcffe7edff8686",
+          "url": "https://git.elibot.ru/agent-bot/aaif-publication-reference/raw/commit/ebd9dcf43977d425e5e80d9fc073a3998c61fcb5/runs/2026-10-04/native-tests.xml"
+        },
+        "reader-report.json": {
+          "bytes": 14048,
+          "sha256": "fa33001473063494d20d72e92a663235d33b7dc34e70b7a024921e82ce91fa99",
+          "url": "https://git.elibot.ru/agent-bot/aaif-publication-reference/raw/commit/ebd9dcf43977d425e5e80d9fc073a3998c61fcb5/runs/2026-10-04/reader-report.json"
+        },
+        "reference-evidence.tar.gz": {
+          "bytes": 28818,
+          "sha256": "709d99f94ec01a7bf2ffc3f500194055a17814020c4e64ed8d4699a0c5941798",
+          "url": "https://git.elibot.ru/agent-bot/aaif-publication-reference/raw/commit/ebd9dcf43977d425e5e80d9fc073a3998c61fcb5/runs/2026-10-04/reference-evidence.tar.gz"
+        },
+        "source-discriminator-report.json": {
+          "bytes": 848,
+          "sha256": "7c5985911bf2dfded873218d18e4a2763a122a82104c9f89e2e766fcab7b2bb2",
+          "url": "https://git.elibot.ru/agent-bot/aaif-publication-reference/raw/commit/ebd9dcf43977d425e5e80d9fc073a3998c61fcb5/runs/2026-10-04/source-discriminator-report.json"
+        },
+        "source-manifest.json": {
+          "bytes": 826,
+          "sha256": "0cc5dd16cd924788545da53d306b8f26eaacb54fcb4234ea566eaa0b1e5c9b31",
+          "url": "https://git.elibot.ru/agent-bot/aaif-publication-reference/raw/commit/ebd9dcf43977d425e5e80d9fc073a3998c61fcb5/manifest.json"
+        },
+        "tests.xml": {
+          "bytes": 11203,
+          "sha256": "9981d73da3a7b6774e022b3a68dd6deca469c5d76c91184bab1c48941ab8e064",
+          "url": "https://git.elibot.ru/agent-bot/aaif-publication-reference/raw/commit/ebd9dcf43977d425e5e80d9fc073a3998c61fcb5/runs/2026-10-04/tests.xml"
+        }
+      },
+      "name": "Alakris",
+      "repository": "https://git.elibot.ru/agent-bot/aaif-publication-reference",
+      "tag": null
+    },
+    "mintid": {
+      "commit": "b678e5cd6b5736e1795fd18d497fd8e501272dcd",
+      "files": {
+        "revocation-trace-testnet-20261006T073712Z.jsonl": {
+          "bytes": 66261,
+          "sha256": "509a5047f3f52730c340314d82a0f4c3968db7b41c4cdca21f438fe70d1563d7",
+          "url": "https://gitlab.com/mintid/mintid/-/raw/b678e5cd6b5736e1795fd18d497fd8e501272dcd/test-harness/trace/records/revocation-trace-testnet-20261006T073712Z.jsonl"
+        },
+        "revocation-trace-testnet-20261006T073712Z.manifest.json": {
+          "bytes": 25963,
+          "sha256": "a3cdc29b85ddaf7ef5e5166ea007dc04cc34c1660b14fa416cec2eab23d6983f",
+          "url": "https://gitlab.com/mintid/mintid/-/raw/b678e5cd6b5736e1795fd18d497fd8e501272dcd/test-harness/trace/records/revocation-trace-testnet-20261006T073712Z.manifest.json"
+        },
+        "revocation-trace-testnet-20261006T073712Z.md": {
+          "bytes": 10405,
+          "sha256": "e984c1d8b0555298bb18057bfd8e04089eb012e980f842a593eb07be7e4b6852",
+          "url": "https://gitlab.com/mintid/mintid/-/raw/b678e5cd6b5736e1795fd18d497fd8e501272dcd/test-harness/trace/records/revocation-trace-testnet-20261006T073712Z.md"
+        }
+      },
+      "name": "MintID",
+      "repository": "https://gitlab.com/mintid/mintid",
+      "tag": "public-v2026-10-07"
+    },
+    "proofable": {
+      "commit": "3a45f026fd0c06b9d1d411c053597584b6b1c3dc",
+      "files": {
+        "README.md": {
+          "bytes": 2409,
+          "sha256": "67dcbff2c2045f421ad8ef8dd1926f0ff967870c66570cd45575d13a127cda4a",
+          "url": "https://raw.githubusercontent.com/proofable/docs/3a45f026fd0c06b9d1d411c053597584b6b1c3dc/public/evidence/aaif/authority-at-dispatch/2026-10-06/README.md"
+        },
+        "SHA256SUMS": {
+          "bytes": 424,
+          "sha256": "3ddf1e631c23f5b26442a06b57d153b9976bddbc6721cbef40b296ff81a06c5d",
+          "url": "https://raw.githubusercontent.com/proofable/docs/3a45f026fd0c06b9d1d411c053597584b6b1c3dc/public/evidence/aaif/authority-at-dispatch/2026-10-06/SHA256SUMS"
+        },
+        "authority-effect-results.json": {
+          "bytes": 5650,
+          "sha256": "c4b35ed7c2f08dc8924979934a137a9bfd673436a4c98f89395d3d6ece7dd92f",
+          "url": "https://raw.githubusercontent.com/proofable/docs/3a45f026fd0c06b9d1d411c053597584b6b1c3dc/public/evidence/aaif/authority-at-dispatch/2026-10-06/authority-effect-results.json"
+        },
+        "authority-effect-results.md": {
+          "bytes": 4569,
+          "sha256": "0338ff2367ef06568301bed497d2f067fd7650499b07fd6f540b69781cef9702",
+          "url": "https://raw.githubusercontent.com/proofable/docs/3a45f026fd0c06b9d1d411c053597584b6b1c3dc/public/evidence/aaif/authority-at-dispatch/2026-10-06/authority-effect-results.md"
+        },
+        "manifest.json": {
+          "bytes": 1840,
+          "sha256": "f0a6bc2243e753c437215476d466094ca6c7b889701b64edf221f6ddbbc8660d",
+          "url": "https://raw.githubusercontent.com/proofable/docs/3a45f026fd0c06b9d1d411c053597584b6b1c3dc/public/evidence/aaif/authority-at-dispatch/2026-10-06/manifest.json"
+        },
+        "trace.jsonl": {
+          "bytes": 2757,
+          "sha256": "8df7ed9d49d1d6fb696a05661fd11db194db7c808719a66cadbf0f0a562cc1e2",
+          "url": "https://raw.githubusercontent.com/proofable/docs/3a45f026fd0c06b9d1d411c053597584b6b1c3dc/public/evidence/aaif/authority-at-dispatch/2026-10-06/trace.jsonl"
+        }
+      },
+      "name": "Proofable",
+      "repository": "https://github.com/proofable/docs",
+      "tag": null
+    }
+  },
+  "schema": "authority-unreachable-implementation-sources/1"
+}
