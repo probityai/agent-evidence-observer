@@ -19,6 +19,7 @@ Other native profiles have separate install units or source workflows.
 - [Check nested ADK calls](https://github.com/probityai/agent-evidence-observer/blob/main/interop/adk-nested-compaction-2026-10-04/README.md): native repeated calls, callback coverage and the excluded-plugin case.
 - [Read AG2 push authority](https://github.com/probityai/agent-evidence-observer/blob/main/interop/ag2-push-authority-2026-10-04/README.md): registration, explicit SDK dispatch, target callbacks and effects across three transports.
 - [Read CrewAI job fences](https://github.com/probityai/agent-evidence-observer/blob/main/interop/crewai-job-fences-2026-10-04/README.md): pinned native jobs, Observer body effects, foreground publication and offline controls.
+- [Check approved refund retries](https://github.com/probityai/agent-evidence-observer/blob/main/docs/APS-REFUND-RETRIES.md): pinned APS SDK, local SQLite effects, retained interruption cases and a separately installed public reader. No provider refund or independent custody claim.
 - [Bind a selected run to retained witness anchors](https://github.com/probityai/agent-evidence-observer/blob/main/docs/WITNESSED-RUN-SELECTION.md): installed finite protocol, opening checkpoint, execution closure and hostile controls.
 - [Apply a consumer decision](https://github.com/probityai/agent-evidence-observer/blob/main/docs/CONSUMER-ADMISSION.md): consumer-selected keys, policy and replay state.
 
