@@ -188,14 +188,49 @@ class TestRefusalControls:
         path.write_text("".join(json.dumps(r) + "\n" for r in records_), encoding="utf-8")
         assert result(read_proofable(records / "proofable"), "proofable-denials-carry-reason") == "pass"
 
-    def test_later_dispatch_under_revoked_delegation_is_observed(self, records):
+    @pytest.mark.parametrize("position", ["before", "after"])
+    @pytest.mark.parametrize("decision", ["ALLOW", "DENY"])
+    def test_same_delegation_does_not_establish_revocation_order(self, records, position, decision):
         path = records / "proofable" / "trace.jsonl"
         rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
         post = next(r for r in rows if r["case_id"] == "post_dispatch_revoke")
-        rows.append({"case_id": "post_dispatch_revoke_next", "observed": {"dispatch_decision": "DENY", "code": "REVOKED"},
-                     "delegation_qHash": post["delegation_qHash"], "terminal_receipt": None})
+        dispatch = {"case_id": "another_dispatch", "observed": {"dispatch_decision": decision, "code": "REVOKED"},
+                    "delegation_qHash": post["delegation_qHash"], "terminal_receipt": None}
+        rows.insert(0 if position == "before" else len(rows), dispatch)
         path.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
-        assert result(read_proofable(records / "proofable"), "proofable-post-dispatch-deny-point-observed") == "pass"
+        row = read_proofable(records / "proofable")
+        assert result(row, "proofable-post-dispatch-deny-point-observed") == "fail"
+        assert "no revocation event time or dispatch sequence" in row["contract"]["temporalRevocation"]
+
+    def test_missing_delegation_hash_does_not_establish_revocation_order(self, records):
+        def remove_hashes(rows):
+            for row in rows:
+                row.pop("delegation_qHash", None)
+            return rows
+        edit_jsonl(records / "proofable" / "trace.jsonl", remove_hashes)
+        assert result(read_proofable(records / "proofable"), "proofable-post-dispatch-deny-point-observed") == "fail"
+
+    def test_unreachable_case_is_selected_by_identity(self, records):
+        edit_json(records / "proofable" / "authority-effect-results.json",
+                  lambda document: document["cases"].reverse())
+        assert read_proofable(records / "proofable")["contract"]["unreachableAuthority"] == "NOT_APPLICABLE_CURRENT_PATH"
+
+    def test_absent_unreachable_case_does_not_select_another_result(self, records):
+        def remove_case(document):
+            document["cases"] = [case for case in document["cases"] if case["case_id"] != "unreachable"]
+        edit_json(records / "proofable" / "authority-effect-results.json", remove_case)
+        assert read_proofable(records / "proofable")["contract"]["unreachableAuthority"] is None
+
+    @pytest.mark.parametrize("reverse", [False, True])
+    def test_conflicting_duplicate_case_summaries_are_refused(self, records, reverse):
+        def duplicate_case(document):
+            unreachable = next(case for case in document["cases"] if case["case_id"] == "unreachable")
+            document["cases"].append({**unreachable, "result": "SUPPORTED"})
+            if reverse:
+                document["cases"].reverse()
+        edit_json(records / "proofable" / "authority-effect-results.json", duplicate_case)
+        with pytest.raises(ValueError, match="duplicate Proofable result case_id: unreachable"):
+            read_proofable(records / "proofable")
 
     def test_rerun_that_differs_from_this_profile_fails(self, records, reference_report, tmp_path):
         ours = json.loads(reference_report.read_bytes())

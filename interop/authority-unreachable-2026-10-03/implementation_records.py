@@ -241,11 +241,23 @@ def _crlf_diagnosis(data: bytes, expected: str) -> str:
     return "no line-ending form of the published bytes matches"
 
 
+def _unique_case_results(cases: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """Reject ambiguous case summaries before selecting or projecting their fields."""
+    by_id = {}
+    for case in cases:
+        case_id = case["case_id"]
+        if case_id in by_id:
+            raise ValueError(f"duplicate Proofable result case_id: {case_id}")
+        by_id[case_id] = case
+    return by_id
+
+
 def read_proofable(directory: Path) -> dict[str, Any]:
     """Map the Proofable package onto the contract and test each claim against its trace."""
     checks = Checks()
     manifest = json.loads((directory / "manifest.json").read_bytes())
     results = json.loads((directory / "authority-effect-results.json").read_bytes())
+    cases = _unique_case_results(results["cases"])
     trace_bytes = (directory / "trace.jsonl").read_bytes()
     for name, digest in sorted(_sums(directory).items()):
         data = (directory / name).read_bytes()
@@ -257,15 +269,16 @@ def read_proofable(directory: Path) -> dict[str, Any]:
     trace = [json.loads(line) for line in trace_bytes.decode("utf-8").splitlines() if line.strip()]
     checks.add("proofable-trace-count", len(trace) == manifest["public_trace"]["record_count"],
                f"{len(trace)} records, manifest says {manifest['public_trace']['record_count']}")
-    by_id = {record["case_id"]: record for record in trace}
     denials = [r for r in trace if r["observed"].get("dispatch_decision") == "DENY"]
     checks.add("proofable-denials-carry-reason", all(r["observed"].get("code") for r in denials),
                "denied without a reason code: " + ", ".join(r["case_id"] for r in denials if not r["observed"].get("code")))
-    post = by_id.get("post_dispatch_revoke", {})
-    later = [r for r in trace if r is not post and r.get("delegation_qHash") == post.get("delegation_qHash")]
-    checks.add("proofable-post-dispatch-deny-point-observed", bool(later),
-               "the stated deny point is the next dispatch after revocation; the trace holds "
-               f"{len(later)} dispatches under that delegation after it, and no revocation time")
+    # This published schema contains neither a revocation event nor dispatch ordering.
+    # Matching a delegation hash or moving a line cannot establish the required boundary.
+    revocation_detail = (
+        "the stated deny point is the next dispatch after revocation; the published schema "
+        "provides no revocation event time or dispatch sequence, so that boundary is not observed"
+    )
+    checks.add("proofable-post-dispatch-deny-point-observed", False, revocation_detail)
     receipts = [r["terminal_receipt"] for r in trace if r.get("terminal_receipt")]
     public = [r for r in receipts if r.get("visibility") != "private"]
     if public:
@@ -274,7 +287,8 @@ def read_proofable(directory: Path) -> dict[str, Any]:
         checks.skip("proofable-receipt-envelope-verified",
                     f"all {len(receipts)} terminal receipts are private; only their qHash is published, "
                     "so the CAIP-380 envelope check the manifest names cannot run from the package")
-    effects = {case["case_id"]: case["observed_effect"]["state"] for case in results["cases"]}
+    effects = {case_id: case["observed_effect"]["state"] for case_id, case in cases.items()}
+    unreachable = cases.get("unreachable")
     return {
         "implementation": "Proofable",
         "evidenceClass": "implementation-owned-runtime-results",
@@ -284,10 +298,10 @@ def read_proofable(directory: Path) -> dict[str, Any]:
                                         "sourceRecordVisibility": manifest["source_record_visibility"]},
             "authorityEvidence": {"source": "local authority state evaluated at dispatch",
                                   "policyDigest": manifest["reader_appraisal"]["policy_digest"]},
-            "dispatchDecision": {case["case_id"]: case["dispatch_decision"]["decision"] for case in results["cases"]},
+            "dispatchDecision": {case_id: case["dispatch_decision"]["decision"] for case_id, case in cases.items()},
             "observedEffect": effects,
-            "temporalRevocation": "post-dispatch revocation recorded without a revocation time or a later dispatch",
-            "unreachableAuthority": results["cases"][2]["result"] if len(results["cases"]) > 2 else None,
+            "temporalRevocation": revocation_detail,
+            "unreachableAuthority": unreachable["result"] if unreachable is not None else None,
             "lostResponse": "not exercised in the published package",
         },
         "checks": checks.rows,
