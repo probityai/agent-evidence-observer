@@ -20,10 +20,14 @@ for role in producer reader; do
 done
 
 cd "$run_dir/empty"
-env -u PYTHONPATH ALAKRIS_SOURCE="$alakris_source" "$run_dir/producer-env/bin/python" -m pytest "$profile_dir/test_authority_profile.py" --import-mode=importlib --junitxml="$run_dir/tests.xml"
+env -u PYTHONPATH ALAKRIS_SOURCE="$alakris_source" "$run_dir/producer-env/bin/python" -m pytest "$profile_dir/test_authority_profile.py" "$profile_dir/test_implementation_records.py" --import-mode=importlib --junitxml="$run_dir/tests.xml"
 env -u PYTHONPATH "$run_dir/producer-env/bin/python" -m producer "$run_dir/native" --source-revision "$source_revision"
 env -u PYTHONPATH "$run_dir/reader-env/bin/python" -m reader "$run_dir/native" --pins "$run_dir/native/consumer-pins.json" --output "$run_dir/reader-report.json"
 if [[ -n "$alakris_source" ]]; then
   env -u PYTHONPATH "$run_dir/reader-env/bin/python" -m source_discriminator "$alakris_source" "$run_dir/source-discriminator-report.json"
 fi
+discriminator_args=()
+[[ -n "$alakris_source" ]] && discriminator_args=(--discriminator-report "$run_dir/source-discriminator-report.json")
+env -u PYTHONPATH "$run_dir/reader-env/bin/python" -m implementation_records "$profile_dir/implementation-records" \
+  "$run_dir/implementation-records-report.json" --reference-report "$run_dir/reader-report.json" "${discriminator_args[@]}"
 "$run_dir/reader-env/bin/python" -c 'import authority_profile,probity_observer,sys;print(sys.version);print(authority_profile.__file__);print(probity_observer.__file__)' > "$run_dir/installed-reader-location.txt"

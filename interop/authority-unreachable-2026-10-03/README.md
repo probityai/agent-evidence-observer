@@ -16,4 +16,6 @@ The [workflow](../../.github/workflows/authority-unreachable.yml) retains native
 
 One result to inspect first: `effect-committed-response-lost` retains a committed row and a failed task. Publication stays blocked. `same-request-retry` retains one effect after two calls; `incomplete-proof-after-effect` retains the observed row while rejecting publication.
 
+`implementation_records.py` reads the MintID, Proofable and Alakris records published for [AAIF issue 13](https://github.com/aaif/wg-identity-and-trust/issues/13) against the same fields and writes `implementation-records-report.json` beside the reference results. The records are pinned by URL and SHA-256 in `implementation-records/SOURCES.json`.
+
 [CONTRACT.md](CONTRACT.md) gives the proposed comparison record, case coverage and implementation boundaries. It is an input to discussion of [AAIF issue 5](https://github.com/aaif/wg-identity-and-trust/issues/5), not an adopted WG format.

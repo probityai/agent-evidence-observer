@@ -1,0 +1,33 @@
+{
+  "evidenceClass": "source-function-execution-with-controlled-inputs",
+  "sourceCommit": "68054425873b9b373ce07359f8e994b817bee210",
+  "sourceSha256": "3a928ff97f2eb13d2138809d1aebbacd645a07210663d74e2d77bae7fa1002df",
+  "originalTestsRerun": false,
+  "deployedSystemRerun": false,
+  "results": [
+    {
+      "caseId": "covered-title",
+      "fingerprintChanged": true
+    },
+    {
+      "caseId": "covered-body-direct-write",
+      "fingerprintChanged": true
+    },
+    {
+      "caseId": "changed-media-reference",
+      "fingerprintChanged": true
+    },
+    {
+      "caseId": "same-reference-new-media-bytes",
+      "fingerprintChanged": false
+    },
+    {
+      "caseId": "changed-platform-packaging",
+      "fingerprintChanged": false
+    },
+    {
+      "caseId": "changed-external-destination",
+      "fingerprintChanged": false
+    }
+  ]
+}
