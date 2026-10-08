@@ -37,6 +37,9 @@ exposed. Running an unmodified agent that way, and a separately operated witness
 
 ## Documentation
 
+Start with [worked examples](docs/README.md) to follow a practical question,
+then open its technical reference for commands and exact evidence.
+
 | page | read it for |
 | --- | --- |
 | [Component tour](https://github.com/probityai/agent-evidence-observer/blob/main/docs/OVERVIEW.md) | every part of the prototype in one paragraph each, with links: ticket service, replay, evaluation history, A2A, AAE, protected dispatch |
