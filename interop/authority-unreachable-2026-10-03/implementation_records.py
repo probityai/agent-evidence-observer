@@ -272,17 +272,110 @@ def read_proofable(directory: Path) -> dict[str, Any]:
     denials = [r for r in trace if r["observed"].get("dispatch_decision") == "DENY"]
     checks.add("proofable-denials-carry-reason", all(r["observed"].get("code") for r in denials),
                "denied without a reason code: " + ", ".join(r["case_id"] for r in denials if not r["observed"].get("code")))
-    # This published schema contains neither a revocation event nor dispatch ordering.
-    # Matching a delegation hash or moving a line cannot establish the required boundary.
-    revocation_detail = (
-        "the stated deny point is the next dispatch after revocation; the published schema "
-        "provides no revocation event time or dispatch sequence, so that boundary is not observed"
+    # REVIEWER PATCH (2026-10-08). The previous line hard-coded this check to False because the
+    # published schema could not carry a revocation event time or dispatch ordering. It now does:
+    # trace.jsonl -> post_dispatch_revoke.dispatch_sequence records the ordered boundary, and
+    # authority-effect-results.json -> cases[post_dispatch_revoke].temporal_revocation carries the
+    # same ordering. Observe the new fields rather than preserving the historical failure; the
+    # boundary still fails closed when any required element is absent.
+    pdr = next((r for r in trace if r["case_id"] == "post_dispatch_revoke"), None)
+    sequence = (pdr or {}).get("dispatch_sequence") or []
+    events = [step.get("event") for step in sequence]
+    expected_order = ["dispatch", "revocation", "original_effect", "next_dispatch"]
+    ordered = events == expected_order
+    # Validate the ordered list, not a map: a dict of the same four events would discard the only
+    # ordering evidence, so a reversed sequence would still pass. Read each step by its index.
+    dispatch = sequence[0] if len(sequence) > 0 else {}
+    revocation = sequence[1] if len(sequence) > 1 else {}
+    original_effect = sequence[2] if len(sequence) > 2 else {}
+    next_dispatch = sequence[3] if len(sequence) > 3 else {}
+    # Each event carries its own timestamp; require all four to parse and to be strictly increasing,
+    # so the recorded boundary is a real time order and not just a list order.
+    boundary_times: list[float] = []
+    if ordered:
+        try:
+            boundary_times = [unix(step["at"]) for step in sequence]
+        except (KeyError, TypeError, ValueError):
+            boundary_times = []
+    chronological = len(boundary_times) == 4 and all(
+        boundary_times[i] < boundary_times[i + 1] for i in range(3))
+    boundary_observed = (
+        ordered
+        and dispatch.get("decision") == "ALLOW"                          # the in-flight action was allowed
+        and revocation.get("observed_in_flight") is True                # revocation happened mid-flight
+        and original_effect.get("committed_effect") == "observed_at_platform"  # effect seen at the platform
+        and next_dispatch.get("decision") == "DENY"                     # required deny point reached
+        and bool(str(next_dispatch.get("reason") or "").strip())        # refusal carries its reason
+        and chronological                                              # t1 < t2 < t3 < t4, all parsed
     )
-    checks.add("proofable-post-dispatch-deny-point-observed", False, revocation_detail)
+    revocation_detail = (
+        "trace.jsonl -> post_dispatch_revoke.dispatch_sequence records, in order and in time, dispatch "
+        "(ALLOW), the revocation event time with observed_in_flight true, the earlier action's "
+        "platform-observed effect, and the next dispatch refused (DENY) with reason; "
+        "authority-effect-results.json -> cases[post_dispatch_revoke].temporal_revocation carries "
+        "the same ordering, keeping the refusal separate from the already-committed effect"
+        if boundary_observed else
+        "the stated deny point is the next dispatch after revocation; the published trace provides "
+        "no complete, correctly ordered, chronological revocation and dispatch sequence, so that "
+        "boundary is not observed"
+    )
+    checks.add("proofable-post-dispatch-deny-point-observed", boundary_observed, revocation_detail)
     receipts = [r["terminal_receipt"] for r in trace if r.get("terminal_receipt")]
     public = [r for r in receipts if r.get("visibility") != "private"]
     if public:
         checks.add("proofable-receipts-public", True, f"{len(public)} public receipts")
+    # REVIEWER PATCH (2026-10-08). The package now discloses portable envelopes, so the
+    # CAIP-380 check is performed here instead of skipped. Each envelope is verified
+    # independently of Proofable's runtime and SDK: the qHash is recomputed from the
+    # canonical subset and the EIP-191 signer is recovered from the published bytes.
+    # The disclosed envelopes are also bound to the trace: the qHash set derived from the
+    # trace records must equal the manifest references and the envelope file exactly, so a
+    # reference that merely happens to exist in the file is not enough.
+    proofs_spec = manifest.get("portable_proofs") or {}
+    proofs_file = proofs_spec.get("file")
+    if proofs_file and (directory / proofs_file).is_file():
+        import portable_envelope
+        envelopes = json.loads((directory / proofs_file).read_bytes())
+
+        def _trace_qhashes() -> list[str]:
+            """Every receipt/decision qHash the trace records name, across all four field shapes."""
+            found: list[str] = []
+            for record in trace:
+                receipt = record.get("terminal_receipt") or {}
+                if receipt.get("qHash"):
+                    found.append(str(receipt["qHash"]))
+                for value in (record.get("authority_decision_qHashes") or []):
+                    found.append(str(value))
+                for key in ("authority_decision_qHash", "next_authority_decision_qHash"):
+                    if record.get(key):
+                        found.append(str(record[key]))
+            return [value.lower() for value in found]
+
+        trace_hashes = _trace_qhashes()
+        reference_hashes = [str(r.get("qHash", "")).lower() for r in proofs_spec.get("references", [])]
+        envelope_hashes = [str(e.get("qHash", "")).lower() for e in envelopes]
+        counts_agree = (
+            len(envelopes) == proofs_spec.get("count") == 11
+            and len(trace_hashes) == len(set(trace_hashes))
+            and len(envelope_hashes) == len(set(envelope_hashes))
+            and len(reference_hashes) == len(set(reference_hashes))
+        )
+        sets_agree = (
+            set(trace_hashes) == set(envelope_hashes) == set(reference_hashes)
+            and len(trace_hashes) == len(set(trace_hashes))
+        )
+        checks.add("proofable-envelope-count",
+                    counts_agree and sets_agree,
+                    f"{len(envelopes)} envelopes, {len(reference_hashes)} manifest references, "
+                    f"{len(trace_hashes)} trace qHashes, manifest count {proofs_spec.get('count')}; "
+                    f"trace-only {sorted(set(trace_hashes) - set(envelope_hashes))}, "
+                    f"file-only {sorted(set(envelope_hashes) - set(trace_hashes))}")
+        invalid = [{"qHash": e.get("qHash"), "errors": verdict["errors"]}
+                   for e in envelopes if not (verdict := portable_envelope.verify(e))["valid"]]
+        checks.add("proofable-receipt-envelope-verified", not invalid and bool(envelopes),
+                    json.dumps(invalid) if invalid else
+                    f"{len(envelopes)} envelopes: qHash recomputed and EIP-191 signer recovered "
+                    "from the published bytes, independently of the Proofable SDK")
     else:
         checks.skip("proofable-receipt-envelope-verified",
                     f"all {len(receipts)} terminal receipts are private; only their qHash is published, "
@@ -295,6 +388,7 @@ def read_proofable(directory: Path) -> dict[str, Any]:
         "custody": manifest["custody"],
         "contract": {
             "implementationAndSource": {"deployedRevision": manifest["deployed_revision"], "runId": manifest["run_id"],
+                                        "sourceRuns": manifest.get("source_runs", []),
                                         "sourceRecordVisibility": manifest["source_record_visibility"]},
             "authorityEvidence": {"source": "local authority state evaluated at dispatch",
                                   "policyDigest": manifest["reader_appraisal"]["policy_digest"]},

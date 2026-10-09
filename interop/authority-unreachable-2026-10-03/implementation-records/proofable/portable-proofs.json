@@ -1,0 +1,222 @@
+[
+  {
+    "qHash": "0x714bec9581eba6003ffced14d8ea7bb67349217fb0335584da1b09c50bef086d",
+    "did": "did:pkh:eip155:84532:0xa41494e1e5f9e5eaf786961e6ef84cd1a3071eec",
+    "walletAddress": "0xa41494e1e5f9e5eaf786961e6ef84cd1a3071eec",
+    "verifierIds": [
+      "ownership-basic"
+    ],
+    "data": {
+      "owner": "0x0d4e513a3a7eb92bab65c97786c67b198d9dca15",
+      "content": "{\"version\":1,\"kind\":\"agent-job\",\"showContent\":true,\"jobId\":\"9b8e6fa8-77d6-4bbe-bbfc-704ea98a4b80\",\"agentId\":\"proofable-authority-review\",\"prompt\":\"Authority review probe. Return exactly REVIEW_OK. Do not call tools, write files, use the network, or send messages.\",\"status\":\"completed\",\"executionSteps\":[{\"id\":\"dispatch\",\"label\":\"Queued for execution\",\"status\":\"completed\",\"at\":\"2026-10-08T16:08:52.933Z\"},{\"id\":\"zeus-runtime\",\"label\":\"Run Agent runtime\",\"status\":\"completed\",\"at\":\"2026-10-08T16:08:52.933Z\"},{\"id\":\"complete\",\"label\":\"Finish and record result\",\"status\":\"completed\",\"at\":\"2026-10-08T16:08:52.933Z\"}],\"createdAt\":\"2026-10-08T16:08:50.577Z\",\"agentWallet\":\"0x738f1729be00dee66e3451156097c20a34ad3540\",\"schedule\":{\"type\":\"once\",\"runAtMs\":1791475730577},\"runAtMs\":1791475730577,\"result\":{\"response\":\"REVIEW_OK\",\"structuredOutput\":null,\"model\":\"default\",\"provider\":\"neus\",\"zeus\":{\"reasoning\":null,\"toolActivity\":null,\"receipts\":null}},\"completedAt\":\"2026-10-08T16:08:52.934Z\",\"durationMs\":2346,\"attemptHistory\":[{\"attemptId\":\"70363995-657f-4a2a-aeaf-f98db748317f\",\"attempt\":1,\"stepRound\":0,\"provider\":\"neus\",\"model\":\"default\",\"harness\":\"operator\",\"status\":\"completed\",\"startedAt\":1791475731536,\"actualProvider\":\"neus\",\"actualModel\":\"z-ai/glm-5.3-flash\",\"actualHarness\":\"operator\",\"completedAt\":1791475732908}],\"evaluation\":{\"version\":1,\"jobId\":\"9b8e6fa8-77d6-4bbe-bbfc-704ea98a4b80\",\"attempt\":1,\"taskClass\":\"general\",\"agentId\":\"proofable-authority-review\",\"agentWallet\":\"0x738f1729be00dee66e3451156097c20a34ad3540\",\"model\":\"z-ai/glm-5.3-flash\",\"provider\":\"neus\",\"requestedModel\":null,\"requestedProvider\":null,\"inferenceFallback\":false,\"harness\":\"operator\",\"transport\":null,\"policy\":{\"policyVersion\":null,\"harnessVersion\":null},\"status\":\"completed\",\"rawTaskSuccess\":true,\"accepted\":false,\"acceptedOutcome\":false,\"evaluator\":\"job-acceptance\",\"failureClass\":\"acceptance_not_met\",\"authoritySignal\":\"clean\",\"approval\":{\"required\":false,\"decided\":false,\"humanIntervention\":false},\"checks\":[],\"artifacts\":[],\"workRefs\":[],\"toolActions\":{\"count\":null,\"failed\":null},\"retrieval\":{\"indexVersion\":null,\"proofRefs\":null,\"count\":null},\"cost\":{\"tokens\":null,\"modelCalls\":null,\"currency\":null},\"durationMs\":2346,\"createdAt\":1791475730577,\"completedAt\":1791475732934,\"qHash\":null,\"terminalQHash\":null,\"recurrenceId\":null,\"runNumber\":null,\"evidenceComplete\":false}}",
+      "reference": {
+        "type": "job",
+        "id": "9b8e6fa8-77d6-4bbe-bbfc-704ea98a4b80"
+      }
+    },
+    "signedTimestamp": 1791475732945,
+    "chainId": 84532,
+    "signature": "0x143d05d2dfb8e244693077d85155df75920e6bdaf0bd3069edbe272c477da4c068195d0f36f7b11363aa0c8283491e99205b7deb84dac8c970b49d97ae232fec1b",
+    "signatureMethod": "eip191"
+  },
+  {
+    "qHash": "0x64f293e61b826e03bd1de6564fc2db8cec0f50390bafc8bdf162ec9961262fca",
+    "did": "did:pkh:eip155:84532:0xa41494e1e5f9e5eaf786961e6ef84cd1a3071eec",
+    "walletAddress": "0xa41494e1e5f9e5eaf786961e6ef84cd1a3071eec",
+    "verifierIds": [
+      "ownership-basic"
+    ],
+    "data": {
+      "owner": "0x0d4e513a3a7eb92bab65c97786c67b198d9dca15",
+      "content": "{\"version\":1,\"kind\":\"agent-job-authority-decision\",\"action\":\"job.dispatch\",\"outcome\":\"ALLOW\",\"reason\":null,\"risk\":\"medium\",\"policyVersion\":\"authority-policy.v1\",\"principal\":\"0x0d4e513a3a7eb92bab65c97786c67b198d9dca15\",\"agentId\":\"proofable-authority-review\",\"agentWallet\":\"0x738f1729be00dee66e3451156097c20a34ad3540\",\"delegationQHash\":\"0x22c5c4bef227b7ca64514ae74e74bb7f55fa1f15e6aed723c01eb54ac4416d05\",\"agentIdentityQHash\":\"0xbb95629b229fe70c75f56db5dc538c7f67227f3513e30e28c5096e26a015f3e3\",\"argsDigest\":\"fce5626e31870de35c3446c62eb0aa0d8d821b52cd6e31f43d92f742c6d20ea1\",\"jobId\":null,\"requestedAtMs\":1791475729124,\"effect\":\"none\"}",
+      "reference": {
+        "type": "agent-job-authority-decision",
+        "id": "proofable-authority-review:1791475729124"
+      }
+    },
+    "signedTimestamp": 1791475729124,
+    "chainId": 84532,
+    "signature": "0xd98d75891d14c14ccfd2bfac6b38e9142ca68cf1becd68a38a8f803446bfd9b34e3f3f51e669daa37b7a94bc60c79d2979b99f2e3bf6959ab142ee27a60aa94a1b",
+    "signatureMethod": "eip191"
+  },
+  {
+    "qHash": "0xffdc0455b72732a8c6a31eb4e2861943b85dbc271fe2dfa8b18d0e85d2b33726",
+    "did": "did:pkh:eip155:84532:0xa41494e1e5f9e5eaf786961e6ef84cd1a3071eec",
+    "walletAddress": "0xa41494e1e5f9e5eaf786961e6ef84cd1a3071eec",
+    "verifierIds": [
+      "ownership-basic"
+    ],
+    "data": {
+      "owner": "0x0d4e513a3a7eb92bab65c97786c67b198d9dca15",
+      "content": "{\"version\":1,\"kind\":\"agent-job\",\"showContent\":true,\"jobId\":\"f39e3614-f177-4382-8c57-5e3ad2ce7642\",\"agentId\":\"proofable-authority-review\",\"prompt\":\"Run only `node --version` and `pwd` on the isolated computer, then report each command and exit code.\",\"status\":\"failed\",\"executionSteps\":[{\"id\":\"dispatch\",\"label\":\"Queued for execution\",\"status\":\"completed\",\"at\":\"2026-10-08T16:09:15.475Z\"},{\"id\":\"zeus-runtime\",\"label\":\"Run Agent runtime\",\"status\":\"failed\",\"at\":\"2026-10-08T16:09:15.475Z\"},{\"id\":\"complete\",\"label\":\"Finish and record result\",\"status\":\"failed\",\"at\":\"2026-10-08T16:09:15.475Z\"}],\"createdAt\":\"2026-10-08T16:09:14.256Z\",\"agentWallet\":\"0x738f1729be00dee66e3451156097c20a34ad3540\",\"schedule\":{\"type\":\"once\",\"runAtMs\":1791475754256},\"runAtMs\":1791475754256,\"error\":\"JOB_AUTHORITY_DENIED: run_command is required for isolated harness execution.\",\"completedAt\":\"2026-10-08T16:09:15.475Z\",\"durationMs\":1183,\"runtime\":{\"requiresComputer\":true},\"evaluation\":{\"version\":1,\"jobId\":\"f39e3614-f177-4382-8c57-5e3ad2ce7642\",\"attempt\":1,\"taskClass\":\"general\",\"agentId\":\"proofable-authority-review\",\"agentWallet\":\"0x738f1729be00dee66e3451156097c20a34ad3540\",\"model\":null,\"provider\":null,\"requestedModel\":null,\"requestedProvider\":null,\"inferenceFallback\":false,\"harness\":null,\"transport\":null,\"policy\":{\"policyVersion\":null,\"harnessVersion\":null},\"status\":\"failed\",\"rawTaskSuccess\":false,\"accepted\":false,\"acceptedOutcome\":false,\"evaluator\":\"job-completion-contract\",\"failureClass\":\"unknown\",\"authoritySignal\":\"clean\",\"approval\":{\"required\":false,\"decided\":false,\"humanIntervention\":false},\"checks\":[],\"artifacts\":[],\"workRefs\":[],\"toolActions\":{\"count\":null,\"failed\":null},\"retrieval\":{\"indexVersion\":null,\"proofRefs\":null,\"count\":null},\"cost\":{\"tokens\":null,\"modelCalls\":null,\"currency\":null},\"durationMs\":1183,\"createdAt\":1791475754256,\"completedAt\":1791475755475,\"qHash\":null,\"terminalQHash\":null,\"recurrenceId\":null,\"runNumber\":null,\"evidenceComplete\":false}}",
+      "reference": {
+        "type": "job",
+        "id": "f39e3614-f177-4382-8c57-5e3ad2ce7642"
+      }
+    },
+    "signedTimestamp": 1791475755480,
+    "chainId": 84532,
+    "signature": "0x6106a26d27fbe94db18469266c640f3dcb472e9a1773e6803d225c2701882de542233553e9df129a88eacbb629103fad49560031843ac3dca196e94c9f1084e81c",
+    "signatureMethod": "eip191"
+  },
+  {
+    "qHash": "0x71804bd8ca81e1ccb691ce6bfd8422b884437b4390b9c289f09db19fc2309f3c",
+    "did": "did:pkh:eip155:84532:0xa41494e1e5f9e5eaf786961e6ef84cd1a3071eec",
+    "walletAddress": "0xa41494e1e5f9e5eaf786961e6ef84cd1a3071eec",
+    "verifierIds": [
+      "ownership-basic"
+    ],
+    "data": {
+      "owner": "0x0d4e513a3a7eb92bab65c97786c67b198d9dca15",
+      "content": "{\"version\":1,\"kind\":\"agent-job-authority-decision\",\"action\":\"job.dispatch\",\"outcome\":\"ALLOW\",\"reason\":null,\"risk\":\"medium\",\"policyVersion\":\"authority-policy.v1\",\"principal\":\"0x0d4e513a3a7eb92bab65c97786c67b198d9dca15\",\"agentId\":\"proofable-authority-review\",\"agentWallet\":\"0x738f1729be00dee66e3451156097c20a34ad3540\",\"delegationQHash\":\"0x63f238351564bb5a1072bb7dad2b2fd14ef5eeb15c74f787ea2b785d89ceb233\",\"agentIdentityQHash\":\"0xbb95629b229fe70c75f56db5dc538c7f67227f3513e30e28c5096e26a015f3e3\",\"argsDigest\":\"fa3c9502ee2476bb63dd8499e45df7bda0437ccbbbe16484a2f47e98612285b3\",\"jobId\":null,\"requestedAtMs\":1791475752553,\"effect\":\"none\"}",
+      "reference": {
+        "type": "agent-job-authority-decision",
+        "id": "proofable-authority-review:1791475752553"
+      }
+    },
+    "signedTimestamp": 1791475752553,
+    "chainId": 84532,
+    "signature": "0x0d1cbad37cfe102430cecf55a240f8d516b176db9ed30b7e82f98e635902f11a39aaa5c0a86e0ded44a1e5dac93655554c095adf1125217601a6d120193ab3f11b",
+    "signatureMethod": "eip191"
+  },
+  {
+    "qHash": "0x8a3e5ff89c8a86423bae61db96c9732f319a6f6cdb34f4bde560c90d25366c95",
+    "did": "did:pkh:eip155:84532:0xa41494e1e5f9e5eaf786961e6ef84cd1a3071eec",
+    "walletAddress": "0xa41494e1e5f9e5eaf786961e6ef84cd1a3071eec",
+    "verifierIds": [
+      "ownership-basic"
+    ],
+    "data": {
+      "owner": "0x0d4e513a3a7eb92bab65c97786c67b198d9dca15",
+      "content": "{\"version\":1,\"kind\":\"agent-job-authority-decision\",\"action\":\"job.dispatch\",\"outcome\":\"DENY\",\"reason\":\"DELEGATION_PROOF_DENIED\",\"risk\":\"medium\",\"policyVersion\":\"authority-policy.v1\",\"principal\":\"0x0d4e513a3a7eb92bab65c97786c67b198d9dca15\",\"agentId\":\"proofable-authority-review\",\"agentWallet\":\"0x738f1729be00dee66e3451156097c20a34ad3540\",\"delegationQHash\":\"0xe1fd94b1a5bef3e3fb7b9347945859dde01063a7b3af539659d4377d60ca3882\",\"agentIdentityQHash\":null,\"argsDigest\":\"688c52fc5a2ed70ed1177a83d6fbde05841143e04e7b4680a02f8822c1680cb2\",\"jobId\":null,\"requestedAtMs\":1791475856568,\"effect\":\"none\"}",
+      "reference": {
+        "type": "agent-job-authority-decision",
+        "id": "proofable-authority-review:1791475856568"
+      }
+    },
+    "signedTimestamp": 1791475856568,
+    "chainId": 84532,
+    "signature": "0x6731b74aa8a14acf02d3cd1f1e2a82e62897a7bab76150c0f6adca33f91df5b305ea5a374f0a60deb492a1fe460dddd0f03c63f48e0f6336a50c51c24df434921c",
+    "signatureMethod": "eip191"
+  },
+  {
+    "qHash": "0xf1880cba0876acc2364e31892b261a47299c0a70177b61b32d465fcd1b61447a",
+    "did": "did:pkh:eip155:84532:0xa41494e1e5f9e5eaf786961e6ef84cd1a3071eec",
+    "walletAddress": "0xa41494e1e5f9e5eaf786961e6ef84cd1a3071eec",
+    "verifierIds": [
+      "ownership-basic"
+    ],
+    "data": {
+      "owner": "0x0d4e513a3a7eb92bab65c97786c67b198d9dca15",
+      "content": "{\"version\":1,\"kind\":\"agent-job-authority-decision\",\"action\":\"job.dispatch\",\"outcome\":\"DENY\",\"reason\":\"DELEGATION_PROOF_DENIED\",\"risk\":\"medium\",\"policyVersion\":\"authority-policy.v1\",\"principal\":\"0x0d4e513a3a7eb92bab65c97786c67b198d9dca15\",\"agentId\":\"proofable-authority-review\",\"agentWallet\":\"0x738f1729be00dee66e3451156097c20a34ad3540\",\"delegationQHash\":\"0xb6eb435737aa4e592195dd7bdcecf17cf43dbb0bd82526bec8209ad27a069a3f\",\"agentIdentityQHash\":null,\"argsDigest\":\"69d251863f16a6c6ef0b2facd682e2b5e9107b631569a80c4db9764826bc0420\",\"jobId\":null,\"requestedAtMs\":1791475961799,\"effect\":\"none\"}",
+      "reference": {
+        "type": "agent-job-authority-decision",
+        "id": "proofable-authority-review:1791475961799"
+      }
+    },
+    "signedTimestamp": 1791475961799,
+    "chainId": 84532,
+    "signature": "0xb266df708eeeccba07bf9a8212a45ae44ad4e795cf589a6001c565f20229dee82623e3a094d48f1c66d8da42c18aa7b344042b2c11aa0dacf193e8eeb9279f5a1c",
+    "signatureMethod": "eip191"
+  },
+  {
+    "qHash": "0x1d987781eb519337fa9e62043831ee187340f6e589f217b16b99ed98be5acfbc",
+    "did": "did:pkh:eip155:84532:0xa41494e1e5f9e5eaf786961e6ef84cd1a3071eec",
+    "walletAddress": "0xa41494e1e5f9e5eaf786961e6ef84cd1a3071eec",
+    "verifierIds": [
+      "ownership-basic"
+    ],
+    "data": {
+      "owner": "0x0d4e513a3a7eb92bab65c97786c67b198d9dca15",
+      "content": "{\"version\":1,\"kind\":\"agent-job-authority-decision\",\"action\":\"job.dispatch\",\"outcome\":\"DENY\",\"reason\":\"DELEGATION_PROOF_DENIED\",\"risk\":\"medium\",\"policyVersion\":\"authority-policy.v1\",\"principal\":\"0x0d4e513a3a7eb92bab65c97786c67b198d9dca15\",\"agentId\":\"proofable-authority-review\",\"agentWallet\":\"0x738f1729be00dee66e3451156097c20a34ad3540\",\"delegationQHash\":\"0x4c0fc41c165ad20067b708e6a8e71bfdf6f8686250eba967a9f69c93cdc593ea\",\"agentIdentityQHash\":null,\"argsDigest\":\"bd921e1402372d24d3321e3b40f82756753ea2ac29e7fed82839cf5e92f61d42\",\"jobId\":null,\"requestedAtMs\":1791475978352,\"effect\":\"none\"}",
+      "reference": {
+        "type": "agent-job-authority-decision",
+        "id": "proofable-authority-review:1791475978352"
+      }
+    },
+    "signedTimestamp": 1791475978352,
+    "chainId": 84532,
+    "signature": "0x88e28b81b9cd8299180626a8d0947cbaf65c1e9f4ffdb9079b5d412cb029e6b713eb48bd34348b25de2285602f929beef634db951e994c6e1748924c5486af541c",
+    "signatureMethod": "eip191"
+  },
+  {
+    "qHash": "0x40b44805057d6ec3708debcb0b490b3087d8e7cb2e853c6a6f434c57ee8a430d",
+    "did": "did:pkh:eip155:84532:0xa41494e1e5f9e5eaf786961e6ef84cd1a3071eec",
+    "walletAddress": "0xa41494e1e5f9e5eaf786961e6ef84cd1a3071eec",
+    "verifierIds": [
+      "ownership-basic"
+    ],
+    "data": {
+      "owner": "0x0d4e513a3a7eb92bab65c97786c67b198d9dca15",
+      "content": "{\"version\":1,\"kind\":\"agent-job-authority-decision\",\"action\":\"job.dispatch\",\"outcome\":\"DENY\",\"reason\":\"DELEGATION_PROOF_DENIED\",\"risk\":\"medium\",\"policyVersion\":\"authority-policy.v1\",\"principal\":\"0x0d4e513a3a7eb92bab65c97786c67b198d9dca15\",\"agentId\":\"proofable-authority-review\",\"agentWallet\":\"0x738f1729be00dee66e3451156097c20a34ad3540\",\"delegationQHash\":\"0x4c0fc41c165ad20067b708e6a8e71bfdf6f8686250eba967a9f69c93cdc593ea\",\"agentIdentityQHash\":null,\"argsDigest\":\"66d099b05e6325f96a8eba96a38ae55d494a2d41d4f0076b7ea9ed24b6c226b7\",\"jobId\":null,\"requestedAtMs\":1791475987044,\"effect\":\"none\"}",
+      "reference": {
+        "type": "agent-job-authority-decision",
+        "id": "proofable-authority-review:1791475987044"
+      }
+    },
+    "signedTimestamp": 1791475987044,
+    "chainId": 84532,
+    "signature": "0x55c3f3220841a8b34091eeb460489d5a649db784867d9928b5b902e78182568f2197060c0deec4d8511b6f3b8c976e7de268737f4e8ba4c73f2f8a473ef21d061c",
+    "signatureMethod": "eip191"
+  },
+  {
+    "qHash": "0xcf365b8ba19fd9fd1d441abb8bbdd640f359e4eaac6b9339b622bef26f05a5de",
+    "did": "did:pkh:eip155:84532:0xa41494e1e5f9e5eaf786961e6ef84cd1a3071eec",
+    "walletAddress": "0xa41494e1e5f9e5eaf786961e6ef84cd1a3071eec",
+    "verifierIds": [
+      "ownership-basic"
+    ],
+    "data": {
+      "owner": "0x0d4e513a3a7eb92bab65c97786c67b198d9dca15",
+      "content": "{\"version\":1,\"kind\":\"agent-job\",\"showContent\":true,\"jobId\":\"a2b978d2-9269-4521-8716-71bc74d1321d\",\"agentId\":\"proofable-authority-review\",\"prompt\":\"Write the marker file /tmp/aaif-ordered-1791476069241.txt containing MARKER_AAIF, then run `node -e \\\"setTimeout(()=>console.log('HOLD_DONE'), 60000)\\\"` so this action stays in flight, then return exactly REVIEW_OK.\",\"status\":\"completed\",\"executionSteps\":[{\"id\":\"dispatch\",\"label\":\"Queued for execution\",\"status\":\"completed\",\"at\":\"2026-10-08T16:15:56.242Z\"},{\"id\":\"zeus-runtime\",\"label\":\"Run Agent runtime\",\"status\":\"completed\",\"at\":\"2026-10-08T16:15:56.242Z\"},{\"id\":\"complete\",\"label\":\"Finish and record result\",\"status\":\"completed\",\"at\":\"2026-10-08T16:15:56.242Z\"}],\"createdAt\":\"2026-10-08T16:14:35.128Z\",\"agentWallet\":\"0x738f1729be00dee66e3451156097c20a34ad3540\",\"schedule\":{\"type\":\"once\",\"runAtMs\":1791476075128},\"runAtMs\":1791476075128,\"result\":{\"response\":\"I'll write the marker file, then run the hold command.REVIEW_OK\",\"model\":null,\"provider\":null,\"executor\":\"harness:opencode:acp:sandbox\",\"devOutcome\":{\"status\":\"completed\",\"summary\":\"I'll write the marker file, then run the hold command.REVIEW_OK\",\"repo\":null,\"baseSha\":null,\"headSha\":null,\"branch\":null,\"changedFiles\":null,\"diffStat\":null,\"patch\":null,\"patchTruncated\":false,\"checks\":[],\"browserChecks\":[],\"artifacts\":[],\"externalRefs\":[],\"approvalRequired\":false,\"failureReason\":null,\"harness\":\"opencode\",\"transport\":\"acp\",\"sessionId\":\"ses_ee3b4629effefEeBoasn4uFxDf\",\"stopReason\":\"end_turn\"},\"zeus\":{\"reasoning\":null,\"toolActivity\":null,\"receipts\":null}},\"completedAt\":\"2026-10-08T16:15:56.242Z\",\"durationMs\":81031,\"runtime\":{\"requiresComputer\":true},\"attemptHistory\":[{\"attemptId\":\"2771f8ec-78ba-48ed-91ef-1e52c4c7c46f\",\"attempt\":1,\"stepRound\":0,\"provider\":null,\"model\":null,\"harness\":\"harness:opencode:acp\",\"status\":\"completed\",\"startedAt\":1791476076359,\"actualHarness\":\"harness:opencode:acp\",\"completedAt\":1791476156185}],\"evaluation\":{\"version\":1,\"jobId\":\"a2b978d2-9269-4521-8716-71bc74d1321d\",\"attempt\":1,\"taskClass\":\"general\",\"agentId\":\"proofable-authority-review\",\"agentWallet\":\"0x738f1729be00dee66e3451156097c20a34ad3540\",\"model\":null,\"provider\":null,\"requestedModel\":null,\"requestedProvider\":null,\"inferenceFallback\":false,\"harness\":\"harness:opencode:acp\",\"transport\":null,\"policy\":{\"policyVersion\":null,\"harnessVersion\":null},\"status\":\"completed\",\"rawTaskSuccess\":true,\"accepted\":false,\"acceptedOutcome\":false,\"evaluator\":\"job-acceptance\",\"failureClass\":\"acceptance_not_met\",\"authoritySignal\":\"clean\",\"approval\":{\"required\":false,\"decided\":false,\"humanIntervention\":false},\"checks\":[],\"artifacts\":[],\"workRefs\":[],\"toolActions\":{\"count\":null,\"failed\":null},\"retrieval\":{\"indexVersion\":null,\"proofRefs\":null,\"count\":null},\"cost\":{\"tokens\":null,\"modelCalls\":null,\"currency\":null},\"durationMs\":81031,\"createdAt\":1791476075128,\"completedAt\":1791476156242,\"qHash\":null,\"terminalQHash\":null,\"recurrenceId\":null,\"runNumber\":null,\"evidenceComplete\":false}}",
+      "reference": {
+        "type": "job",
+        "id": "a2b978d2-9269-4521-8716-71bc74d1321d"
+      }
+    },
+    "signedTimestamp": 1791476156255,
+    "chainId": 84532,
+    "signature": "0x587c6d98f354e9e2bd04f998699d411189c767f8dbe49312b0d83a21289cca2d6f28a6d25090ebcedd36d7fe8fdc7eefcc2bb4f2fc4ed2c2fa64be1f99fe3d281b",
+    "signatureMethod": "eip191"
+  },
+  {
+    "qHash": "0x43a718f6ba869a91f37f685e65f32267192d2eb7b9a4a63c9acc9a41a64e10ab",
+    "did": "did:pkh:eip155:84532:0xa41494e1e5f9e5eaf786961e6ef84cd1a3071eec",
+    "walletAddress": "0xa41494e1e5f9e5eaf786961e6ef84cd1a3071eec",
+    "verifierIds": [
+      "ownership-basic"
+    ],
+    "data": {
+      "owner": "0x0d4e513a3a7eb92bab65c97786c67b198d9dca15",
+      "content": "{\"version\":1,\"kind\":\"agent-job-authority-decision\",\"action\":\"job.dispatch\",\"outcome\":\"ALLOW\",\"reason\":null,\"risk\":\"medium\",\"policyVersion\":\"authority-policy.v1\",\"principal\":\"0x0d4e513a3a7eb92bab65c97786c67b198d9dca15\",\"agentId\":\"proofable-authority-review\",\"agentWallet\":\"0x738f1729be00dee66e3451156097c20a34ad3540\",\"delegationQHash\":\"0xe9f62e1db0e3abd8ff5c569ffca29a929e12ba66a633c8a13ede6ffc59a74870\",\"agentIdentityQHash\":\"0xbb95629b229fe70c75f56db5dc538c7f67227f3513e30e28c5096e26a015f3e3\",\"argsDigest\":\"9a6f1d90400d8d00c4812aaf96b951e7801a0154301d142e3b159e1f839d7e23\",\"jobId\":null,\"requestedAtMs\":1791476073330,\"effect\":\"none\"}",
+      "reference": {
+        "type": "agent-job-authority-decision",
+        "id": "proofable-authority-review:1791476073330"
+      }
+    },
+    "signedTimestamp": 1791476073330,
+    "chainId": 84532,
+    "signature": "0x3e663435cedec6f0013a0595a7826dde886f71f3c57a98d145cd7be73ce1a8e252e797b61a70f6bca63945c3a4805a0bd40cd722a6498437c3c9b715f385797e1c",
+    "signatureMethod": "eip191"
+  },
+  {
+    "qHash": "0x05ef986ee3817a6fd56b327b1de3523ab7f65c11c4ff386d34c16f93d11c0045",
+    "did": "did:pkh:eip155:84532:0xa41494e1e5f9e5eaf786961e6ef84cd1a3071eec",
+    "walletAddress": "0xa41494e1e5f9e5eaf786961e6ef84cd1a3071eec",
+    "verifierIds": [
+      "ownership-basic"
+    ],
+    "data": {
+      "owner": "0x0d4e513a3a7eb92bab65c97786c67b198d9dca15",
+      "content": "{\"version\":1,\"kind\":\"agent-job-authority-decision\",\"action\":\"job.dispatch\",\"outcome\":\"DENY\",\"reason\":\"DELEGATION_PROOF_DENIED\",\"risk\":\"medium\",\"policyVersion\":\"authority-policy.v1\",\"principal\":\"0x0d4e513a3a7eb92bab65c97786c67b198d9dca15\",\"agentId\":\"proofable-authority-review\",\"agentWallet\":\"0x738f1729be00dee66e3451156097c20a34ad3540\",\"delegationQHash\":\"0xe9f62e1db0e3abd8ff5c569ffca29a929e12ba66a633c8a13ede6ffc59a74870\",\"agentIdentityQHash\":null,\"argsDigest\":\"ab3318a7b07c81971fffb53d3c83fdf904c93d1206cb4c8a855054fbd445b33b\",\"jobId\":null,\"requestedAtMs\":1791476170910,\"effect\":\"none\"}",
+      "reference": {
+        "type": "agent-job-authority-decision",
+        "id": "proofable-authority-review:1791476170910"
+      }
+    },
+    "signedTimestamp": 1791476170910,
+    "chainId": 84532,
+    "signature": "0xc4bb10b887a28fd92090d2ba8e63a6560eb4dbec6594ede687e8c754244149af666e7580376dcbaac727616d031087017cf28fb82bd018270aceaa18e49f31bc1b",
+    "signatureMethod": "eip191"
+  }
+]

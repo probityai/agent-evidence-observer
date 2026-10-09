@@ -3,15 +3,14 @@
 Proofable's implementation records for the four scenarios, expressed under the shared authority/effect
 contract ([`probityai/agent-evidence-observer`](https://github.com/probityai/agent-evidence-observer)
 `fb8cabc5c9c54459743497f2325bfef49b137a1a`, `interop/authority-unreachable-2026-10-03/CONTRACT.md`).
-Deployed revision `f92faf39a4bae480cca3e5c07ce2c95d6ab68411`; environment: live production hosted MCP.
-Custody: **SELF** (author-operated).
+Deployed revision `e1217327a1568b39d5153686b8085471b5329cde`; environment: live production hosted MCP. Custody: **SELF** (author-operated).
 
 | Scenario | Decision | Dispatch | Effect/outcome | Protocol record | Result |
 | --- | --- | --- | --- | --- | --- |
-| binding_veto | DENY (`JOB_AUTHORITY_DENIED`) | refused before executor assignment | none — no effect could commit | recorded | **SUPPORTED** |
+| binding_veto | job dispatch DENY; run_command DENY | protected action refused before executor assignment | none — no effect could commit | signed decision + job outcome | **SUPPORTED** |
 | revoked_stale | revoked: DENY (`DELEGATION_PROOF_DENIED`); never-revoked control: ALLOW | revoked: no job created; control: dispatched | none | recorded | **SUPPORTED** |
 | unreachable | NOT APPLICABLE TO CURRENT PATH | not attempted | not applicable | not applicable | **NOT APPLICABLE TO CURRENT PATH** |
-| post_dispatch_revoke | ALLOW at dispatch | dispatched; revocation occurred in flight | effect/outcome remained attributable to the original dispatch | recorded | **SUPPORTED** |
+| post_dispatch_revoke | ALLOW at dispatch; next dispatch after revocation: DENY (`DELEGATION_PROOF_DENIED`) | dispatched; revocation occurred in flight; next dispatch refused | the earlier action's effect was already committed and remains observed at the platform | recorded | **SUPPORTED** |
 
 ## Protocol boundary
 
@@ -19,25 +18,19 @@ Custody: **SELF** (author-operated).
 states; collapsing them would treat a failed task as evidence that no effect committed, or a later
 denial as retroactively preventing an earlier effect.
 
-## How Proofable produces the result (public-safe summary)
+## Revocation after dispatch — when the refusal happened, separately from the prior effect
 
-- **Identity is not authority.** An agent can have its own identity independent of how it receives
-  authority. When authority is delegated, Proofable records the grant separately and evaluates its
-  current state at the action boundary. An agent can be authenticated and still lack the authority to
-  act.
-- **Authority is evaluated at the action boundary.** For this delegated-authority scenario, the
-  dispatch path resolves the selected grant from current state and checks the requested action against
-  it — revoked or expired authority is denied rather than inherited from a still-valid identity.
-- **A denial is itself evidence.** A refused dispatch produces a signed authority-decision record
-  (`outcome`, `reason`, `policyVersion`), not only a silent failure.
-- **The record is portable.** The same signed record can be carried to another relying party, which
-  applies its own appraisal; disclosure is separate from evidentiary validity, so the full grant,
-  runtime policy, and internal execution state need not be disclosed.
-- **Layers stay separate.** Proofable treats identity, authority, execution evidence and appraisal as
-  distinct layers. Authority may be native or delegated; the proof/receipt is the evidence layer that
-  connects them, not an authorization model in itself.
+One grant is dispatched under, revoked while the action is in flight, and then used for the next
+dispatch. The two questions stay separate:
 
-Authority policy version: `authority-policy.v1`.
+- the earlier action was **allowed at dispatch** and its effect was already committed and read back at the platform (`observed_at_platform`);
+- the **next dispatch** under the same revoked grant was **refused** with reason (`DELEGATION_PROOF_DENIED`).
+
+Recorded times — dispatch `2026-10-08T16:14:34.247Z`, revocation `2026-10-08T16:14:50.334Z`
+(status at revocation `running`, observed in flight `true`),
+earlier action outcome `2026-10-08T16:15:57.747Z`, next dispatch `2026-10-08T16:16:15.865Z`.
+
+Revocation latency is **not measured** in this run and is not claimed.
 
 ## Remote authority unavailable (NOT APPLICABLE TO CURRENT PATH)
 
@@ -47,12 +40,12 @@ authority dependency, which is a separate joint comparison, and is not inferred 
 
 ## Evidence scope
 
-Author-operated; independent reproduction not yet claimed.
+Author-operated; independent reproduction not yet claimed. Revocation latency is not measured.
 
 ## Reader appraisal
 
 - **Trace:** recompute SHA-256 of `trace.jsonl` and compare against `manifest.json` → `public_trace.sha256`.
-- **Record:** the underlying Proofable proof/receipt is a CAIP-380 envelope. An independent reader can verify such an envelope offline with `verifyPortableProofEnvelope` from the public **Apache-2.0** `@proofable/sdk` — the signature is checked without a call to Proofable.
+- **Record:** `portable-proofs.json` contains the disclosed job and authority CAIP-380 envelopes. Run `node verify-portable-proofs.mjs` with `@proofable/sdk` installed to verify every qHash and signature offline.
 - **Policy identity:** the policy version (`authority-policy.v1`) identifies the policy; a canonical policy digest is not emitted by the deployed system.
 
 ## Public references

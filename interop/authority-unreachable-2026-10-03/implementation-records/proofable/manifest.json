@@ -1,16 +1,36 @@
 {
-  "schema": "proofable-authority-at-dispatch-evidence/v1",
+  "schema": "proofable-authority-at-dispatch-evidence/v2",
   "implementation": "Proofable",
-  "environment": "prod",
-  "deployed_revision": "f92faf39a4bae480cca3e5c07ce2c95d6ab68411",
-  "run_id": "four-case-run-f92faf39a4ba",
+  "deployed_revision": "e1217327a1568b39d5153686b8085471b5329cde",
+  "run_id": "aaif-e1217327a-20261008",
+  "source_runs": [
+    {
+      "run_id": "aaif-e1217327a-20261008",
+      "role": "eight-case authority suite",
+      "records": 8
+    },
+    {
+      "run_id": "aaif-e1217327a-20261008",
+      "role": "ordered post-revocation probe",
+      "records": 1
+    }
+  ],
   "disclosure": "public",
-  "source_record_visibility": "private",
+  "source_record_visibility": "public_link_only_for_disclosed_receipts",
   "independent_reproduction": false,
-  "custody": "SELF (author-operated; ordinary non-admin Pro review tenant)",
-  "boundary": "authority \u2192 decision \u2192 dispatch \u2192 effect/outcome \u2192 receipt",
+  "custody": "SELF (author-operated; no independent witness)",
+  "boundary": "authority → decision → dispatch → effect/outcome → receipt",
   "authority_policy_version": "authority-policy.v1",
   "authority_policy_boundary": "identity is independent of how authority is received; authority may be native or delegated, and when delegated the grant is evaluated from current state at the action boundary",
+  "evidence_scope": "author-operated; independent reproduction not yet claimed; revocation latency not measured",
+  "portable_proof_signer": "each disclosed envelope is signed by the Proofable service wallet, which attests a server-observed statement; the envelope subject/owner names whose record is stored, not who signed it",
+  "signer_address": "0xa41494e1e5f9e5eaf786961e6ef84cd1a3071eec",
+  "subject_controller_address": "0x0d4e513a3a7eb92bab65c97786c67b198d9dca15",
+  "contract": {
+    "reference": "probityai/agent-evidence-observer",
+    "commit": "fb8cabc5c9c54459743497f2325bfef49b137a1a",
+    "file": "interop/authority-unreachable-2026-10-03/CONTRACT.md"
+  },
   "results": {
     "binding_veto": "SUPPORTED",
     "revoked_stale": "SUPPORTED",
@@ -20,12 +40,83 @@
   "public_trace": {
     "file": "trace.jsonl",
     "record_count": 6,
-    "sha256": "d749cf16fe8dd599f528e21e95863b930004a0b3f0a9882695e3d3b03e8c2183"
+    "sha256": "96241d8409c4661f8e60cd0904e7245434f48bf5711d9c377706f29ff721a0c8"
+  },
+  "portable_proofs": {
+    "file": "portable-proofs.json",
+    "count": 11,
+    "references": [
+      {
+        "case_id": "hosted_allow",
+        "relation": "job-outcome",
+        "qHash": "0x714bec9581eba6003ffced14d8ea7bb67349217fb0335584da1b09c50bef086d"
+      },
+      {
+        "case_id": "hosted_allow",
+        "relation": "authority-decision",
+        "qHash": "0x64f293e61b826e03bd1de6564fc2db8cec0f50390bafc8bdf162ec9961262fca"
+      },
+      {
+        "case_id": "binding_veto",
+        "relation": "job-outcome",
+        "qHash": "0xffdc0455b72732a8c6a31eb4e2861943b85dbc271fe2dfa8b18d0e85d2b33726"
+      },
+      {
+        "case_id": "binding_veto",
+        "relation": "authority-decision",
+        "qHash": "0x71804bd8ca81e1ccb691ce6bfd8422b884437b4390b9c289f09db19fc2309f3c"
+      },
+      {
+        "case_id": "revoke_before_dispatch",
+        "relation": "authority-decision",
+        "qHash": "0x8a3e5ff89c8a86423bae61db96c9732f319a6f6cdb34f4bde560c90d25366c95"
+      },
+      {
+        "case_id": "expiry_before_dispatch",
+        "relation": "authority-decision",
+        "qHash": "0xf1880cba0876acc2364e31892b261a47299c0a70177b61b32d465fcd1b61447a"
+      },
+      {
+        "case_id": "stale_authority",
+        "relation": "authority-decision",
+        "qHash": "0x1d987781eb519337fa9e62043831ee187340f6e589f217b16b99ed98be5acfbc"
+      },
+      {
+        "case_id": "stale_authority",
+        "relation": "authority-decision",
+        "qHash": "0x40b44805057d6ec3708debcb0b490b3087d8e7cb2e853c6a6f434c57ee8a430d"
+      },
+      {
+        "case_id": "post_dispatch_revoke_ordered",
+        "relation": "job-outcome",
+        "qHash": "0xcf365b8ba19fd9fd1d441abb8bbdd640f359e4eaac6b9339b622bef26f05a5de"
+      },
+      {
+        "case_id": "post_dispatch_revoke_ordered",
+        "relation": "authority-decision",
+        "qHash": "0x43a718f6ba869a91f37f685e65f32267192d2eb7b9a4a63c9acc9a41a64e10ab"
+      },
+      {
+        "case_id": "post_dispatch_revoke_ordered",
+        "relation": "authority-decision",
+        "qHash": "0x05ef986ee3817a6fd56b327b1de3523ab7f65c11c4ff386d34c16f93d11c0045"
+      }
+    ]
+  },
+  "offline_verifier": {
+    "package": "@proofable/sdk",
+    "version": "0.1.4",
+    "command": "node verify-portable-proofs.mjs"
   },
   "reader_appraisal": {
     "trace_check": "recompute SHA-256 of trace.jsonl and compare with manifest.public_trace.sha256",
-    "record_check": "the underlying Proofable proof/receipt is a CAIP-380 envelope; verify it offline with verifyPortableProofEnvelope from the public Apache-2.0 @proofable/sdk",
+    "record_check": "run node verify-portable-proofs.mjs from this packet with @proofable/sdk installed; every disclosed envelope must pass qHash and signature verification offline",
     "policy_digest": "not emitted by the deployed system; authority_policy_version is the policy identifier"
+  },
+  "post_dispatch_revocation": {
+    "record": "authority-effect-results.json → cases[case_id=post_dispatch_revoke].temporal_revocation",
+    "trace": "trace.jsonl → post_dispatch_revoke.dispatch_sequence",
+    "separates": "the next dispatch refusal (with its reason) from the earlier action's already-committed effect"
   },
   "public_references": {
     "sdk": "https://www.npmjs.com/package/@proofable/sdk",
