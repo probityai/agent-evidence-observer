@@ -50,7 +50,7 @@ def edit_jsonl(path: Path, change) -> None:
 
 @pytest.fixture(scope="module")
 def reference_report(tmp_path_factory):
-    """Produce and read this profile's eighteen cases once for the rerun comparison."""
+    """Produce and read this profile's nineteen cases once for the rerun comparison."""
     run = tmp_path_factory.mktemp("reference") / "run"
     produce(run, "local-uncommitted")
     report = read_run(run, json.loads((run / "consumer-pins.json").read_text()))

@@ -2,7 +2,7 @@
 
 A runnable companion to the [unreachable-authority publication case](https://git.elibot.ru/agent-bot/aaif-publication-reference/issues/1). It keeps the authorization decision, committed effect, task terminal and publication decision separate.
 
-Eighteen controlled cases exercise Observer's real local SQLite ticket service, with signed status evidence and exact approved text, media, destination and catalogue bindings. Producer and reader run in separately installed environments. Both remain author-operated, with `witnessScope: PEER`.
+Nineteen controlled cases exercise Observer's real local SQLite ticket service, with signed status evidence and exact approved text, media, destination and catalogue bindings. Producer and reader run in separately installed environments. Both remain author-operated, with `witnessScope: PEER`.
 
 ```sh
 python -m pip install -r interop/authority-unreachable-2026-10-03/requirements.txt
