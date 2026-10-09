@@ -232,6 +232,7 @@ class TestReader:
             for case in sorted(p for p in root.iterdir() if p.is_dir()):
                 payload = json.loads((case / "record.json").read_text())["payload"]
                 assert payload["contractId"] == CONTRACT_ID
+                assert payload["freshnessLimitSeconds"] == MAX_AGE_SECONDS
                 observed = checked_record(payload["authorityEvidence"], json.loads(
                     (root / "consumer-pins.json").read_text())["authorityKey"], AUTHORITY_DOMAIN)["observedAt"]
                 assert payload["evidenceAgeSeconds"] == payload["decisionAt"] - observed
@@ -250,6 +251,7 @@ class TestReader:
             ("other-version", "trace contract id differs"),
             ("age", "evidence age differs from decision time"),
             ("age-bool", "evidence age differs from decision time"),
+            ("limit", "freshness limit differs from consumer selection"),
         ])
         def test_trace_without_contract_or_with_wrong_age_is_rejected(self, signable_case, mutation, reason, caplog):
             root, keys, pins = signable_case
@@ -265,6 +267,8 @@ class TestReader:
                 payload["evidenceAgeSeconds"] += 1
             if mutation == "age-bool":
                 payload["evidenceAgeSeconds"] = False
+            if mutation == "limit":
+                payload["freshnessLimitSeconds"] = MAX_AGE_SECONDS + 1
             (case / "record.json").write_bytes(canonical(sign_record(payload, keys["record"], RECORD_DOMAIN)))
             with caplog.at_level(logging.WARNING), pytest.raises(VerificationError) as error:
                 read_case(case, pins)

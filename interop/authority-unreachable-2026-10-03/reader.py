@@ -13,7 +13,7 @@ from probity_observer.authorization import ActionRequest, GrantPolicy, verify_gr
 from probity_observer.crypto import VerificationError, digest, strict_loads
 from probity_observer.ticket_service import DOMAIN, STATE_FIELDS, _checked as checked_native_receipt, _state_schema, verify_ticket_result
 
-from authority_profile import (AUTHORITY_DOMAIN, CASE_IDS, CONTRACT_ID, PROFILE, RECORD_DOMAIN, check_authority, check_delegation,
+from authority_profile import (AUTHORITY_DOMAIN, CASE_IDS, CONTRACT_ID, MAX_AGE_SECONDS, PROFILE, RECORD_DOMAIN, check_authority, check_delegation,
                                checked_record, reference_time, refuse)
 
 
@@ -224,7 +224,8 @@ def _contract(payload: dict[str, Any], pins: dict[str, str]) -> None:
     The id is checked before any other field, so a trace written against a
     different or unnamed contract is never interpreted under this one.
     ``evidenceAgeSeconds`` must equal decision time minus the observation
-    time inside the signed authority evidence.
+    time inside the signed authority evidence, and the deployed freshness
+    limit the producer applied must equal the limit this consumer selected.
     """
     if "contractId" not in payload:
         refuse("trace contract id is missing")
@@ -235,11 +236,13 @@ def _contract(payload: dict[str, Any], pins: dict[str, str]) -> None:
     if type(age) is not int or type(observed.get("observedAt")) is not int or type(payload.get("decisionAt")) is not int \
             or age != payload["decisionAt"] - observed["observedAt"]:
         refuse("evidence age differs from decision time")
+    if payload.get("freshnessLimitSeconds") != MAX_AGE_SECONDS or type(payload.get("freshnessLimitSeconds")) is not int:
+        refuse("freshness limit differs from consumer selection")
 
 
 def _record_schema(payload: dict[str, Any]) -> None:
     """Check the finite profile's exact fields before interpreting its claims."""
-    fields = {"contractId", "evidenceAgeSeconds", "delegationRoot", "delegationHops", "profile", "caseId", "request", "grantPolicy", "grant", "authorityEvidence", "decisionAt",
+    fields = {"contractId", "evidenceAgeSeconds", "freshnessLimitSeconds", "delegationRoot", "delegationHops", "profile", "caseId", "request", "grantPolicy", "grant", "authorityEvidence", "decisionAt",
               "requestDeadline", "humanReachable", "priorFallback", "attempts", "faultInjection",
               "dispatchContentSha256", "taskTerminal", "readback", "coverage", "custody", "witnessScope"}
     if set(payload) != fields:
@@ -307,7 +310,8 @@ def read_case(path: Path, pins: dict[str, str]) -> dict[str, Any]:
                    and not native["nativeRevoked"])
     return {"caseId": payload["caseId"], **native, "authorityStatus": authority, "authorityReason": authority_reason,
             "delegationStatus": delegation, "delegationReason": delegation_reason,
-            "evidenceAgeSeconds": payload["evidenceAgeSeconds"], "contractId": payload["contractId"],
+            "evidenceAgeSeconds": payload["evidenceAgeSeconds"],
+            "freshnessLimitSeconds": payload["freshnessLimitSeconds"], "contractId": payload["contractId"],
             "taskTerminal": payload["taskTerminal"], "nativeCompletionProof": proof, "proofReason": proof_reason,
             "publicationReady": publication, "attemptCount": len(payload["attempts"]),
             "dispatchDecisions": [a["decision"] for a in payload["attempts"]], "witnessScope": "PEER",

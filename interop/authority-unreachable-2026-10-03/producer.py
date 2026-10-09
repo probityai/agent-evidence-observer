@@ -14,7 +14,7 @@ from probity_observer.authorization import ActionRequest, GrantPolicy, issue_gra
 from probity_observer.crypto import SigningKey, VerificationError, canonical
 from probity_observer.ticket_service import TicketStore
 
-from authority_profile import AUTHORITY_DOMAIN, CASE_IDS, CONTRACT_ID, PROFILE, RECORD_DOMAIN, content_bytes, dispatch, reference_time, sign_record
+from authority_profile import AUTHORITY_DOMAIN, CASE_IDS, CONTRACT_ID, MAX_AGE_SECONDS, PROFILE, RECORD_DOMAIN, content_bytes, dispatch, reference_time, sign_record
 
 NATIVE_REVISION = "9db0558cf8cc8112ea31b601fa7c7d3c2f38c907"
 START = 1791028800
@@ -111,7 +111,7 @@ def _case(root: Path, case_id: str, keys: dict[str, SigningKey]) -> dict[str, An
     readback = store.readback()
     payload = {"contractId": CONTRACT_ID, "profile": PROFILE, "caseId": case_id, "request": asdict(request), "grantPolicy": asdict(policy),
                "grant": delegated, "authorityEvidence": authority, "decisionAt": at,
-               "evidenceAgeSeconds": age, "delegationRoot": ROOT_GRANTOR, "delegationHops": hops,
+               "evidenceAgeSeconds": age, "freshnessLimitSeconds": MAX_AGE_SECONDS, "delegationRoot": ROOT_GRANTOR, "delegationHops": hops,
                "requestDeadline": START + 120,
                "humanReachable": case_id == "approved-human-reachable", "priorFallback": delegated is not None,
                "attempts": attempts, "faultInjection": faults,
