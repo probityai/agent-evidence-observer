@@ -20,19 +20,19 @@ jobs:
     timeout-minutes: 25
     steps:
       - name: Check out the owned consumer selected by this event
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           path: owned-consumer
           persist-credentials: false
       - name: Check out the immutable existing Observer reader
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: probityai/agent-evidence-observer
           ref: 62f5d0c6fbd785259db2d5c8076dd844b53a0593
           path: existing-reader
           persist-credentials: false
       - name: Check out the actual supported current Inspect release
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: UKGovernmentBEIS/inspect_ai
           ref: 93f7182cf2ce9be22724b05e499cd1358d7ed41d
