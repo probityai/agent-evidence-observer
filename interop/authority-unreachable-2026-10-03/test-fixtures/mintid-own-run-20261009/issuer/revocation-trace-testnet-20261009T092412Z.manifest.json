@@ -1,0 +1,358 @@
+{
+  "schema": "mintid-trace-manifest/2",
+  "record": "revocation-trace-testnet-20261009T092412Z",
+  "derived": false,
+  "started_utc": "2026-10-09T09:24:12.198Z",
+  "source": {
+    "revision": "de51576fc40a82aab577fb96f65f1f6630aac2a1",
+    "public_tags": [
+      "public-v2026-10-08.2"
+    ],
+    "tracked_changes": false,
+    "services_revision_stated": null
+  },
+  "stated": null,
+  "deployment": {
+    "target": "testnet",
+    "chain_id": "mintid-testnet-2",
+    "issuer_id": "3d2a9df3cc5cb853ba6a61bfc475cda119eb215c22aad7b2b4bcebc46399183b",
+    "verifier_id": "6f4c5d1becd3c47e56efcbfc950fc5d845eff13c318a8aed866613e045621661",
+    "kyc_provider": "sandbox",
+    "endpoints": {
+      "issuer_url": "https://issuer.testnet.mintid.net",
+      "verifier_url": "https://verifier.testnet.mintid.net",
+      "rpc": "https://rpc.testnet.mintid.net",
+      "relay": "https://relay.testnet.mintid.net"
+    },
+    "build": {
+      "issuer": {
+        "source_revision": "1c57bc06a670",
+        "release": "public-v2026-10-08.1",
+        "signing_key_id": "9ddd3b08a70e35065788ca08d5f22761df22f77611755ccae13fe8809ac3a6cd"
+      },
+      "verifier": {
+        "engine_pin": "proof-core 0.4.0",
+        "sdk_version": "0.3.0",
+        "spec_revision": "SPEC-1 v3.2",
+        "state_vectors_version": "mintid-proofvector-1/h2",
+        "state_vectors_sha256": "36d36f371b3b4b0a1db995a4a1fb46f352ed5f5aacc28df5ca10c2a31d0ea495",
+        "conformance_suite_version": "1.0.0",
+        "source_revision": "1c57bc06a670",
+        "release": "public-v2026-10-08.1"
+      }
+    },
+    "services": {
+      "verifier": {
+        "source_revision": "1c57bc06a670",
+        "release": "public-v2026-10-08.1",
+        "basis": "build-info"
+      },
+      "issuer": {
+        "source_revision": "1c57bc06a670",
+        "release": "public-v2026-10-08.1",
+        "basis": "build-info"
+      }
+    },
+    "parameters": {
+      "A": 180,
+      "H": 30,
+      "K": 5,
+      "G": 60,
+      "cascade_spread_beats": 8
+    },
+    "max_root_age_seconds": 180,
+    "heartbeat_seconds": 30,
+    "max_height_lag": 100
+  },
+  "policy": {
+    "claim_policy": [
+      {
+        "claim": "human_backed",
+        "value": true
+      },
+      {
+        "claim": "pairwise_pseudonym",
+        "value": "6f4c5d1becd3c47e56efcbfc950fc5d845eff13c318a8aed866613e045621661"
+      },
+      {
+        "claim": "assurance_grade",
+        "operator": ">=",
+        "value": "A2"
+      },
+      {
+        "claim": "counterparty_includes",
+        "value": "eip155:8453:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
+      },
+      {
+        "claim": "delegated_scope_includes",
+        "value": "payments.initiate"
+      },
+      {
+        "claim": "category_in",
+        "value": "mcc:5812"
+      },
+      {
+        "claim": "geo_in",
+        "value": "iso3166-1:ES"
+      },
+      {
+        "claim": "transaction_limit",
+        "operator": ">=",
+        "value": "5000000 USDC"
+      },
+      {
+        "claim": "key_custody_class",
+        "operator": ">=",
+        "value": "tpm"
+      },
+      {
+        "claim": "unexpired",
+        "value": true
+      },
+      {
+        "claim": "credential_active",
+        "value": true
+      }
+    ],
+    "issuer_policy": {
+      "accepted_issuer_ids": [
+        "3d2a9df3cc5cb853ba6a61bfc475cda119eb215c22aad7b2b4bcebc46399183b"
+      ]
+    },
+    "sha256": "9f02f1c77044017c9b411a7d069cbc4fd5311087fc09c91e4cfd1ec5e29c3577"
+  },
+  "verifier_status": {
+    "before": {
+      "observed_unix": 1791537856,
+      "substrate": "ok",
+      "chain_height": 192584,
+      "root_epoch": 13619,
+      "root_height": 192580,
+      "root_age_seconds": 11,
+      "fresh": true,
+      "max_root_age_seconds": 180,
+      "heartbeat_seconds": 30,
+      "max_height_lag": 100
+    },
+    "after": {
+      "observed_unix": 1791538044,
+      "substrate": "ok",
+      "chain_height": 192673,
+      "root_epoch": 13625,
+      "root_height": 192665,
+      "root_age_seconds": 19,
+      "fresh": true,
+      "max_root_age_seconds": 180,
+      "heartbeat_seconds": 30,
+      "max_height_lag": 100
+    }
+  },
+  "decision_log_source": "not read (operator only: MINTID_VERIFIER_CONSOLE_PASSWORD)",
+  "paths": [
+    {
+      "path": "issuer",
+      "t0_unix": 1791537996.7612576,
+      "t0_definition": "the issuer's removal of the agent (revoke response)",
+      "bound_seconds": 185,
+      "bound_formula": "t0 + A + K",
+      "last_accepted": null,
+      "first_refused": {
+        "utc": "2026-10-09T09:26:58.910Z",
+        "seconds_after_t0": 22.1,
+        "session_id": "590a52ac50878176c1354cd8ab115f32",
+        "accepted": false,
+        "reason_code": "deadline_exceeded",
+        "chain_height_after": 192661,
+        "decision_log": null
+      },
+      "root_at_denial": {
+        "status_epoch": 13624,
+        "finalized_height": 192651,
+        "generated_at_unix": 1791537995,
+        "finalized_at_utc": null,
+        "emergency": false
+      },
+      "root_carrying_revocation": {
+        "status_epoch": 13625,
+        "finalized_height": 192665,
+        "generated_at_unix": 1791538025,
+        "finalized_at_utc": "2026-10-09T09:27:04.859Z",
+        "emergency": false
+      },
+      "refresh_refused_seconds_after_t0": 9.7,
+      "control_never_revoked": {
+        "last_accepted": null,
+        "first_refused": {
+          "utc": "2026-10-09T09:26:45.567Z",
+          "seconds_after_t0": 8.8,
+          "session_id": "542533514f353fca1e0a4dbeea225e7c",
+          "accepted": false,
+          "reason_code": "status_root_stale",
+          "chain_height_after": 192654,
+          "decision_log": null
+        },
+        "after_refresh": {
+          "utc": "2026-10-09T09:27:21.573Z",
+          "seconds_after_t0": 44.8,
+          "session_id": "2065ab457c983b38a3185436d05a01f0",
+          "accepted": true,
+          "reason_code": "accepted",
+          "chain_height_after": 192671,
+          "decision_log": null
+        }
+      },
+      "attribution": {
+        "revoked": {
+          "agent": "agent_issuer",
+          "refresh": {
+            "observation": "refused",
+            "outcome": "credential_revoked",
+            "utc": "2026-10-09T09:26:46.430Z",
+            "seconds_after_t0": 9.7
+          }
+        },
+        "control": {
+          "agent": "sibling_control",
+          "refused": {
+            "utc": "2026-10-09T09:26:45.567Z",
+            "seconds_after_t0": 8.8,
+            "session_id": "542533514f353fca1e0a4dbeea225e7c",
+            "accepted": false,
+            "reason_code": "status_root_stale",
+            "chain_height_after": 192654,
+            "decision_log": null
+          },
+          "refresh": {
+            "observation": "refreshed",
+            "outcome": null,
+            "utc": "2026-10-09T09:27:12.187Z",
+            "seconds_after_t0": 35.4
+          },
+          "after_refresh": {
+            "utc": "2026-10-09T09:27:21.573Z",
+            "seconds_after_t0": 44.8,
+            "session_id": "2065ab457c983b38a3185436d05a01f0",
+            "accepted": true,
+            "reason_code": "accepted",
+            "chain_height_after": 192671,
+            "decision_log": null
+          }
+        }
+      }
+    }
+  ],
+  "decisions": [
+    {
+      "utc": "2026-10-09T09:25:32.994Z",
+      "path": "issuer",
+      "agent": "agent_issuer",
+      "attempt": "baseline",
+      "accepted": true,
+      "reason_code": "accepted",
+      "condition": null,
+      "root_epoch": null,
+      "root_height": null,
+      "root_age_seconds": null
+    },
+    {
+      "utc": "2026-10-09T09:25:43.509Z",
+      "path": "issuer",
+      "agent": "sibling_control",
+      "attempt": "baseline",
+      "accepted": false,
+      "reason_code": "deadline_exceeded",
+      "condition": null,
+      "root_epoch": null,
+      "root_height": null,
+      "root_age_seconds": null
+    },
+    {
+      "utc": "2026-10-09T09:26:00.367Z",
+      "path": "issuer",
+      "agent": "sibling_control",
+      "attempt": "baseline_retry",
+      "accepted": false,
+      "reason_code": "deadline_exceeded",
+      "condition": null,
+      "root_epoch": null,
+      "root_height": null,
+      "root_age_seconds": null
+    },
+    {
+      "utc": "2026-10-09T09:26:13.676Z",
+      "path": "issuer",
+      "agent": "sibling_control",
+      "attempt": "baseline_retry",
+      "accepted": false,
+      "reason_code": "status_root_stale",
+      "condition": null,
+      "root_epoch": null,
+      "root_height": null,
+      "root_age_seconds": null
+    },
+    {
+      "utc": "2026-10-09T09:26:29.547Z",
+      "path": "issuer",
+      "agent": "sibling_control",
+      "attempt": "baseline_retry",
+      "accepted": true,
+      "reason_code": "accepted",
+      "condition": null,
+      "root_epoch": null,
+      "root_height": null,
+      "root_age_seconds": null
+    },
+    {
+      "utc": "2026-10-09T09:26:45.567Z",
+      "path": "issuer",
+      "agent": "sibling_control",
+      "attempt": "control_stale",
+      "accepted": false,
+      "reason_code": "status_root_stale",
+      "condition": null,
+      "root_epoch": null,
+      "root_height": null,
+      "root_age_seconds": null
+    },
+    {
+      "utc": "2026-10-09T09:26:58.910Z",
+      "path": "issuer",
+      "agent": "agent_issuer",
+      "attempt": "forced",
+      "accepted": false,
+      "reason_code": "deadline_exceeded",
+      "condition": null,
+      "root_epoch": null,
+      "root_height": null,
+      "root_age_seconds": null
+    },
+    {
+      "utc": "2026-10-09T09:27:05.567Z",
+      "path": "issuer",
+      "agent": "agent_issuer",
+      "attempt": "forced_confirm",
+      "accepted": false,
+      "reason_code": "status_root_stale",
+      "condition": null,
+      "root_epoch": null,
+      "root_height": null,
+      "root_age_seconds": null
+    },
+    {
+      "utc": "2026-10-09T09:27:21.573Z",
+      "path": "issuer",
+      "agent": "sibling_refreshed",
+      "attempt": "control_refreshed",
+      "accepted": true,
+      "reason_code": "accepted",
+      "condition": null,
+      "root_epoch": null,
+      "root_height": null,
+      "root_age_seconds": null
+    }
+  ],
+  "files": {
+    "revocation-trace-testnet-20261009T092412Z.jsonl": "afb28c4207ea29fd5c52483dd8bc560158367c27a231146435a245a68cefd30d",
+    "revocation-trace-testnet-20261009T092412Z.md": "39292791da6a3f1afecb83d0b75acab452efdaa3adb6e362be0cf695c4f6037d"
+  }
+}

@@ -281,3 +281,28 @@ class TestRefusalControls:
             manifest["files"][0]["sha256"] = "0" * 64
         edit_json(records / "alakris" / "source-manifest.json", repin)
         assert "alakris-source-pin" in read_alakris(records / "alakris", None, None)["failed"]
+
+
+class TestMintidOwnRun:
+    """Our own run of MintID's trace at public-v2026-10-08.2 on 2026-10-09 (no operator access)."""
+
+    FIXTURES = Path(__file__).parent / "test-fixtures" / "mintid-own-run-20261009"
+
+    def test_skipped_path_is_not_performed_and_never_crashes(self):
+        row = read_mintid(self.FIXTURES / "full")
+        assert result(row, "mintid-issuer-run") == "not-performed"
+        assert row["failed"] == []
+
+    def test_retried_baseline_refusals_are_not_a_first_refusal(self):
+        row = read_mintid(self.FIXTURES / "full")
+        for agent, seconds in (("cascade_agent_1", "+39.4"), ("cascade_agent_2", "+74.4")):
+            check = next(c for c in row["checks"] if c["id"] == f"mintid-cascade:{agent}-first-refusal")
+            assert check["result"] == "pass" and check["detail"].startswith(f"derived {seconds} s")
+            assert result(row, f"mintid-cascade:{agent}-stays-denied") == "pass"
+
+    def test_unread_decision_log_is_not_a_disagreement(self):
+        row = read_mintid(self.FIXTURES / "issuer")
+        assert result(row, "mintid-decision-log-agrees") == "not-performed"
+        assert result(row, "mintid-issuer:agent_issuer-attributed") == "pass"
+        issuer = next(p for p in row["contract"]["temporalRevocation"] if p["path"] == "issuer")
+        assert issuer["firstRefusalAlsoRefusedNeverRevokedControl"] is None

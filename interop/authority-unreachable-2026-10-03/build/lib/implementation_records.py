@@ -130,20 +130,13 @@ def _mintid_t0(path: dict[str, Any], triggers: dict[str, dict[str, Any]]) -> flo
 def _mintid_path(path: dict[str, Any], decisions: list[dict[str, Any]], triggers: dict[str, dict[str, Any]],
                  refreshes: dict[str, str], checks: Checks) -> dict[str, Any]:
     """Check one revocation path's first refusal, bound, monotonic denial and attribution."""
-    if "skipped" in path:
-        # The trace's own guard skipped the path before any trigger: there is
-        # nothing to check, which is a check not performed, never a pass.
-        checks.skip(f"mintid-{path['path']}-run", f"skipped by the trace: {path['skipped']}")
-        return {"path": path["path"], "agent": None, "skipped": path["skipped"]}
     agent = path.get("agent") or (path.get("attribution") or {}).get("revoked", {}).get("agent")
     name = f"{path['path']}:{agent}"
     t0 = _mintid_t0(path, triggers)
     checks.add(f"mintid-{name}-t0", t0 is not None and abs(t0 - path["t0_unix"]) < 0.01,
                f"trigger-derived t0 {t0} against manifest {path['t0_unix']}")
     own = [d for d in decisions if d["path"] == path["path"] and d["agent"] == agent]
-    # Baseline attempts, retried ones included, precede the trigger by design.
-    refused = next((d for d in own if not d["accepted"] and not d["attempt"].startswith("baseline")
-                    and unix(d["utc"]) >= path["t0_unix"]), None)
+    refused = next((d for d in own if not d["accepted"] and d["attempt"] != "baseline"), None)
     if not checks.add(f"mintid-{name}-refused", refused is not None, "a forced presentation was refused"):
         return {"path": path["path"], "agent": agent}
     seconds = round(unix(refused["utc"]) - path["t0_unix"], 1)
@@ -162,8 +155,7 @@ def _mintid_path(path: dict[str, Any], decisions: list[dict[str, Any]], triggers
     checks.add(f"mintid-{name}-attributed", revoked_refresh == "credential_revoked",
                f"holder refresh outcome {revoked_refresh}")
     control = (path.get("attribution") or {}).get("control") or {}
-    control_log = (control.get("refused") or {}).get("decision_log")
-    rollover = (control_log["root_epoch"] == refused["root_epoch"]) if control_log else (False if not control else None)
+    rollover = bool(control) and control["refused"]["decision_log"]["root_epoch"] == refused["root_epoch"]
     accepted_before = [d for d in own if d["accepted"] and unix(d["utc"]) < unix(refused["utc"])]
     return {"path": path["path"], "agent": agent, "triggerUnix": path["t0_unix"],
             "triggerDefinition": path["t0_definition"],
@@ -194,11 +186,8 @@ def read_mintid(directory: Path) -> dict[str, Any]:
                    f"manifest {digest[:16]}" if present else "file named by the manifest is absent")
     events = _mintid_events(raw)
     decisions = _mintid_decisions(events)
-    if not any(e["kind"] == "decision_log_line" for e in events):
-        checks.skip("mintid-decision-log-agrees", "the trace read no verifier decision-log lines (operator access)")
-    else:
-        checks.add("mintid-decision-log-agrees", all(d["logAgrees"] for d in decisions),
-                   f"{sum(not d['logAgrees'] for d in decisions)} decisions differ from the verifier log line")
+    checks.add("mintid-decision-log-agrees", all(d["logAgrees"] for d in decisions),
+               f"{sum(not d['logAgrees'] for d in decisions)} decisions differ from the verifier log line")
     projected = [{k: d[k] for k in ("utc", "path", "agent", "attempt", "accepted", "reason_code", "condition",
                                     "root_epoch", "root_height", "root_age_seconds")} for d in decisions]
     checks.add("mintid-manifest-decisions-rebuild", projected == manifest["decisions"],
@@ -344,11 +333,15 @@ def read_alakris(directory: Path, reference_report: Path | None, discriminator_r
     if reference_report is None:
         checks.skip("alakris-rerun-reproduced", "no reader report from this run was supplied")
     else:
-        ours = _projection(json.loads(reference_report.read_bytes()))
-        differing = sorted(k for k in set(ours) | set(_projection(theirs)) if ours.get(k) != _projection(theirs).get(k))
+        ours, rerun = _projection(json.loads(reference_report.read_bytes())), _projection(theirs)
+        # Compare every case their rerun covered; a case added to the profile
+        # after the rerun is reported as not rerun, never as agreement.
+        differing = sorted(k for k in rerun if ours.get(k) != rerun[k])
+        later = sorted(set(ours) - set(rerun))
         checks.add("alakris-rerun-reproduced", not differing,
-                   f"{len(ours) - len(differing)} of {len(ours)} cases match the 2026-10-04 operator rerun"
-                   + (f"; differing: {', '.join(differing)}" if differing else ""))
+                   f"{len(rerun) - len(differing)} of {len(rerun)} cases match the 2026-10-04 operator rerun"
+                   + (f"; differing: {', '.join(differing)}" if differing else "")
+                   + (f"; added after that rerun, not rerun by the implementer: {', '.join(later)}" if later else ""))
     theirs_discriminator = json.loads((directory / "source-discriminator-report.json").read_bytes())
     if discriminator_report is None:
         checks.skip("alakris-discriminator-reproduced", "no discriminator report from this run was supplied")

@@ -1,0 +1,571 @@
+{
+  "schema": "mintid-trace-manifest/2",
+  "record": "revocation-trace-testnet-20261009T091400Z",
+  "derived": false,
+  "started_utc": "2026-10-09T09:14:00.189Z",
+  "source": {
+    "revision": "de51576fc40a82aab577fb96f65f1f6630aac2a1",
+    "public_tags": [
+      "public-v2026-10-08.2"
+    ],
+    "tracked_changes": false,
+    "services_revision_stated": null
+  },
+  "stated": null,
+  "deployment": {
+    "target": "testnet",
+    "chain_id": "mintid-testnet-2",
+    "issuer_id": "3d2a9df3cc5cb853ba6a61bfc475cda119eb215c22aad7b2b4bcebc46399183b",
+    "verifier_id": "6f4c5d1becd3c47e56efcbfc950fc5d845eff13c318a8aed866613e045621661",
+    "kyc_provider": "sandbox",
+    "endpoints": {
+      "issuer_url": "https://issuer.testnet.mintid.net",
+      "verifier_url": "https://verifier.testnet.mintid.net",
+      "rpc": "https://rpc.testnet.mintid.net",
+      "relay": "https://relay.testnet.mintid.net"
+    },
+    "build": {
+      "issuer": {
+        "source_revision": "1c57bc06a670",
+        "release": "public-v2026-10-08.1",
+        "signing_key_id": "9ddd3b08a70e35065788ca08d5f22761df22f77611755ccae13fe8809ac3a6cd"
+      },
+      "verifier": {
+        "engine_pin": "proof-core 0.4.0",
+        "sdk_version": "0.3.0",
+        "spec_revision": "SPEC-1 v3.2",
+        "state_vectors_version": "mintid-proofvector-1/h2",
+        "state_vectors_sha256": "36d36f371b3b4b0a1db995a4a1fb46f352ed5f5aacc28df5ca10c2a31d0ea495",
+        "conformance_suite_version": "1.0.0",
+        "source_revision": "1c57bc06a670",
+        "release": "public-v2026-10-08.1"
+      }
+    },
+    "services": {
+      "verifier": {
+        "source_revision": "1c57bc06a670",
+        "release": "public-v2026-10-08.1",
+        "basis": "build-info"
+      },
+      "issuer": {
+        "source_revision": "1c57bc06a670",
+        "release": "public-v2026-10-08.1",
+        "basis": "build-info"
+      }
+    },
+    "parameters": {
+      "A": 180,
+      "H": 30,
+      "K": 5,
+      "G": 60,
+      "cascade_spread_beats": 8
+    },
+    "max_root_age_seconds": 180,
+    "heartbeat_seconds": 30,
+    "max_height_lag": 100
+  },
+  "policy": {
+    "claim_policy": [
+      {
+        "claim": "human_backed",
+        "value": true
+      },
+      {
+        "claim": "pairwise_pseudonym",
+        "value": "6f4c5d1becd3c47e56efcbfc950fc5d845eff13c318a8aed866613e045621661"
+      },
+      {
+        "claim": "assurance_grade",
+        "operator": ">=",
+        "value": "A2"
+      },
+      {
+        "claim": "counterparty_includes",
+        "value": "eip155:8453:0x833589fcd6edb6e08f4c7c32d4f71b54bda02913"
+      },
+      {
+        "claim": "delegated_scope_includes",
+        "value": "payments.initiate"
+      },
+      {
+        "claim": "category_in",
+        "value": "mcc:5812"
+      },
+      {
+        "claim": "geo_in",
+        "value": "iso3166-1:ES"
+      },
+      {
+        "claim": "transaction_limit",
+        "operator": ">=",
+        "value": "5000000 USDC"
+      },
+      {
+        "claim": "key_custody_class",
+        "operator": ">=",
+        "value": "tpm"
+      },
+      {
+        "claim": "unexpired",
+        "value": true
+      },
+      {
+        "claim": "credential_active",
+        "value": true
+      }
+    ],
+    "issuer_policy": {
+      "accepted_issuer_ids": [
+        "3d2a9df3cc5cb853ba6a61bfc475cda119eb215c22aad7b2b4bcebc46399183b"
+      ]
+    },
+    "sha256": "9f02f1c77044017c9b411a7d069cbc4fd5311087fc09c91e4cfd1ec5e29c3577"
+  },
+  "verifier_status": {
+    "before": {
+      "observed_unix": 1791537242,
+      "substrate": "ok",
+      "chain_height": 192299,
+      "root_epoch": 13598,
+      "root_height": 192287,
+      "root_age_seconds": 27,
+      "fresh": true,
+      "max_root_age_seconds": 180,
+      "heartbeat_seconds": 30,
+      "max_height_lag": 100
+    },
+    "after": {
+      "observed_unix": 1791537789,
+      "substrate": "ok",
+      "chain_height": 192552,
+      "root_epoch": 13616,
+      "root_height": 192538,
+      "root_age_seconds": 34,
+      "fresh": true,
+      "max_root_age_seconds": 180,
+      "heartbeat_seconds": 30,
+      "max_height_lag": 100
+    }
+  },
+  "decision_log_source": "not read (operator only: MINTID_VERIFIER_CONSOLE_PASSWORD)",
+  "paths": [
+    {
+      "path": "issuer",
+      "skipped": "baseline of sibling_control not accepted within 60 s (last answer `deadline_exceeded`): no trigger fired"
+    },
+    {
+      "path": "kill_switch",
+      "t0_unix": 1791537422.7575822,
+      "t0_definition": "the recording of the nullifier on chain (block time of the relay's tx)",
+      "bound_seconds": 245,
+      "bound_formula": "t0 + G + A + K",
+      "last_accepted": null,
+      "first_refused": {
+        "utc": "2026-10-09T09:17:19.967Z",
+        "seconds_after_t0": 17.2,
+        "session_id": "4f67da3cc2591b1fe2bd544ad7d02149",
+        "accepted": false,
+        "reason_code": "status_root_stale",
+        "chain_height_after": 192392,
+        "decision_log": null
+      },
+      "root_at_denial": {
+        "status_epoch": 13605,
+        "finalized_height": 192386,
+        "generated_at_unix": 1791537425,
+        "finalized_at_utc": null,
+        "emergency": false
+      },
+      "root_carrying_revocation": null,
+      "refresh_refused_seconds_after_t0": 34.0,
+      "attribution": {
+        "revoked": {
+          "agent": "agent_kill_switch",
+          "refresh": {
+            "observation": "refused",
+            "outcome": "credential_revoked",
+            "utc": "2026-10-09T09:17:36.723Z",
+            "seconds_after_t0": 34.0
+          }
+        },
+        "control": null
+      }
+    },
+    {
+      "path": "cascade",
+      "agent": "cascade_agent_1",
+      "t0_unix": 1791537545,
+      "t0_definition": "generation of the trigger root (the root carrying the principal's revocation)",
+      "bound_seconds": 395,
+      "bound_formula": "t_T + 7\u00b7H + A + K",
+      "last_accepted": {
+        "utc": "2026-10-09T09:19:22.056Z",
+        "seconds_after_t0": 17.1,
+        "session_id": "7f39af971fe7e90aa4addf9263798e05",
+        "accepted": true,
+        "reason_code": "accepted",
+        "chain_height_after": 192449,
+        "decision_log": null
+      },
+      "first_refused": {
+        "utc": "2026-10-09T09:19:44.369Z",
+        "seconds_after_t0": 39.4,
+        "session_id": "3a92debd0ce3906a8692b2d1c461b98a",
+        "accepted": false,
+        "reason_code": "status_root_stale",
+        "chain_height_after": 192460,
+        "decision_log": null
+      },
+      "root_at_denial": {
+        "status_epoch": 13610,
+        "finalized_height": 192457,
+        "generated_at_unix": 1791537575,
+        "finalized_at_utc": null,
+        "emergency": false
+      },
+      "root_carrying_revocation": {
+        "status_epoch": 13609,
+        "finalized_height": 192443,
+        "generated_at_unix": 1791537545,
+        "finalized_at_utc": "2026-10-09T09:19:05.807Z",
+        "emergency": false
+      },
+      "refresh_refused_seconds_after_t0": 241.5,
+      "attribution": {
+        "revoked": {
+          "agent": "cascade_agent_1",
+          "refresh": {
+            "observation": "refused",
+            "outcome": "credential_revoked",
+            "utc": "2026-10-09T09:23:06.474Z",
+            "seconds_after_t0": 241.5
+          }
+        },
+        "control": null
+      }
+    },
+    {
+      "path": "cascade",
+      "agent": "cascade_agent_2",
+      "t0_unix": 1791537545,
+      "t0_definition": "generation of the trigger root (the root carrying the principal's revocation)",
+      "bound_seconds": 395,
+      "bound_formula": "t_T + 7\u00b7H + A + K",
+      "last_accepted": {
+        "utc": "2026-10-09T09:20:03.467Z",
+        "seconds_after_t0": 58.5,
+        "session_id": "e1beb6db7df43a7256fd143e0017384f",
+        "accepted": true,
+        "reason_code": "accepted",
+        "chain_height_after": 192469,
+        "decision_log": null
+      },
+      "first_refused": {
+        "utc": "2026-10-09T09:20:19.369Z",
+        "seconds_after_t0": 74.4,
+        "session_id": "f34e262a4c6e3adab34bd72d80a73fd5",
+        "accepted": false,
+        "reason_code": "status_root_stale",
+        "chain_height_after": 192476,
+        "decision_log": null
+      },
+      "root_at_denial": {
+        "status_epoch": 13611,
+        "finalized_height": 192471,
+        "generated_at_unix": 1791537605,
+        "finalized_at_utc": null,
+        "emergency": false
+      },
+      "root_carrying_revocation": {
+        "status_epoch": 13609,
+        "finalized_height": 192443,
+        "generated_at_unix": 1791537545,
+        "finalized_at_utc": "2026-10-09T09:19:05.807Z",
+        "emergency": false
+      },
+      "refresh_refused_seconds_after_t0": 92.2,
+      "attribution": {
+        "revoked": {
+          "agent": "cascade_agent_2",
+          "refresh": {
+            "observation": "refused",
+            "outcome": "credential_revoked",
+            "utc": "2026-10-09T09:20:37.225Z",
+            "seconds_after_t0": 92.2
+          }
+        },
+        "control": null
+      }
+    }
+  ],
+  "decisions": [
+    {
+      "utc": "2026-10-09T09:15:37.803Z",
+      "path": "issuer",
+      "agent": "agent_issuer",
+      "attempt": "baseline",
+      "accepted": true,
+      "reason_code": "accepted",
+      "condition": null,
+      "root_epoch": null,
+      "root_height": null,
+      "root_age_seconds": null
+    },
+    {
+      "utc": "2026-10-09T09:15:45.767Z",
+      "path": "issuer",
+      "agent": "sibling_control",
+      "attempt": "baseline",
+      "accepted": false,
+      "reason_code": "status_root_stale",
+      "condition": null,
+      "root_epoch": null,
+      "root_height": null,
+      "root_age_seconds": null
+    },
+    {
+      "utc": "2026-10-09T09:16:02.684Z",
+      "path": "issuer",
+      "agent": "sibling_control",
+      "attempt": "baseline_retry",
+      "accepted": false,
+      "reason_code": "deadline_exceeded",
+      "condition": null,
+      "root_epoch": null,
+      "root_height": null,
+      "root_age_seconds": null
+    },
+    {
+      "utc": "2026-10-09T09:16:13.691Z",
+      "path": "issuer",
+      "agent": "sibling_control",
+      "attempt": "baseline_retry",
+      "accepted": false,
+      "reason_code": "status_root_stale",
+      "condition": null,
+      "root_epoch": null,
+      "root_height": null,
+      "root_age_seconds": null
+    },
+    {
+      "utc": "2026-10-09T09:16:30.073Z",
+      "path": "issuer",
+      "agent": "sibling_control",
+      "attempt": "baseline_retry",
+      "accepted": false,
+      "reason_code": "deadline_exceeded",
+      "condition": null,
+      "root_epoch": null,
+      "root_height": null,
+      "root_age_seconds": null
+    },
+    {
+      "utc": "2026-10-09T09:16:46.300Z",
+      "path": "issuer",
+      "agent": "sibling_control",
+      "attempt": "baseline_retry",
+      "accepted": false,
+      "reason_code": "deadline_exceeded",
+      "condition": null,
+      "root_epoch": null,
+      "root_height": null,
+      "root_age_seconds": null
+    },
+    {
+      "utc": "2026-10-09T09:16:57.767Z",
+      "path": "kill_switch",
+      "agent": "agent_kill_switch",
+      "attempt": "baseline",
+      "accepted": true,
+      "reason_code": "accepted",
+      "condition": null,
+      "root_epoch": null,
+      "root_height": null,
+      "root_age_seconds": null
+    },
+    {
+      "utc": "2026-10-09T09:17:19.967Z",
+      "path": "kill_switch",
+      "agent": "agent_kill_switch",
+      "attempt": "forced",
+      "accepted": false,
+      "reason_code": "status_root_stale",
+      "condition": null,
+      "root_epoch": null,
+      "root_height": null,
+      "root_age_seconds": null
+    },
+    {
+      "utc": "2026-10-09T09:17:29.767Z",
+      "path": "kill_switch",
+      "agent": "agent_kill_switch",
+      "attempt": "forced_confirm",
+      "accepted": false,
+      "reason_code": "status_root_stale",
+      "condition": null,
+      "root_epoch": null,
+      "root_height": null,
+      "root_age_seconds": null
+    },
+    {
+      "utc": "2026-10-09T09:17:56.275Z",
+      "path": "cascade",
+      "agent": "cascade_agent_1",
+      "attempt": "baseline",
+      "accepted": false,
+      "reason_code": "deadline_exceeded",
+      "condition": null,
+      "root_epoch": null,
+      "root_height": null,
+      "root_age_seconds": null
+    },
+    {
+      "utc": "2026-10-09T09:18:11.494Z",
+      "path": "cascade",
+      "agent": "cascade_agent_1",
+      "attempt": "baseline_retry",
+      "accepted": false,
+      "reason_code": "status_root_stale",
+      "condition": null,
+      "root_epoch": null,
+      "root_height": null,
+      "root_age_seconds": null
+    },
+    {
+      "utc": "2026-10-09T09:18:24.138Z",
+      "path": "cascade",
+      "agent": "cascade_agent_1",
+      "attempt": "baseline_retry",
+      "accepted": true,
+      "reason_code": "accepted",
+      "condition": null,
+      "root_epoch": null,
+      "root_height": null,
+      "root_age_seconds": null
+    },
+    {
+      "utc": "2026-10-09T09:18:32.967Z",
+      "path": "cascade",
+      "agent": "cascade_agent_2",
+      "attempt": "baseline",
+      "accepted": false,
+      "reason_code": "status_root_stale",
+      "condition": null,
+      "root_epoch": null,
+      "root_height": null,
+      "root_age_seconds": null
+    },
+    {
+      "utc": "2026-10-09T09:18:47.000Z",
+      "path": "cascade",
+      "agent": "cascade_agent_2",
+      "attempt": "baseline_retry",
+      "accepted": false,
+      "reason_code": "status_root_stale",
+      "condition": null,
+      "root_epoch": null,
+      "root_height": null,
+      "root_age_seconds": null
+    },
+    {
+      "utc": "2026-10-09T09:19:00.715Z",
+      "path": "cascade",
+      "agent": "cascade_agent_2",
+      "attempt": "baseline_retry",
+      "accepted": true,
+      "reason_code": "accepted",
+      "condition": null,
+      "root_epoch": null,
+      "root_height": null,
+      "root_age_seconds": null
+    },
+    {
+      "utc": "2026-10-09T09:19:22.056Z",
+      "path": "cascade",
+      "agent": "cascade_agent_1",
+      "attempt": "forced",
+      "accepted": true,
+      "reason_code": "accepted",
+      "condition": null,
+      "root_epoch": null,
+      "root_height": null,
+      "root_age_seconds": null
+    },
+    {
+      "utc": "2026-10-09T09:19:32.977Z",
+      "path": "cascade",
+      "agent": "cascade_agent_2",
+      "attempt": "forced",
+      "accepted": true,
+      "reason_code": "accepted",
+      "condition": null,
+      "root_epoch": null,
+      "root_height": null,
+      "root_age_seconds": null
+    },
+    {
+      "utc": "2026-10-09T09:19:44.369Z",
+      "path": "cascade",
+      "agent": "cascade_agent_1",
+      "attempt": "forced",
+      "accepted": false,
+      "reason_code": "status_root_stale",
+      "condition": null,
+      "root_epoch": null,
+      "root_height": null,
+      "root_age_seconds": null
+    },
+    {
+      "utc": "2026-10-09T09:19:52.045Z",
+      "path": "cascade",
+      "agent": "cascade_agent_1",
+      "attempt": "forced_confirm",
+      "accepted": false,
+      "reason_code": "status_root_stale",
+      "condition": null,
+      "root_epoch": null,
+      "root_height": null,
+      "root_age_seconds": null
+    },
+    {
+      "utc": "2026-10-09T09:20:03.467Z",
+      "path": "cascade",
+      "agent": "cascade_agent_2",
+      "attempt": "forced",
+      "accepted": true,
+      "reason_code": "accepted",
+      "condition": null,
+      "root_epoch": null,
+      "root_height": null,
+      "root_age_seconds": null
+    },
+    {
+      "utc": "2026-10-09T09:20:19.369Z",
+      "path": "cascade",
+      "agent": "cascade_agent_2",
+      "attempt": "forced",
+      "accepted": false,
+      "reason_code": "status_root_stale",
+      "condition": null,
+      "root_epoch": null,
+      "root_height": null,
+      "root_age_seconds": null
+    },
+    {
+      "utc": "2026-10-09T09:20:25.867Z",
+      "path": "cascade",
+      "agent": "cascade_agent_2",
+      "attempt": "forced_confirm",
+      "accepted": false,
+      "reason_code": "status_root_stale",
+      "condition": null,
+      "root_epoch": null,
+      "root_height": null,
+      "root_age_seconds": null
+    }
+  ],
+  "files": {
+    "revocation-trace-testnet-20261009T091400Z.jsonl": "7bbed66c69625c7bccf0e0eeaa69b49c8d0d0f35802327fa12d0f00fb08b2e8c",
+    "revocation-trace-testnet-20261009T091400Z.md": "e67e7281d2541e9dd57f02f71d92d36e1ab73e56743142c92780f715bec87544"
+  }
+}
