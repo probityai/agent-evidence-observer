@@ -280,25 +280,35 @@ def read_proofable(directory: Path) -> dict[str, Any]:
     # boundary still fails closed when any required element is absent.
     pdr = next((r for r in trace if r["case_id"] == "post_dispatch_revoke"), None)
     sequence = (pdr or {}).get("dispatch_sequence") or []
-    by_event = {step.get("event"): step for step in sequence}
-    revocation = by_event.get("revocation") or {}
-    next_dispatch = by_event.get("next_dispatch") or {}
+    events = [step.get("event") for step in sequence]
+    expected_order = ["dispatch", "revocation", "original_effect", "next_dispatch"]
+    ordered = events == expected_order
+    # Validate the ordered list, not a map: a dict of the same four events would discard the only
+    # ordering evidence, so a reversed sequence would still pass. Read each step by its index.
+    dispatch = sequence[0] if len(sequence) > 0 else {}
+    revocation = sequence[1] if len(sequence) > 1 else {}
+    original_effect = sequence[2] if len(sequence) > 2 else {}
+    next_dispatch = sequence[3] if len(sequence) > 3 else {}
     boundary_observed = (
-        bool(sequence)
+        ordered
+        and dispatch.get("decision") == "ALLOW"              # the in-flight action was allowed
+        and bool(dispatch.get("at"))                         # dispatch carries its own time
         and bool(revocation.get("at"))                      # revocation event time
+        and bool(original_effect.get("at"))                 # effect observed before the refusal
         and next_dispatch.get("decision") == "DENY"         # required deny point reached
         and bool(next_dispatch.get("reason"))               # refusal carries its reason
-        and {"dispatch", "original_effect"} <= set(by_event)  # both anchors present
+        and bool(next_dispatch.get("at"))                   # refusal carries its own time
     )
     revocation_detail = (
-        "trace.jsonl -> post_dispatch_revoke.dispatch_sequence records dispatch (ALLOW), the "
-        "revocation event time with in-flight status, the earlier action's platform-observed "
+        "trace.jsonl -> post_dispatch_revoke.dispatch_sequence records, in order, dispatch (ALLOW), "
+        "the revocation event time with in-flight status, the earlier action's platform-observed "
         "effect, and the next dispatch refused (DENY) with reason; "
         "authority-effect-results.json -> cases[post_dispatch_revoke].temporal_revocation carries "
         "the same ordering, keeping the refusal separate from the already-committed effect"
         if boundary_observed else
-        "the stated deny point is the next dispatch after revocation; the published schema "
-        "provides no complete revocation event time or dispatch sequence, so that boundary is not observed"
+        "the stated deny point is the next dispatch after revocation; the published trace provides "
+        "no complete, correctly ordered revocation event time and dispatch sequence, so that "
+        "boundary is not observed"
     )
     checks.add("proofable-post-dispatch-deny-point-observed", boundary_observed, revocation_detail)
     receipts = [r["terminal_receipt"] for r in trace if r.get("terminal_receipt")]

@@ -219,7 +219,7 @@ class TestRefusalControls:
         path.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
         row = read_proofable(records / "proofable")
         assert result(row, "proofable-post-dispatch-deny-point-observed") == "fail"
-        assert "no complete revocation event time" in row["contract"]["temporalRevocation"]
+        assert "no complete, correctly ordered revocation event time" in row["contract"]["temporalRevocation"]
 
     @pytest.mark.parametrize("event", ["revocation", "next_dispatch", "original_effect"])
     def test_incomplete_dispatch_sequence_does_not_establish_the_boundary(self, records, event):
@@ -229,6 +229,17 @@ class TestRefusalControls:
             return rows
         edit_jsonl(records / "proofable" / "trace.jsonl", drop_event)
         assert result(read_proofable(records / "proofable"), "proofable-post-dispatch-deny-point-observed") == "fail"
+
+    def test_reversed_dispatch_sequence_does_not_establish_the_boundary(self, records):
+        """All four events present but out of order must fail: order is the boundary's evidence."""
+        def reverse_sequence(rows):
+            post = next(r for r in rows if r["case_id"] == "post_dispatch_revoke")
+            post["dispatch_sequence"] = list(reversed(post["dispatch_sequence"]))
+            return rows
+        edit_jsonl(records / "proofable" / "trace.jsonl", reverse_sequence)
+        row = read_proofable(records / "proofable")
+        assert result(row, "proofable-post-dispatch-deny-point-observed") == "fail"
+        assert "correctly ordered" in row["contract"]["temporalRevocation"]
 
     def test_revocation_without_a_time_does_not_establish_the_boundary(self, records):
         def strip_time(rows):
