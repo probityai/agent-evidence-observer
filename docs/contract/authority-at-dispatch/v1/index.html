@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Authority at dispatch, contract v1</title>
+<style>body{max-width:44rem;margin:2rem auto;padding:0 1rem;font:16px/1.5 system-ui,sans-serif}code{background:#f2f2f2;padding:0 .2rem}</style>
+</head>
+<body>
+<h1>Authority at dispatch, contract v1</h1>
+<p>This URI identifies version 1 of the authority-at-dispatch comparison record. A trace written against it carries:</p>
+<pre><code>"contractId": "https://probityai.github.io/agent-evidence-observer/contract/authority-at-dispatch/v1"</code></pre>
+<p>The record fields, their required meaning and the reference cases are defined in
+<a href="https://github.com/probityai/agent-evidence-observer/blob/main/interop/authority-unreachable-2026-10-03/CONTRACT.md">CONTRACT.md</a>.
+The reader in the same directory refuses a trace that omits this identifier or names another version.</p>
+<p>Fields this version adds to every trace: <code>contractId</code>, <code>evidenceAgeSeconds</code>,
+<code>freshnessLimitSeconds</code>, <code>delegationRoot</code> and <code>delegationHops</code>.</p>
+</body>
+</html>
