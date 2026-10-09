@@ -14,7 +14,6 @@ from packaging.requirements import Requirement
 from packaging.utils import canonicalize_name
 from packaging.version import Version
 
-
 LOCKS = (
     "pydantic-ai-native-2026-10-02/requirements.lock",
     "pydantic-ai-native-2026-10-02/requirements-reader.lock",
@@ -46,7 +45,7 @@ def main() -> None:
     requirements = [Requirement(value) for value in project["dependencies"]]
     for relative in LOCKS:
         path = root / "interop" / relative
-        selected = dict(re.findall(r"^([A-Za-z0-9_.-]+)==([^\s;]+)", path.read_text(), re.M))
+        selected = dict(re.findall(r"^([A-Za-z0-9_.-]+)==([^\s;]+)", path.read_text(), re.MULTILINE))
         selected = {canonicalize_name(name): Version(version) for name, version in selected.items()}
         for requirement in requirements:
             if requirement.url is not None:
