@@ -16,7 +16,8 @@ from probity_observer.authorization import ActionRequest, GrantPolicy, verify_gr
 from probity_observer.crypto import SigningKey, VerificationError, canonical, digest, strict_loads
 from probity_observer.ticket_service import DOMAIN
 
-from authority_profile import AUTHORITY_DOMAIN, MAX_AGE_SECONDS, PROFILE, RECORD_DOMAIN, check_authority, checked_record, content_bytes, reference_time, sign_record
+from authority_profile import (AUTHORITY_DOMAIN, CONTRACT_ID, MAX_AGE_SECONDS, PROFILE, RECORD_DOMAIN, check_authority,
+                               check_delegation, checked_record, content_bytes, reference_time, sign_record)
 from producer import START, _case, produce
 from reader import read_case, read_run
 from source_discriminator import inspect_fingerprint
@@ -129,6 +130,38 @@ class TestAuthorityProfile:
             assert "authority profile refused: " + reason in caplog.messages
 
 
+        @pytest.mark.parametrize("hops,reason", [
+            ([], "delegation chain is broken"),
+            ([{"delegator": "issuer", "delegate": "orchestrator", "actions": ["ticket-update"], "targets": ["/t/1"]},
+              {"delegator": "someone-else", "delegate": "approver", "actions": ["ticket-update"], "targets": ["/t/1"]}],
+             "delegation chain is broken"),
+            ([{"delegator": "issuer", "delegate": "orchestrator", "actions": ["ticket-update"], "targets": ["/t/1"]},
+              {"delegator": "orchestrator", "delegate": "approver", "actions": ["ticket-update", "ticket-delete"], "targets": ["/t/1"]}],
+             "delegation hop widens scope"),
+            ([{"delegator": "issuer", "delegate": "orchestrator", "actions": ["ticket-update"], "targets": ["/t/1"]},
+              {"delegator": "orchestrator", "delegate": "approver", "actions": ["ticket-update"], "targets": ["/t/1", "/t/2"]}],
+             "delegation hop widens scope"),
+            ([{"delegator": "issuer", "delegate": "approver", "actions": ["ticket-read"], "targets": ["/t/1"]}],
+             "delegated scope excludes action"),
+            ([{"delegator": "issuer", "delegate": "other", "actions": ["ticket-update"], "targets": ["/t/1"]}],
+             "delegation chain is broken"),
+            ([{"delegator": "issuer", "delegate": "approver", "actions": "ticket-update", "targets": ["/t/1"]}],
+             "delegation hop fields differ"),
+        ])
+        def test_delegation_amplification_and_breaks_are_refused(self, hops, reason, caplog):
+            with caplog.at_level(logging.WARNING), pytest.raises(VerificationError) as error:
+                check_delegation(hops, "issuer", "approver", "ticket-update", "/t/1")
+            assert str(error.value) == reason
+            assert "authority profile refused: " + reason in caplog.messages
+
+    class TestDelegationPassing:
+        def test_narrowing_chain_admits_exact_action(self):
+            hops = [{"delegator": "issuer", "delegate": "orchestrator", "actions": ["ticket-update", "ticket-read"],
+                     "targets": ["/t/1", "/t/2"]},
+                    {"delegator": "orchestrator", "delegate": "approver", "actions": ["ticket-update"], "targets": ["/t/1"]}]
+            assert check_delegation(hops, "issuer", "approver", "ticket-update", "/t/1") == 2
+
+
 class TestReader:
     class TestPassingCases:
         @pytest.mark.parametrize("case_id,revision,terminal,publish", [
@@ -150,6 +183,7 @@ class TestReader:
             ("same-request-retry", 1, "completed", True),
             ("effect-then-authority-revoked", 1, "failed", False),
             ("incomplete-proof-after-effect", 1, "completed", False),
+            ("delegation-hop-amplified", 0, "failed", False),
         ])
         def test_effect_task_and_publication_are_separate(self, produced, case_id, revision, terminal, publish):
             root, pins = produced
@@ -187,12 +221,56 @@ class TestReader:
         def test_run_reports_the_full_selected_case_set(self, produced):
             root, pins = produced
             result = read_run(root, pins)
-            assert result["caseCount"] == 18
+            assert result["caseCount"] == 19
             assert sum(row["effectObserved"] for row in result["results"]) == 6
             assert sum(row["publicationReady"] for row in result["results"]) == 3
             assert result["independentCustody"] is False
+            assert result["contractId"] == CONTRACT_ID
+
+        def test_every_trace_writes_the_contract_id_and_evidence_age(self, produced):
+            root, _ = produced
+            for case in sorted(p for p in root.iterdir() if p.is_dir()):
+                payload = json.loads((case / "record.json").read_text())["payload"]
+                assert payload["contractId"] == CONTRACT_ID
+                observed = checked_record(payload["authorityEvidence"], json.loads(
+                    (root / "consumer-pins.json").read_text())["authorityKey"], AUTHORITY_DOMAIN)["observedAt"]
+                assert payload["evidenceAgeSeconds"] == payload["decisionAt"] - observed
+
+        def test_amplified_hop_is_denied_before_native_mutation(self, produced):
+            root, pins = produced
+            payload = json.loads((root / "delegation-hop-amplified" / "record.json").read_text())["payload"]
+            assert payload["attempts"][0]["reason"] == "delegation hop widens scope"
+            result = read_case(root / "delegation-hop-amplified", pins)
+            assert result["delegationStatus"] == "not-admitted"
+            assert result["effectObserved"] is False
 
     class TestFailingCases:
+        @pytest.mark.parametrize("mutation,reason", [
+            ("missing", "trace contract id is missing"),
+            ("other-version", "trace contract id differs"),
+            ("age", "evidence age differs from decision time"),
+            ("age-bool", "evidence age differs from decision time"),
+        ])
+        def test_trace_without_contract_or_with_wrong_age_is_rejected(self, signable_case, mutation, reason, caplog):
+            root, keys, pins = signable_case
+            _case(root, "approved-human-reachable", keys)
+            case = root / "approved-human-reachable"
+            assert read_case(case, pins)["publicationReady"] is True
+            payload = json.loads((case / "record.json").read_text())["payload"]
+            if mutation == "missing":
+                payload.pop("contractId")
+            if mutation == "other-version":
+                payload["contractId"] = CONTRACT_ID.replace("/v1", "/v0")
+            if mutation == "age":
+                payload["evidenceAgeSeconds"] += 1
+            if mutation == "age-bool":
+                payload["evidenceAgeSeconds"] = False
+            (case / "record.json").write_bytes(canonical(sign_record(payload, keys["record"], RECORD_DOMAIN)))
+            with caplog.at_level(logging.WARNING), pytest.raises(VerificationError) as error:
+                read_case(case, pins)
+            assert str(error.value) == reason
+            assert "authority profile refused: " + reason in caplog.messages
+
         @pytest.mark.parametrize("mutation", ["content", "head", "time", "revoked-prefix"])
         def test_signed_completed_return_must_match_native_prefix(self, signable_case, mutation, caplog):
             root, keys, pins = signable_case

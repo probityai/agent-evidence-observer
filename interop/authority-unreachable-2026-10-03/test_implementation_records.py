@@ -88,6 +88,9 @@ class TestPinnedRecords:
         row = read_alakris(RECORDS / "alakris", reference_report, None)
         assert row["failed"] == []
         assert result(row, "alakris-rerun-reproduced") == "pass"
+        rerun = next(c for c in row["checks"] if c["id"] == "alakris-rerun-reproduced")
+        assert rerun["detail"].startswith("18 of 18 cases match the 2026-10-04 operator rerun")
+        assert rerun["detail"].endswith("added after that rerun, not rerun by the implementer: delegation-hop-amplified")
         assert result(row, "alakris-discriminator-reproduced") == "not-performed"
         assert row["contract"]["originalTests"] == {"tests": 37, "failed": 2, "passed": 35}
         assert row["contract"]["lostResponse"]["referenceShape"] == {

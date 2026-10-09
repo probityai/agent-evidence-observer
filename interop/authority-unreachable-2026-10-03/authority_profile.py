@@ -19,6 +19,10 @@ from probity_observer.ticket_service import TicketStore
 
 LOGGER = logging.getLogger(__name__)
 PROFILE = "authority-unreachable-reference-v0"
+# Versioned identifier of the comparison record in CONTRACT.md. Every trace
+# writes it; a reader refuses a trace without it or with another version.
+CONTRACT_ID = "https://probityai.github.io/agent-evidence-observer/contract/authority-at-dispatch/v1"
+HOP_FIELDS = {"delegator", "delegate", "actions", "targets"}
 AUTHORITY_DOMAIN = PROFILE + "-authority"
 RECORD_DOMAIN = PROFILE + "-record"
 MAX_AGE_SECONDS = 180
@@ -30,6 +34,7 @@ CASE_IDS = (
     "catalogue-mutated", "destination-mutated", "revoked-between-intent-and-effect",
     "crash-after-intent", "crash-inside-effect-transaction", "effect-committed-response-lost",
     "same-request-retry", "effect-then-authority-revoked", "incomplete-proof-after-effect",
+    "delegation-hop-amplified",
 )
 
 
@@ -123,6 +128,51 @@ def check_authority(record: Any, key: str, principal: str, at: int) -> dict[str,
     return {**payload, "ageSeconds": at - stamp}
 
 
+def check_delegation(hops: Any, root: str, principal: str, action: str, target: str) -> int:
+    """Refuse a delegation chain that breaks, widens, or excludes the action.
+
+    Parameters
+    ----------
+    hops : Any
+        Ordered hops from the root grantor to the dispatching principal. Each
+        hop names its delegator, delegate, and the exact action and target
+        sets it passes on. Sets are compared exactly; no wildcard expands.
+    root, principal : str
+        Consumer-selected root grantor and the principal named by the request.
+    action, target : str
+        Exact tool and target of the attempted dispatch.
+
+    Returns
+    -------
+    int
+        Number of hops checked.
+
+    Raises
+    ------
+    VerificationError
+        If a hop is malformed, the chain does not run from ``root`` to
+        ``principal``, a later hop holds any action or target its delegator did
+        not hold (amplification), or the final scope excludes the dispatch.
+    """
+    if not isinstance(hops, list) or not hops:
+        refuse("delegation chain is broken")
+    holder, actions, targets = root, None, None
+    for hop in hops:
+        if (not isinstance(hop, dict) or set(hop) != HOP_FIELDS
+                or not all(isinstance(hop[k], list) and all(isinstance(v, str) for v in hop[k]) for k in ("actions", "targets"))):
+            refuse("delegation hop fields differ")
+        if hop["delegator"] != holder:
+            refuse("delegation chain is broken")
+        if actions is not None and not (set(hop["actions"]) <= actions and set(hop["targets"]) <= targets):
+            refuse("delegation hop widens scope")
+        holder, actions, targets = hop["delegate"], set(hop["actions"]), set(hop["targets"])
+    if holder != principal:
+        refuse("delegation chain is broken")
+    if action not in actions or target not in targets:
+        refuse("delegated scope excludes action")
+    return len(hops)
+
+
 def content_bytes(text: str, media: bytes, destination: str, catalogue: bytes) -> bytes:
     """Bind the complete local publication descriptor into protected bytes.
 
@@ -149,6 +199,7 @@ def content_bytes(text: str, media: bytes, destination: str, catalogue: bytes) -
 def dispatch(
     store: TicketStore, request: ActionRequest, grant: dict[str, Any] | None,
     content: bytes, authority: dict[str, Any], authority_key: str, *, at: int, request_deadline: int,
+    hops: list[dict[str, Any]], root: str,
 ) -> dict[str, Any]:
     """Check status and exact approved bytes, then enter the native gate.
 
@@ -167,13 +218,15 @@ def dispatch(
     Raises
     ------
     VerificationError
-        For missing delegated authority, invalid source evidence, mismatched
+        For missing delegated authority, an amplified or broken delegation
+        chain, invalid source evidence, mismatched
         descriptor bytes, or any native admission refusal.
     """
     if grant is None:
         refuse("no pre-authorized fallback")
     if type(request_deadline) is not int or at >= request_deadline:
         refuse("original decision window has closed")
+    check_delegation(hops, root, request.principal_id, request.tool_id, request.target_path)
     check_authority(authority, authority_key, request.principal_id, at)
     if hashlib.sha256(content).hexdigest() != request.content_sha256:
         refuse("approved action bytes changed")

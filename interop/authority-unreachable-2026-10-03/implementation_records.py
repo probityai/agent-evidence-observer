@@ -333,11 +333,15 @@ def read_alakris(directory: Path, reference_report: Path | None, discriminator_r
     if reference_report is None:
         checks.skip("alakris-rerun-reproduced", "no reader report from this run was supplied")
     else:
-        ours = _projection(json.loads(reference_report.read_bytes()))
-        differing = sorted(k for k in set(ours) | set(_projection(theirs)) if ours.get(k) != _projection(theirs).get(k))
+        ours, rerun = _projection(json.loads(reference_report.read_bytes())), _projection(theirs)
+        # Compare every case their rerun covered; a case added to the profile
+        # after the rerun is reported as not rerun, never as agreement.
+        differing = sorted(k for k in rerun if ours.get(k) != rerun[k])
+        later = sorted(set(ours) - set(rerun))
         checks.add("alakris-rerun-reproduced", not differing,
-                   f"{len(ours) - len(differing)} of {len(ours)} cases match the 2026-10-04 operator rerun"
-                   + (f"; differing: {', '.join(differing)}" if differing else ""))
+                   f"{len(rerun) - len(differing)} of {len(rerun)} cases match the 2026-10-04 operator rerun"
+                   + (f"; differing: {', '.join(differing)}" if differing else "")
+                   + (f"; added after that rerun, not rerun by the implementer: {', '.join(later)}" if later else ""))
     theirs_discriminator = json.loads((directory / "source-discriminator-report.json").read_bytes())
     if discriminator_report is None:
         checks.skip("alakris-discriminator-reproduced", "no discriminator report from this run was supplied")

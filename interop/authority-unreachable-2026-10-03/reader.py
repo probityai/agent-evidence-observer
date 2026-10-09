@@ -13,7 +13,8 @@ from probity_observer.authorization import ActionRequest, GrantPolicy, verify_gr
 from probity_observer.crypto import VerificationError, digest, strict_loads
 from probity_observer.ticket_service import DOMAIN, STATE_FIELDS, _checked as checked_native_receipt, _state_schema, verify_ticket_result
 
-from authority_profile import CASE_IDS, PROFILE, RECORD_DOMAIN, check_authority, checked_record, reference_time, refuse
+from authority_profile import (AUTHORITY_DOMAIN, CASE_IDS, CONTRACT_ID, PROFILE, RECORD_DOMAIN, check_authority, check_delegation,
+                               checked_record, reference_time, refuse)
 
 
 def _native_envelope(raw: bytes, key: str) -> dict[str, Any]:
@@ -137,6 +138,17 @@ def _authorization(payload: dict[str, Any], pins: dict[str, str]) -> tuple[str, 
     return "valid-for-approved-request-at-reference-time", None
 
 
+def _delegation(payload: dict[str, Any]) -> tuple[str, str | None]:
+    """Recompute the delegation chain; an amplified hop is never admitted."""
+    request = ActionRequest(**payload["request"])
+    try:
+        check_delegation(payload["delegationHops"], payload["delegationRoot"], request.principal_id,
+                         request.tool_id, request.target_path)
+    except VerificationError as error:
+        return "not-admitted", str(error)
+    return "narrowing-chain-covers-action", None
+
+
 def _completion(payload: dict[str, Any], pins: dict[str, str], native_state: dict[str, Any]) -> tuple[str, str | None]:
     """Require native completion proof while leaving observed effects intact."""
     if payload["readback"]["revision"] == 0:
@@ -206,9 +218,28 @@ def _attempts(payload: dict[str, Any]) -> None:
         refuse("task terminal contradicts retained dispatch return")
 
 
+def _contract(payload: dict[str, Any], pins: dict[str, str]) -> None:
+    """Require the versioned contract id and a consistent evidence age.
+
+    The id is checked before any other field, so a trace written against a
+    different or unnamed contract is never interpreted under this one.
+    ``evidenceAgeSeconds`` must equal decision time minus the observation
+    time inside the signed authority evidence.
+    """
+    if "contractId" not in payload:
+        refuse("trace contract id is missing")
+    if payload["contractId"] != CONTRACT_ID:
+        refuse("trace contract id differs")
+    observed = checked_record(payload.get("authorityEvidence"), pins["authorityKey"], AUTHORITY_DOMAIN)
+    age = payload.get("evidenceAgeSeconds")
+    if type(age) is not int or type(observed.get("observedAt")) is not int or type(payload.get("decisionAt")) is not int \
+            or age != payload["decisionAt"] - observed["observedAt"]:
+        refuse("evidence age differs from decision time")
+
+
 def _record_schema(payload: dict[str, Any]) -> None:
     """Check the finite profile's exact fields before interpreting its claims."""
-    fields = {"profile", "caseId", "request", "grantPolicy", "grant", "authorityEvidence", "decisionAt",
+    fields = {"contractId", "evidenceAgeSeconds", "delegationRoot", "delegationHops", "profile", "caseId", "request", "grantPolicy", "grant", "authorityEvidence", "decisionAt",
               "requestDeadline", "humanReachable", "priorFallback", "attempts", "faultInjection",
               "dispatchContentSha256", "taskTerminal", "readback", "coverage", "custody", "witnessScope"}
     if set(payload) != fields:
@@ -251,6 +282,7 @@ def read_case(path: Path, pins: dict[str, str]) -> dict[str, Any]:
     """
     candidate = json.loads((path / "record.json").read_text(encoding="ascii"))
     payload = checked_record(candidate, pins["recordKey"], RECORD_DOMAIN)
+    _contract(payload, pins)
     _record_schema(payload)
     if pins["profile"] != PROFILE or payload["profile"] != PROFILE or payload["caseId"] != path.name:
         refuse("profile or case identity differs")
@@ -264,14 +296,18 @@ def read_case(path: Path, pins: dict[str, str]) -> dict[str, Any]:
         refuse("record custody or scope exceeds reference profile")
     native, native_state, prefixes = read_native(path / "native.sqlite", payload, pins)
     authority, authority_reason = _authorization(payload, pins)
+    delegation, delegation_reason = _delegation(payload)
     proof, proof_reason = _completion(payload, pins, native_state)
     for attempt in payload["attempts"]:
         if attempt["returnStatus"] == "completed":
             _completed_attempt(attempt, payload, pins["serviceKey"], native_state, prefixes)
     publication = (native["effectObserved"] and payload["taskTerminal"] == "completed"
                    and proof == "verified-bounded-native-completion" and authority == "valid-for-approved-request-at-reference-time"
+                   and delegation == "narrowing-chain-covers-action"
                    and not native["nativeRevoked"])
     return {"caseId": payload["caseId"], **native, "authorityStatus": authority, "authorityReason": authority_reason,
+            "delegationStatus": delegation, "delegationReason": delegation_reason,
+            "evidenceAgeSeconds": payload["evidenceAgeSeconds"], "contractId": payload["contractId"],
             "taskTerminal": payload["taskTerminal"], "nativeCompletionProof": proof, "proofReason": proof_reason,
             "publicationReady": publication, "attemptCount": len(payload["attempts"]),
             "dispatchDecisions": [a["decision"] for a in payload["attempts"]], "witnessScope": "PEER",
@@ -285,7 +321,7 @@ def read_run(root: Path, pins: dict[str, str]) -> dict[str, Any]:
     if declared != list(CASE_IDS) or producer["caseCount"] != len(CASE_IDS):
         refuse("declared case coverage differs from selected profile")
     rows = [read_case(root / case_id, pins) for case_id in CASE_IDS]
-    return {"profile": PROFILE, "caseCount": len(rows), "results": rows,
+    return {"contractId": CONTRACT_ID, "profile": PROFILE, "caseCount": len(rows), "results": rows,
             "independentCustody": False, "outsideImplementationRerun": False}
 
 

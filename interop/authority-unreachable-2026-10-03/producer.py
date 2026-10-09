@@ -14,10 +14,21 @@ from probity_observer.authorization import ActionRequest, GrantPolicy, issue_gra
 from probity_observer.crypto import SigningKey, VerificationError, canonical
 from probity_observer.ticket_service import TicketStore
 
-from authority_profile import AUTHORITY_DOMAIN, CASE_IDS, PROFILE, RECORD_DOMAIN, content_bytes, dispatch, reference_time, sign_record
+from authority_profile import AUTHORITY_DOMAIN, CASE_IDS, CONTRACT_ID, PROFILE, RECORD_DOMAIN, content_bytes, dispatch, reference_time, sign_record
 
 NATIVE_REVISION = "9db0558cf8cc8112ea31b601fa7c7d3c2f38c907"
 START = 1791028800
+ROOT_GRANTOR = "grantor-1"
+
+
+def delegation_hops(case_id: str) -> list[dict[str, Any]]:
+    """Return the two-hop chain; one case widens scope at the second hop."""
+    target = "/work/tickets/publication-1"
+    first = {"delegator": ROOT_GRANTOR, "delegate": "orchestrator-1", "actions": ["ticket-update"], "targets": [target]}
+    second = {"delegator": "orchestrator-1", "delegate": "approver-1", "actions": ["ticket-update"], "targets": [target]}
+    if case_id == "delegation-hop-amplified":
+        second = {**second, "actions": ["ticket-update", "ticket-delete"], "targets": [target, "/work/tickets/publication-2"]}
+    return [first, second]
 
 
 def write_json(path: Path, value: Any) -> None:
@@ -51,10 +62,12 @@ def _fault_hook(case_id: str, store: TicketStore, fault_log: list[str]):
 
 
 def _attempt(store: TicketStore, request: ActionRequest, grant: dict[str, Any] | None,
-             authority: dict[str, Any], authority_key: str, content: bytes, at: int) -> dict[str, Any]:
+             authority: dict[str, Any], authority_key: str, content: bytes, at: int,
+             hops: list[dict[str, Any]]) -> dict[str, Any]:
     """Retain a native return or failure without inferring effect absence."""
     try:
-        receipt = dispatch(store, request, grant, content, authority, authority_key, at=at, request_deadline=START + 120)
+        receipt = dispatch(store, request, grant, content, authority, authority_key, at=at,
+                           request_deadline=START + 120, hops=hops, root=ROOT_GRANTOR)
         return {"decision": "allow", "returnStatus": "completed", "reason": None, "receipt": receipt}
     except VerificationError as error:
         return {"decision": "deny", "returnStatus": "failed", "reason": str(error), "receipt": None}
@@ -84,19 +97,21 @@ def _case(root: Path, case_id: str, keys: dict[str, SigningKey]) -> dict[str, An
     faults: list[str] = []
     store.crash_hook = _fault_hook(case_id, store, faults)
     delegated = None if case_id == "unreachable-no-fallback" else grant
-    attempts = [_attempt(store, request, delegated, authority, keys["authority"].public_hex, _action_bytes(case_id), at)]
+    hops = delegation_hops(case_id)
+    attempts = [_attempt(store, request, delegated, authority, keys["authority"].public_hex, _action_bytes(case_id), at, hops)]
     store.crash_hook = None
     if case_id == "same-request-retry":
-        attempts.append(_attempt(store, request, grant, authority, keys["authority"].public_hex, approved, at))
+        attempts.append(_attempt(store, request, grant, authority, keys["authority"].public_hex, approved, at, hops))
     if case_id in {"crash-after-intent", "crash-inside-effect-transaction", "revoked-between-intent-and-effect"}:
         store.recover()
-        attempts.append(_attempt(store, request, grant, authority, keys["authority"].public_hex, approved, at))
+        attempts.append(_attempt(store, request, grant, authority, keys["authority"].public_hex, approved, at, hops))
     if case_id == "effect-then-authority-revoked":
         store.revoke()
-        attempts.append(_attempt(store, request, grant, authority, keys["authority"].public_hex, approved, at))
+        attempts.append(_attempt(store, request, grant, authority, keys["authority"].public_hex, approved, at, hops))
     readback = store.readback()
-    payload = {"profile": PROFILE, "caseId": case_id, "request": asdict(request), "grantPolicy": asdict(policy),
+    payload = {"contractId": CONTRACT_ID, "profile": PROFILE, "caseId": case_id, "request": asdict(request), "grantPolicy": asdict(policy),
                "grant": delegated, "authorityEvidence": authority, "decisionAt": at,
+               "evidenceAgeSeconds": age, "delegationRoot": ROOT_GRANTOR, "delegationHops": hops,
                "requestDeadline": START + 120,
                "humanReachable": case_id == "approved-human-reachable", "priorFallback": delegated is not None,
                "attempts": attempts, "faultInjection": faults,
