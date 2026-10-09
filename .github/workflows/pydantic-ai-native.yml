@@ -75,7 +75,7 @@ jobs:
           python -c "import json; from pathlib import Path; r=Path('fresh-run'); a=json.loads((r/'producer-stdout.json').read_bytes()); b=json.loads((r/'fresh-consumer-report.json').read_bytes()); c=json.loads((r/'packet/report.json').read_bytes()); assert a==b==c and b['status']=='verified' and b['plannedAttempts']==7"
       - name: Retain original histories, sources, joins and consumer report
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: pydantic-ai-native-ticket
           path: |

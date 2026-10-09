@@ -31,7 +31,7 @@ jobs:
           result = json.loads(Path('a2a-native-run/report.json').read_text())
           subprocess.run([sys.executable, 'interop/a2a-native-2026-10-02/a2a_verify.py', 'a2a-native-run', '--native-pins', 'a2a-native-run/selected-native-pins.json', '--plan-sha256', result['plan_sha256'], '--history-sha256', result['history_sha256']], check=True)
           PY
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: native-a2a-sdk-reference

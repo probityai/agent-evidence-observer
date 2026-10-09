@@ -82,7 +82,7 @@ jobs:
           python -I -B "$profile/verify_consumer.py" --reader "$RUNNER_TEMP/adk-nested-reader/bin/python" --source "$GITHUB_WORKSPACE/selected-verify" --wheel "$RUNNER_TEMP/adk-verify-wheels/probity_verify-0.1.0-py3-none-any.whl" --packet "$profile/actual-run/packet" --policy "$profile/actual-run/host-policy.json" --policy-sha256 "$policy_sha" --output "$profile/actual-run/verify-consumer"
       - name: Retain installed source, raw callbacks, effects and original child receipts
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: adk-nested-compaction-native-evidence
           path: |

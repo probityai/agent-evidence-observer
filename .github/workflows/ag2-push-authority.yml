@@ -76,7 +76,7 @@ jobs:
           AG2_PUSH_PACKET="$profile/actual-run/packet" "$RUNNER_TEMP/ag2-push-reader/bin/python" -I -B "$profile/test_controls.py" -v 2>&1 | tee "$profile/actual-run/reader-controls.log"
       - name: Retain source, failed child receipts, native callbacks and signed effects
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: ag2-push-authority-native-evidence
           path: |
