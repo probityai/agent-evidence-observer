@@ -17,7 +17,13 @@ Original contracts, source pins and packet ZIPs remain intact.
 Use a reviewed immutable checkout and the same hash-selected reader/build
 requirements as the original package:
 
+Start in checkout `55c3921cf299407176f2121083c7f39aff12165f`. All35 selected
+source and packaging files match there. The recorded `observer_base_commit`
+predates three packaging additions; it is provenance, not the complete build
+selection. This frozen replay does not qualify the current Observer package.
+
 ```sh
+set -eu
 python -m venv .durable-reader-env
 .durable-reader-env/bin/python -m pip install --require-hashes --only-binary=:all: -r interop/framework-consumer-2026-10-02/FRAMEWORK-CONSUMER-REQUIREMENTS-2026-10-02.lock
 PATH="$PWD/.durable-reader-env/bin:$PATH" bash interop/framework-consumer-2026-10-02/FRAMEWORK-DURABLE-CONSUMER-BUILD-2026-10-02.sh "$PWD" "$PWD/durable-reader-wheels"

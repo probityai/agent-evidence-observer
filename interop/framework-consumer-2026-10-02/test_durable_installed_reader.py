@@ -144,10 +144,11 @@ def test_source_or_metadata_upgrade_requires_reselection(name: str, tmp_path: Pa
     """Refuse replaced source/metadata bytes before building any output wheel."""
     import os
     import shutil
-    root = ROOT.parents[1]
+    root = Path(os.environ["FRAMEWORK_DURABLE_SELECTED_SOURCE"]).resolve()
     selection = json.loads((ROOT / "FRAMEWORK-DURABLE-CONSUMER-CONTRACT-2026-10-02.json").read_bytes())
     clone = tmp_path / "changed-source"
-    for path in selection["source_files"]:
+    for path, pin in selection["source_files"].items():
+        assert hashlib.sha256((root / path).read_bytes()).hexdigest() == pin["sha256"]
         target = clone / path
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(root / path, target)
