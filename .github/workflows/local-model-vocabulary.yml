@@ -21,7 +21,7 @@ jobs:
       - run: python -m pytest interop/local-model-vocabulary-2026-10-02/tests -q
       - name: Build, install and repeat the offline consumer controls
         run: python interop/local-model-vocabulary-2026-10-02/verify_installation.py . installed-reader-controls
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: installed-vocabulary-reader-controls-${{ github.sha }}
@@ -71,14 +71,14 @@ jobs:
           report = json.loads(Path("model-vocabulary-artifacts/run/report.json").read_bytes())
           print(json.dumps({k: v for k, v in report.items() if k != "attempts"}, indent=2))
           PYTHON
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: model-vocabulary-cpu-preparation-${{ github.sha }}
           path: model-vocabulary-artifacts
           if-no-files-found: error
           retention-days: 90
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: model-vocabulary-cpu-native-packet-${{ github.sha }}
@@ -114,7 +114,7 @@ jobs:
       - name: Recompute the completed study and preserve all eight strict quality holds
         run: |
           python -I interop/local-model-vocabulary-2026-10-02/consume_native.py retained-vocabulary-reader-wheel/probity_policy_vocabulary_reader-0.1.0-py3-none-any.whl retained-vocabulary-native-packet interop/local-model-vocabulary-2026-10-02/retained/selected-pins-37094901561.json retained-vocabulary-consumer --expected-report interop/local-model-vocabulary-2026-10-02/retained/report-37094901561.json
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: retained-vocabulary-installed-native-consumer-${{ github.sha }}

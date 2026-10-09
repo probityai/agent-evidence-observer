@@ -42,7 +42,7 @@ jobs:
           test -s five-tier-v0-run/report.json
           cp five-tier-v0-run/consumer-pins.json "$RUNNER_TEMP/five-tier-v0-selected-pins.json"
           python interop/five-tier-v0-2026-10-02/run.py five-tier-v0-run --verify --pins-file "$RUNNER_TEMP/five-tier-v0-selected-pins.json" > five-tier-v0-offline.json
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
         with:
           name: finite-five-tier-native-integration

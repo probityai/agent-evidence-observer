@@ -63,7 +63,7 @@ jobs:
           python host_gate.py fresh-run --pins-file "$RUNNER_TEMP/target-selected-pins.json" --policy-file "$RUNNER_TEMP/target-host-policy.json" --policy-sha256 "$(sha256sum "$RUNNER_TEMP/target-host-policy.json" | cut -d' ' -f1)" --reader "$RUNNER_TEMP/target-reader/bin/probity-read-target-recovery" --output host-receipts > host-decision.json
       - name: Retain complete public packet and separately installed reader receipts
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
           name: target-recovery-${{ github.sha }}
           path: |

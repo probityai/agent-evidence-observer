@@ -30,7 +30,7 @@ jobs:
       - run: python -m ruff check --select C901 --config 'lint.mccabe.max-complexity=5' interop/local-model-tool-arguments-2026-10-03/*.py
       - name: Really install and replay disclosed synthetic consumer controls
         run: python -I -B interop/local-model-tool-arguments-2026-10-03/verify_installation.py . installed-tool-argument-controls
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
         with:
           name: tool-argument-installed-offline-controls-${{ github.sha }}
@@ -86,7 +86,7 @@ jobs:
           assert report['population']=={'planned':128,'started':128,'scored':128,'error':0,'unsupported':0,'incomplete':0,'unknown-start':0}
           assert len(report['quality'])==8 and all(row['fullyCorrectPairs']==row['correctAbstentions']==0 for row in report['quality'])
           PYTHON
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
         with:
           name: tool-argument-installed-retained-native-${{ github.sha }}
@@ -128,7 +128,7 @@ jobs:
       - name: Install and verify the actual packet separately (quality holds remain explicit)
         run: |
           python -I -B interop/local-model-tool-arguments-2026-10-03/consume_actual.py . tool-argument-preparation/run tool-argument-preparation/run/consumer-pins.json actual-tool-argument-consumer --reader-contract interop/local-model-tool-arguments-2026-10-03/reader-source-contract.json --reader-contract-sha256 1cf2a5f3527f72db90ad0881c5dd360bb0775f005cd4cc8971e287015fe400d4
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
         with:
           name: tool-argument-cpu-preparation-${{ github.sha }}
@@ -138,7 +138,7 @@ jobs:
             actual-tool-argument-consumer
           if-no-files-found: warn
           retention-days: 90
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         if: always()
         with:
           name: tool-argument-cpu-native-packet-${{ github.sha }}
