@@ -130,6 +130,7 @@ def verify(baseline: Path, packet: Path, output: Path, dependencies: Path) -> di
             output, "reader-dependencies")
     command([str(python), "-I", "-m", "pip", "--isolated", "install", "--no-deps",
              "--no-index", str(observer), str(original)], output, "baseline-install")
+    command([str(python), "-I", "-m", "pip", "--isolated", "check"], output, "baseline-pip-check")
     invocation = [str(python), "-I", str(reader), str(packet), "--pins-file", str(pins)]
     before = command(invocation, output, "baseline-reader")
     baseline_policy = output / "baseline-policy.json"
@@ -138,6 +139,7 @@ def verify(baseline: Path, packet: Path, output: Path, dependencies: Path) -> di
                          reader, output / "baseline-gate")
     command([str(python), "-I", "-m", "pip", "--isolated", "install", "--no-deps",
              "--no-index", "--upgrade", str(candidate)], output, "candidate-upgrade")
+    command([str(python), "-I", "-m", "pip", "--isolated", "check"], output, "candidate-pip-check")
     after = command(invocation, output, "candidate-reader")
     if before != after:
         raise ValueError("upgrade-changed-original-reader-stdout")

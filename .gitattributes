@@ -1,0 +1,2 @@
+# Preserve the hash-selected format-patch bytes, including context/mail separators.
+interop/adk-current-consumer-2026-10-03/upstream-tox-corrections/two-commits.mbox -whitespace

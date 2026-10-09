@@ -133,3 +133,18 @@ separately retained signed prefix. Missing stores never reset history. The fixed
 different-UID run tests private reads, peer checks, duplicate effects and real
 process failures under one administrator. It establishes no independent human
 operator, customer workload or independent custody.
+
+## Verify complete native source before starting children
+
+The CrewAI bootstrap's `launch` (complexity 17) checks selected Observer
+metadata, all runtime Python files, dependency locks and the complete native
+source inventory before it runs native cases.
+It then coordinates the producer, SDK-free reader and repeated consumer.
+The branches are intrinsic source traversal and process orchestration, with
+distinct refusal reasons at each selected boundary.
+
+Its `child` helper (complexity 16) retains actual exit, timeout, stdout and
+stderr before reporting a failure. Its nested diagnostic traversal preserves
+the native publication records that explain a failed reader. This is process
+fault isolation. The finite native gate and hostile reader controls exercise
+these boundaries; the reported complexity remains visible.

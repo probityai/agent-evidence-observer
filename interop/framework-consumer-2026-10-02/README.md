@@ -12,6 +12,7 @@ git fetch origin 5b5b6328bf70fef0fa17e86e62c6163c5943b13f
 git worktree add --detach selected-reader-source 5b5b6328bf70fef0fa17e86e62c6163c5943b13f
 PATH="$PWD/.reader-env/bin:$PATH" bash interop/framework-consumer-2026-10-02/FRAMEWORK-CONSUMER-BUILD-2026-10-02.sh "$PWD/selected-reader-source" "$PWD/reader-wheels"
 .reader-env/bin/python -m pip install --no-deps reader-wheels/*.whl
+.reader-env/bin/python -m pip check
 ```
 
 `probity-langgraph-read PACKET --pins-file POLICY` reconstructs six retained

@@ -82,6 +82,7 @@ and exact Observer source. From this profile directory:
 ```bash
 python -m pip install --require-hashes --only-binary=:all: -r requirements.lock
 python -m pip install --no-deps -e ../..
+python -m pip check
 python -m ruff check recovery_*.py probity_pydantic_recovery tests
 python -m ruff check --select C901 --config 'lint.mccabe.max-complexity=5' recovery_*.py probity_pydantic_recovery tests
 timeout --signal=TERM --kill-after=5s 180s python -m pytest -q tests

@@ -53,9 +53,11 @@ jobs:
           "$RUNNER_TEMP/adk-responses-producer/bin/python" -m pip wheel --no-deps --no-build-isolation "$GITHUB_WORKSPACE/selected-observer" "$profile" --wheel-dir "$RUNNER_TEMP/adk-responses-wheels"
           "$RUNNER_TEMP/adk-responses-producer/bin/python" -m pip install --no-compile --no-deps "$RUNNER_TEMP/adk-responses-wheels/agent_evidence_observer-0.0.1-py3-none-any.whl" "$RUNNER_TEMP/adk-responses-wheels/probity_adk_user_responses-0.0.1-py3-none-any.whl"
           "$RUNNER_TEMP/adk-responses-producer/bin/python" -m pip install --no-compile --no-deps --no-build-isolation --force-reinstall "$GITHUB_WORKSPACE/selected-adk"
+          "$RUNNER_TEMP/adk-responses-producer/bin/python" -m pip check
           python -m venv "$RUNNER_TEMP/adk-responses-reader"
           "$RUNNER_TEMP/adk-responses-reader/bin/python" -m pip install --no-compile --require-hashes -r "$profile/requirements-reader.lock"
           "$RUNNER_TEMP/adk-responses-reader/bin/python" -m pip install --no-compile --no-deps "$RUNNER_TEMP/adk-responses-wheels/agent_evidence_observer-0.0.1-py3-none-any.whl" "$RUNNER_TEMP/adk-responses-wheels/probity_adk_user_responses-0.0.1-py3-none-any.whl"
+          "$RUNNER_TEMP/adk-responses-reader/bin/python" -m pip check
       - name: Run three actual native cases then the isolated offline reader twice
         run: |
           set -euo pipefail
@@ -72,6 +74,7 @@ jobs:
           profile="$GITHUB_WORKSPACE/interop/adk-user-responses-2026-10-04"
           "$RUNNER_TEMP/adk-responses-producer/bin/python" -m pip wheel --no-deps --no-build-isolation "$GITHUB_WORKSPACE/selected-verify" --wheel-dir "$RUNNER_TEMP/adk-verify-wheels"
           "$RUNNER_TEMP/adk-responses-reader/bin/python" -m pip install --no-compile --no-deps "$RUNNER_TEMP/adk-verify-wheels/probity_verify-0.1.0-py3-none-any.whl"
+          "$RUNNER_TEMP/adk-responses-reader/bin/python" -m pip check
           policy_sha="$(sha256sum "$profile/actual-run/host-policy.json" | cut -d ' ' -f 1)"
           python -I -B "$profile/verify_consumer.py" --reader "$RUNNER_TEMP/adk-responses-reader/bin/python" --source "$GITHUB_WORKSPACE/selected-verify" --wheel "$RUNNER_TEMP/adk-verify-wheels/probity_verify-0.1.0-py3-none-any.whl" --packet "$profile/actual-run/packet" --policy "$profile/actual-run/host-policy.json" --policy-sha256 "$policy_sha" --output "$profile/actual-run/verify-consumer"
       - name: Retain installed source, raw callbacks, effects and original child receipts

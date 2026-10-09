@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['interop/adk-a2a-failed-task-2026-10-03/**', '.github/workflows/adk-a2a-failed-task.yml']
+    paths: ['interop/adk-a2a-failed-task-2026-10-03/**', '.github/workflows/adk-a2a-failed-task.yml', 'pyproject.toml']
   pull_request:
     branches: [main]
-    paths: ['interop/adk-a2a-failed-task-2026-10-03/**', '.github/workflows/adk-a2a-failed-task.yml']
+    paths: ['interop/adk-a2a-failed-task-2026-10-03/**', '.github/workflows/adk-a2a-failed-task.yml', 'pyproject.toml']
 
 permissions:
   contents: read

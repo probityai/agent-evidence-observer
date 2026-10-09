@@ -1,0 +1,42 @@
+{
+  "schemaVersion": "probity.adk-full-tox-source.v1",
+  "repository": "google/adk-python",
+  "baseCommit": "e94c2e726a269e0f04e2e4b202f5c131c80c20de",
+  "patchedSourceCommits": [
+    "add13dcff08fed54b2ea62ae9e84de7f248bcfb5",
+    "91eb7f09307cb6fdbe9ae1bfbc296259e7022676"
+  ],
+  "patchedSourceTree": "3645f920253517623bbb097882008eb978582e10",
+  "upstreamGkeFix": "b9a2c0546a856c1520405cae9307f2e2cce4dc65",
+  "patchFile": "upstream-tox-corrections/two-commits.mbox",
+  "patchSHA256": "13dd7f57961811dbc41eb601ad47a9f17c8db586f09ca5d0e2882f1c4f989887",
+  "license": "Apache-2.0",
+  "licenseFile": "upstream-tox-corrections/LICENSE",
+  "licenseSHA256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+  "originalFileSHA256": {
+    "src/google/adk/code_executors/gke_code_executor.py": "568e1b630a174432eac2479b19b8325b98ad46ac612a3276a243cd316c43b49e",
+    "tests/unittests/code_executors/test_gke_code_executor.py": "b72974cae9015a4493644361dff0fc6433cf71cd24e6e005560cda77cc9acf65",
+    "tests/unittests/models/test_completions_http_client.py": "955f627f8ac2881a6db764cc646a13beb9fdf687e702821efa0b6176597d389f"
+  },
+  "patchedFileSHA256": {
+    "src/google/adk/code_executors/gke_code_executor.py": "3707cdbc9e9be63588f860fe593b159e012dd68d6b577d6f7cba84bf7babb386",
+    "tests/unittests/code_executors/test_gke_code_executor.py": "e4281e25c38d2ba07132aebca9ee69bb69a9c228f4ab6c849a6a089c6a1ee0a0",
+    "tests/unittests/models/test_completions_http_client.py": "aabd24314eb951e72dd30cd533807c746026b46d73b38aa89c28c0d9aadee97c"
+  },
+  "unchangedFileSHA256": {
+    "tox.ini": "4ad8b5205e760ba61738554041e8fbdfacdcd38187a5b167006dd6b4bdac0801",
+    "pyproject.toml": "170649e795d073e44f03ed6cee0fe6cedc309a733e05d6be82a5c98f34f61230",
+    "LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+  },
+  "nativeSourceSelection": {
+    "file": "native-source-selection.json",
+    "sha256": "6b8867a2e481d94a234169f2cb32bef5318ba931e3a0a6d921105250a21e7386",
+    "commit": "e94c2e726a269e0f04e2e4b202f5c131c80c20de"
+  },
+  "sampleOverlaySHA256": {
+    "publish_reference.py": "6bc1233a9f88f0f3ae458c81cd2e64a7ee103349f96fde4682f80b12e6fec6a4",
+    "README.md": "488488faa51383bb7671708fc0845d06bb87a5efee2d901939e6f3a755098db1",
+    "test_report_publication_sample.py": "ad5f667855a1b336ac858c3853fa7017278734247057aa1cf9f790b4b596bf40"
+  },
+  "scope": "e94 source plus the isolated already-landed GKE fix and client-scoped cleanup tests; unchanged tox configuration. Native consumer SDK selection remains e94. The publication sample is a separate recorded overlay."
+}

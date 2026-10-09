@@ -12,7 +12,9 @@ uv pip install --python "$evidence/reader/bin/python" --require-hashes -r "$prof
 "$evidence/producer/bin/python" -m build --wheel --no-isolation --outdir "$evidence/wheels" "$source_root"
 "$evidence/producer/bin/python" -m build --wheel --no-isolation --outdir "$evidence/wheels" "$profile"
 uv pip install --python "$evidence/producer/bin/python" --no-deps "$evidence"/wheels/*.whl
+uv pip check --python "$evidence/producer/bin/python"
 uv pip install --python "$evidence/reader/bin/python" --no-deps "$evidence"/wheels/*.whl
+uv pip check --python "$evidence/reader/bin/python"
 export HAYSTACK_READER_PYTHON="$evidence/reader/bin/python"
 "$evidence/producer/bin/python" -I -B -m pytest -c /dev/null "$profile/test_native.py" -q -p no:cacheprovider --junitxml="$evidence/native-tests.xml"
 "$evidence/producer/bin/python" -I -B -m probity_haystack.producer "$evidence/packet"

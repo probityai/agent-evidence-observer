@@ -10,7 +10,7 @@ Ratification checks the prior core's self-digest and shape, then a signature und
 
 After the write, the local observer signs a link to the recomputed core, request and observer claim. `verify_effect_link` checks that link, consumer-pinned observer and witness keys, the packet and witnessed history, and the one expected file write. The demo keeps these checks in one operator's custody. It reports `issuerAuthentication: not-established`, PEER witness scope, and `execution: unknown` when the effect link is absent.
 
-Install the optional `aae` dependency and run:
+Use the root test environment and run:
 
 ```sh
 python examples/aae_replay.py

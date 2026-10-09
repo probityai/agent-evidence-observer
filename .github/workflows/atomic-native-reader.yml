@@ -33,7 +33,7 @@ jobs:
         run: python native-atomic/tools/native-evaluation/run.py --output atomic-native-run --jobs 2
       - name: Build the consumer wheel and check refusal controls
         run: |
-          python -m pip install -e '.[test,aae]' build
+          python -m pip install -e '.[test]' build
           python -m pytest -q tests/test_atomic_reader.py --junitxml=atomic-reader-tests.xml
           python -m build --wheel --outdir dist
           python -m venv "$RUNNER_TEMP/atomic-reader-env"

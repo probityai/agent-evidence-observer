@@ -47,6 +47,7 @@ jobs:
           python -m pip wheel --no-deps --no-build-isolation "$GITHUB_WORKSPACE/selected-observer" . --wheel-dir "$RUNNER_TEMP/openai-wheels"
           python verify_wheels.py "$RUNNER_TEMP/openai-wheels" --selection source-selection.json > installed-source-proof.json
           python -m pip install --no-deps "$RUNNER_TEMP/openai-wheels/agent_evidence_observer-0.0.1-py3-none-any.whl" "$RUNNER_TEMP/openai-wheels/probity_openai_agents_reference-0.0.1-py3-none-any.whl"
+          python -m pip check
       - name: Execute SDK lifecycle and semantic refusal controls
         run: |
           set -euo pipefail
@@ -66,6 +67,7 @@ jobs:
           python -m venv "$RUNNER_TEMP/openai-reader"
           "$RUNNER_TEMP/openai-reader/bin/python" -m pip install --require-hashes -r requirements-reader.lock
           "$RUNNER_TEMP/openai-reader/bin/python" -m pip install --no-deps "$RUNNER_TEMP/openai-wheels/agent_evidence_observer-0.0.1-py3-none-any.whl" "$RUNNER_TEMP/openai-wheels/probity_openai_agents_reference-0.0.1-py3-none-any.whl"
+          "$RUNNER_TEMP/openai-reader/bin/python" -m pip check
           "$RUNNER_TEMP/openai-reader/bin/python" -c "import importlib.util; assert importlib.util.find_spec('agents') is None and importlib.util.find_spec('openai') is None"
       - name: Replay with separately supplied demonstration pins
         run: |

@@ -4,7 +4,7 @@ Python 3.12 or later and [`uv`](https://docs.astral.sh/uv/) are needed for these
 
 ```sh
 uv venv .venv --python python3.12
-uv pip install --python .venv/bin/python -e '.[test,aae]'
+uv pip install --python .venv/bin/python -e '.[test]'
 .venv/bin/pytest -q
 .venv/bin/agent-evidence-observer demo ./sample-run
 .venv/bin/agent-evidence-observer verify ./sample-run

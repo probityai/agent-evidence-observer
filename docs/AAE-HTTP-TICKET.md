@@ -7,7 +7,7 @@ The service freezes canonical mandate, transaction and core bytes. It independen
 `verify_aae_ticket_result` requires the same native replay and commitment before checking the signed completion, current signed read-back, exact local grant, identity fields, grant times and native content bytes. The plain reader omits the optional commitment and refuses joined records because their configuration digest differs. It never strips the commitment to make the record fit. Existing plain service configuration and records remain unchanged.
 
 ```bash
-python -m pip install -e '.[test,aae]'
+python -m pip install -e '.[test]'
 pytest -q tests/test_ticket_service.py tests/test_aae_ticket.py
 python examples/aae_ticket_demo.py ./aae-ticket-run --source-revision YOUR_EXACT_COMMIT
 ```

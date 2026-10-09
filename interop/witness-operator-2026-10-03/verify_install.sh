@@ -25,6 +25,7 @@ done
 "$evidence/operator/bin/python" -I -B -m build --wheel --no-isolation --outdir "$evidence/wheels" "$profile"
 for role in operator producer reader; do
   uv pip install --python "${environments[$role]}/bin/python" --no-deps "$evidence"/wheels/*.whl
+  uv pip check --python "${environments[$role]}/bin/python"
   uv pip freeze --python "${environments[$role]}/bin/python" > "$evidence/$role-install.txt"
 done
 "$evidence/operator/bin/python" -I -B -m pytest -c /dev/null "$source_root/tests" -q -p no:cacheprovider --junitxml="$evidence/core-tests.xml"

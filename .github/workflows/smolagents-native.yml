@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['interop/smolagents-native-2026-10-03/**', '.github/workflows/smolagents-native.yml']
+    paths: ['interop/smolagents-native-2026-10-03/**', '.github/workflows/smolagents-native.yml', 'pyproject.toml']
   pull_request:
     branches: [main]
-    paths: ['interop/smolagents-native-2026-10-03/**', '.github/workflows/smolagents-native.yml']
+    paths: ['interop/smolagents-native-2026-10-03/**', '.github/workflows/smolagents-native.yml', 'pyproject.toml']
 
 permissions:
   contents: read

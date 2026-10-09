@@ -59,9 +59,11 @@ jobs:
           "$RUNNER_TEMP/ag2-push-producer/bin/python" -m pip install --no-compile --no-deps "$RUNNER_TEMP/ag2-push-wheels/agent_evidence_observer-0.0.1-py3-none-any.whl" "$RUNNER_TEMP/ag2-push-wheels/probity_ag2_push_authority-0.0.1-py3-none-any.whl"
           "$RUNNER_TEMP/ag2-push-producer/bin/python" -m pip install --no-compile --no-deps --no-build-isolation "$GITHUB_WORKSPACE/selected-ag2"
           "$RUNNER_TEMP/ag2-push-producer/bin/python" -m pip install --no-compile --no-deps --no-build-isolation --force-reinstall "$GITHUB_WORKSPACE/selected-a2a"
+          "$RUNNER_TEMP/ag2-push-producer/bin/python" -m pip check
           python -m venv "$RUNNER_TEMP/ag2-push-reader"
           "$RUNNER_TEMP/ag2-push-reader/bin/python" -m pip install --no-compile --require-hashes -r "$profile/requirements-reader.lock"
           "$RUNNER_TEMP/ag2-push-reader/bin/python" -m pip install --no-compile --no-deps "$RUNNER_TEMP/ag2-push-wheels/agent_evidence_observer-0.0.1-py3-none-any.whl" "$RUNNER_TEMP/ag2-push-wheels/probity_ag2_push_authority-0.0.1-py3-none-any.whl"
+          "$RUNNER_TEMP/ag2-push-reader/bin/python" -m pip check
       - name: Run eighteen native tasks and separate registration, dispatch and target decisions
         run: |
           set -euo pipefail

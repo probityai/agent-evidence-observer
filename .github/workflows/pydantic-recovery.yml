@@ -6,12 +6,14 @@ on:
     paths:
       - 'interop/pydantic-recovery-2026-10-03/**'
       - 'src/probity_observer/**'
+      - 'pyproject.toml'
       - '.github/workflows/pydantic-recovery.yml'
   push:
     branches: [main]
     paths:
       - 'interop/pydantic-recovery-2026-10-03/**'
       - 'src/probity_observer/**'
+      - 'pyproject.toml'
       - '.github/workflows/pydantic-recovery.yml'
 permissions:
   contents: read
@@ -33,6 +35,7 @@ jobs:
         run: |
           python -m pip install --require-hashes --only-binary=:all: -r requirements.lock --report install-report.json
           python -m pip install --no-deps -e ../..
+          python -m pip check
       - name: Check native process and semantic refusal controls
         run: |
           python -m ruff check recovery_*.py probity_pydantic_recovery tests

@@ -1,6 +1,6 @@
 # Instructions for coding agents
 
-- Install with `uv venv .venv --python python3.12 && uv pip install --python .venv/bin/python -e '.[test,aae]'`
+- Install with `uv venv .venv --python python3.12 && uv pip install --python .venv/bin/python -e '.[test]'`
   and run `.venv/bin/pytest -q` after any change under `src/` or `tests/`.
 - A change under `interop/<profile>/` runs that profile's own tests from its directory; its workflow
   in `.github/workflows/` shows the exact commands.

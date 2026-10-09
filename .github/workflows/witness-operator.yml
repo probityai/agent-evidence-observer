@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['src/**', 'tests/**', 'interop/witness-operator-2026-10-03/**', '.github/workflows/witness-operator.yml']
+    paths: ['src/**', 'tests/**', 'interop/witness-operator-2026-10-03/**', '.github/workflows/witness-operator.yml', 'pyproject.toml']
   pull_request:
     branches: [main]
-    paths: ['src/**', 'tests/**', 'interop/witness-operator-2026-10-03/**', '.github/workflows/witness-operator.yml']
+    paths: ['src/**', 'tests/**', 'interop/witness-operator-2026-10-03/**', '.github/workflows/witness-operator.yml', 'pyproject.toml']
 
 permissions:
   contents: read

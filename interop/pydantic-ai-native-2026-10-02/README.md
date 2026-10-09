@@ -54,6 +54,7 @@ isolated from Observer's root project and other profiles.
 python -m pip install --require-hashes -r requirements.lock
 python -m pip wheel --no-deps --no-build-isolation ../.. . --wheel-dir /tmp/probity-pydantic-wheels
 python -m pip install --no-deps /tmp/probity-pydantic-wheels/agent_evidence_observer-0.0.1-py3-none-any.whl /tmp/probity-pydantic-wheels/probity_pydantic_reference-0.0.1-py3-none-any.whl
+python -m pip check
 python -m pytest tests -q
 probity-pydantic-run /tmp/probity-pydantic-fresh-packet --source-revision YOUR_SELECTED_COMMIT
 ```
@@ -61,12 +62,13 @@ probity-pydantic-run /tmp/probity-pydantic-fresh-packet --source-revision YOUR_S
 The output directory must not exist. The seven-case v1 packet is newly generated;
 there is no fallback to a committed report or earlier artifact. The workflow
 runs the installed wheel outside the source directory, then installs another
-wheel into a separate environment containing only cryptography dependencies.
+wheel into a separate environment with the core cryptography and canonicalization dependencies.
 
 ```bash
 python -m venv /tmp/probity-pydantic-reader
 /tmp/probity-pydantic-reader/bin/python -m pip install --require-hashes -r requirements-reader.lock
 /tmp/probity-pydantic-reader/bin/python -m pip install --no-deps /tmp/probity-pydantic-wheels/agent_evidence_observer-0.0.1-py3-none-any.whl /tmp/probity-pydantic-wheels/probity_pydantic_reference-0.0.1-py3-none-any.whl
+/tmp/probity-pydantic-reader/bin/python -m pip check
 # Inspect and select hashes/reference time as your policy before this step.
 /tmp/probity-pydantic-reader/bin/probity-pydantic-read /tmp/probity-pydantic-fresh-packet --pins-file /tmp/consumer-selected-pins.json
 ```

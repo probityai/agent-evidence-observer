@@ -50,7 +50,14 @@ The root wheel contains `probity_observer` modules and the Apache license.
 It does not contain the `interop/` scripts, profile wheels, native frameworks,
 model weights, retained experiment packets or selected consumer policies.
 The `inspect` extra supplies the historical Inspect 0.3.273 dependency, not every profile.
-The `aae` extra supplies the existing canonicalization dependency.
+The current source includes RFC8785 canonicalization as a core dependency.
+
+For maintainers, `scripts/compile-observer-locks.sh` regenerates the affected
+runtime locks from the root metadata and each profile's actual input. It keeps
+the existing versions as constraints. `scripts/check-runtime-locks.py` checks
+20 current-source locks against the core requirements. Each installed consumer
+also runs its own package dependency check before it reads evidence. Historical
+source-selected builds keep their original dependency and extra contracts.
 
 ## Separately installed native profiles
 

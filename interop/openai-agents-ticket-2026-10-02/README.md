@@ -30,6 +30,7 @@ git worktree add --detach selected-observer 71ac0b2126473316655184235000647a6dd0
 .producer-env/bin/python -m pip wheel --no-deps --no-build-isolation selected-observer . --wheel-dir selected-wheels
 .producer-env/bin/python verify_wheels.py selected-wheels --selection source-selection.json
 .producer-env/bin/python -m pip install --no-deps selected-wheels/*.whl
+.producer-env/bin/python -m pip check
 .producer-env/bin/probity-openai-run /tmp/new-openai-packet --source-revision "$(git rev-parse HEAD)"
 ```
 
@@ -81,6 +82,7 @@ complete trace/span parentage and chronology, and every declared attempt.
 python -m venv .reader-env
 .reader-env/bin/python -m pip install --require-hashes -r requirements-reader.lock
 .reader-env/bin/python -m pip install --no-deps selected-wheels/*.whl
+.reader-env/bin/python -m pip check
 .reader-env/bin/python -c "import importlib.util; assert importlib.util.find_spec('agents') is None and importlib.util.find_spec('openai') is None"
 .reader-env/bin/probity-openai-read /tmp/new-openai-packet --pins-file /path/to/host-selected-policy.json
 ```

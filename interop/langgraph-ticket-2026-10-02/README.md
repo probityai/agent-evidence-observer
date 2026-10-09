@@ -34,6 +34,7 @@ Use Python 3.13 in a fresh environment from the repository root:
 python -m venv .venv-lg
 .venv-lg/bin/python -m pip install --require-hashes --only-binary=:all: -r interop/langgraph-ticket-2026-10-02/requirements-restart.lock --report lg-install-report.json
 .venv-lg/bin/python -m pip install --no-deps -e .
+.venv-lg/bin/python -m pip check
 cd interop/langgraph-ticket-2026-10-02
 ../../.venv-lg/bin/python -m pytest -q tests
 ../../.venv-lg/bin/python lg_run.py fresh-run --source-revision "$(git rev-parse HEAD)"

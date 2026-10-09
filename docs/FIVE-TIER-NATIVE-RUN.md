@@ -3,7 +3,7 @@
 The launcher runs the pinned Inspect reasoning profile, the Inspect execution profile for tools/agents/workloads, and the native A2A SDK profile in separate processes. Inspect uses controlled local mock outputs; the A2A server performs deterministic arithmetic. These are executable native contract examples, not model-quality benchmarks.
 
 ```sh
-python -m pip install -e '.[test,inspect,aae]'
+python -m pip install -e '.[test,inspect]'
 python -m pip install -e 'interop/a2a-native-2026-10-02[test]'
 python examples/five_tier_demo.py ./five-tier-run
 ```

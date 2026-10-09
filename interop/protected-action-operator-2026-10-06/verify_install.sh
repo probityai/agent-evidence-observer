@@ -45,6 +45,7 @@ for package in "$source_root" "$source_root/interop/witness-operator-2026-10-03"
 done
 for role in issuer gateway witness consumer workload; do
   uv pip install --python "${environments[$role]}/bin/python" --link-mode copy --no-deps "$evidence"/wheels/*.whl
+  uv pip check --python "${environments[$role]}/bin/python"
   chmod -R a+rX "${environments[$role]}"
   uv pip freeze --python "${environments[$role]}/bin/python" > "$evidence/$role-install.txt"
   "${environments[$role]}/bin/python" -I -B "$profile/qualify_install.py" "$source_root" > "$evidence/$role-source-before.json"
