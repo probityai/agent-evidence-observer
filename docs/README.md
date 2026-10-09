@@ -14,6 +14,7 @@ These examples use controlled local effects and selected framework runs:
 | A job's output was refused. Had its body already changed a file? | [CrewAI job decisions and file effects](CREWAI-JOB-FENCES.md) |
 | Nested agents shortened their history. Which sessions and callbacks were captured? | [ADK history and nested calls](ADK-NESTED-COMPACTION.md) |
 | The dispatched request changed after approval. Does permission still apply? | [REMORA cases and protected file writes](REMORA-EFFECT-BRIDGE.md) |
+| A server changed a tool after its grade. Does the saved definition still match? | [Tool grades and retained local effects](TOOL-MANIFEST-EFFECT.md) |
 | An evaluation failed. Did its tool still update the target? | [Inspect scores, authority, and effects](INSPECT-AUTHORITY-EFFECT.md) |
 
 A verified record answers a specific question under selected inputs. Read each
