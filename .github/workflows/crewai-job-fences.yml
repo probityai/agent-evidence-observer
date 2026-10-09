@@ -71,9 +71,11 @@ jobs:
           uv build --wheel --python "$(command -v python)" "$GITHUB_WORKSPACE/selected-observer" --out-dir "$RUNNER_TEMP/crewai-jobs-wheels"
           uv build --wheel --python "$(command -v python)" "$profile" --out-dir "$RUNNER_TEMP/crewai-jobs-wheels"
           uv pip install --python "$RUNNER_TEMP/crewai-jobs-producer/bin/python" --no-deps "$RUNNER_TEMP/crewai-jobs-wheels/"*.whl
+          uv pip check --python "$RUNNER_TEMP/crewai-jobs-producer/bin/python"
           python -m venv "$RUNNER_TEMP/crewai-jobs-reader"
           uv pip install --python "$RUNNER_TEMP/crewai-jobs-reader/bin/python" --require-hashes -r "$profile/requirements-reader.lock"
           uv pip install --python "$RUNNER_TEMP/crewai-jobs-reader/bin/python" --no-deps "$RUNNER_TEMP/crewai-jobs-wheels/agent_evidence_observer-0.0.1-py3-none-any.whl" "$RUNNER_TEMP/crewai-jobs-wheels/probity_crewai_job_fences-0.0.1-py3-none-any.whl"
+          uv pip check --python "$RUNNER_TEMP/crewai-jobs-reader/bin/python"
       - name: Run native fences and real threaded flows, then read twice offline
         run: |
           set -euo pipefail
@@ -90,6 +92,7 @@ jobs:
           profile="$GITHUB_WORKSPACE/interop/crewai-job-fences-2026-10-04"
           uv build --wheel --python "$(command -v python)" "$GITHUB_WORKSPACE/selected-verify" --out-dir "$RUNNER_TEMP/crewai-verify-wheels"
           uv pip install --python "$RUNNER_TEMP/crewai-jobs-reader/bin/python" --no-deps "$RUNNER_TEMP/crewai-verify-wheels/probity_verify-0.1.0-py3-none-any.whl"
+          uv pip check --python "$RUNNER_TEMP/crewai-jobs-reader/bin/python"
           policy_sha="$(sha256sum "$profile/actual-run/host-policy.json" | cut -d ' ' -f 1)"
           python -I -B "$profile/verify_consumer.py" --reader "$RUNNER_TEMP/crewai-jobs-reader/bin/python" --source "$GITHUB_WORKSPACE/selected-verify" --wheel "$RUNNER_TEMP/crewai-verify-wheels/probity_verify-0.1.0-py3-none-any.whl" --packet "$profile/actual-run/packet" --policy "$profile/actual-run/host-policy.json" --policy-sha256 "$policy_sha" --output "$profile/actual-run/verify-consumer"
       - name: Retain the original attempt, installed sources, callbacks and effects

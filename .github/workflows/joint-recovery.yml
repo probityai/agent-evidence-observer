@@ -9,6 +9,7 @@ on:
       - 'interop/langgraph-ticket-2026-10-02/**'
       - 'interop/target-recovery-2026-10-02/**'
       - 'src/probity_observer/**'
+      - 'pyproject.toml'
       - '.github/workflows/joint-recovery.yml'
   push:
     branches: [main]
@@ -18,6 +19,7 @@ on:
       - 'interop/langgraph-ticket-2026-10-02/**'
       - 'interop/target-recovery-2026-10-02/**'
       - 'src/probity_observer/**'
+      - 'pyproject.toml'
       - '.github/workflows/joint-recovery.yml'
 permissions:
   contents: read
@@ -45,6 +47,7 @@ jobs:
         run: |
           python -m pip install --require-hashes --only-binary=:all: -r requirements.lock --report install-report.json
           python -m pip install --no-deps -e ../..
+          python -m pip check
       - name: Check finite native recovery and semantic refusal controls
         run: |
           python -m ruff check joint_*.py joint_host_gate.py verify_upgrade.py tests

@@ -23,7 +23,7 @@ jobs:
       - name: Install standalone test dependencies
         run: python -m pip install -e '.[test]'
       - name: Install pinned native mock harness and Observer adapter
-        run: python -m pip install -e '../..[inspect,aae]'
+        run: python -m pip install -e '../..[inspect]'
       - name: Check declared populations and mutation controls
         run: python -m pytest -q --junitxml=test-results.xml
       - name: Retain five-tier synthetic contract exercise

@@ -62,7 +62,9 @@ jobs:
           uv pip install --python "$RUNNER_TEMP/reader-env/bin/python" cryptography==46.0.7 cffi==2.1.1 pycparser==3.0
           uv pip install --python "$RUNNER_TEMP/reader-env/bin/python" pytest==8.3.3
           uv pip install --python "$RUNNER_TEMP/reader-env/bin/python" --no-deps "$RUNNER_TEMP/wheels/agent_evidence_observer-0.0.1-py3-none-any.whl" "$RUNNER_TEMP/wheels/probity_inspect_current_reader-0.0.1-py3-none-any.whl"
+          uv pip check --python "$RUNNER_TEMP/reader-env/bin/python"
           uv pip install --python "$RUNNER_TEMP/builder/bin/python" --no-deps "$RUNNER_TEMP/wheels/agent_evidence_observer-0.0.1-py3-none-any.whl" "$RUNNER_TEMP/wheels/probity_inspect_current_reader-0.0.1-py3-none-any.whl"
+          uv pip check --python "$RUNNER_TEMP/builder/bin/python"
       - name: Install actual current native host from its immutable dependency lock
         working-directory: current-inspect
         run: |
@@ -71,6 +73,7 @@ jobs:
           uv pip install --python .venv/bin/python cryptography==46.0.7 cffi==2.1.1 pycparser==3.0
           uv pip install --python .venv/bin/python --no-deps --no-build-isolation .
           uv pip install --python .venv/bin/python --no-deps "$RUNNER_TEMP/wheels/agent_evidence_observer-0.0.1-py3-none-any.whl" "$RUNNER_TEMP/wheels/probity_inspect_current_reader-0.0.1-py3-none-any.whl"
+          uv pip check --python .venv/bin/python
       - name: Verify loader, population, installation and failure controls
         env:
           PYTEST_DISABLE_PLUGIN_AUTOLOAD: '1'

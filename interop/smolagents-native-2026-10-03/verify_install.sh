@@ -14,12 +14,12 @@ uv venv "$evidence/reader" --python 3.13
 if test -f "$profile/requirements.lock"; then
   cp "$profile/requirements.lock" "$evidence/requirements.lock"
 else
-  uv pip compile "$profile/requirements.in" "$sdk_root/pyproject.toml" --python-version 3.13 --generate-hashes --output-file "$evidence/requirements.lock"
+  uv pip compile "$source_root/pyproject.toml" "$profile/requirements.in" "$sdk_root/pyproject.toml" --python-version 3.13 --generate-hashes --output-file "$evidence/requirements.lock"
 fi
 if test -f "$profile/requirements-reader.lock"; then
   cp "$profile/requirements-reader.lock" "$evidence/requirements-reader.lock"
 else
-  uv pip compile "$profile/requirements-reader.in" --python-version 3.13 --generate-hashes --output-file "$evidence/requirements-reader.lock"
+  uv pip compile "$source_root/pyproject.toml" "$profile/requirements-reader.in" --python-version 3.13 --generate-hashes --output-file "$evidence/requirements-reader.lock"
 fi
 uv pip install --python "$evidence/producer/bin/python" --require-hashes -r "$evidence/requirements.lock"
 uv pip install --python "$evidence/reader/bin/python" --require-hashes -r "$evidence/requirements-reader.lock"
@@ -27,7 +27,9 @@ uv pip install --python "$evidence/reader/bin/python" --require-hashes -r "$evid
 "$evidence/producer/bin/python" -I -B -m build --wheel --no-isolation --outdir "$evidence/wheels" "$profile"
 "$evidence/producer/bin/python" -I -B -m build --wheel --no-isolation --outdir "$evidence/wheels" "$sdk_root"
 uv pip install --python "$evidence/producer/bin/python" --no-deps "$evidence"/wheels/*.whl
+uv pip check --python "$evidence/producer/bin/python"
 uv pip install --python "$evidence/reader/bin/python" --no-deps "$evidence"/wheels/agent_evidence_observer-*.whl "$evidence"/wheels/probity_smolagents_reference-*.whl
+uv pip check --python "$evidence/reader/bin/python"
 export SMOLAGENTS_READER_PYTHON="$evidence/reader/bin/python"
 "$evidence/producer/bin/python" -I -B -m pytest -c /dev/null "$source_root/tests" -q -p no:cacheprovider --junitxml="$evidence/core-tests.xml"
 "$evidence/producer/bin/python" -I -B -m pytest -c /dev/null "$profile/test_native.py" -q -p no:cacheprovider --junitxml="$evidence/native-tests.xml"

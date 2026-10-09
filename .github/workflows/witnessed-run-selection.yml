@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
   push:
     branches: [main]
-    paths: ['src/**', 'tests/**', 'interop/witnessed-run-selection-2026-10-04/**', '.github/workflows/witnessed-run-selection.yml']
+    paths: ['src/**', 'tests/**', 'interop/witnessed-run-selection-2026-10-04/**', '.github/workflows/witnessed-run-selection.yml', 'pyproject.toml']
   pull_request:
     branches: [main]
-    paths: ['src/**', 'tests/**', 'interop/witnessed-run-selection-2026-10-04/**', '.github/workflows/witnessed-run-selection.yml']
+    paths: ['src/**', 'tests/**', 'interop/witnessed-run-selection-2026-10-04/**', '.github/workflows/witnessed-run-selection.yml', 'pyproject.toml']
 
 permissions:
   contents: read

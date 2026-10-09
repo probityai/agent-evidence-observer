@@ -48,6 +48,7 @@ git worktree add --detach selected-observer 4a50e61471355611121a578f3a4c22daa931
 .producer-env/bin/python -m pip wheel --no-deps --no-build-isolation selected-observer . --wheel-dir selected-wheels
 .producer-env/bin/python verify_wheels.py selected-wheels --selection source-selection.json
 .producer-env/bin/python -m pip install --no-deps selected-wheels/*.whl
+.producer-env/bin/python -m pip check
 .producer-env/bin/probity-adk-run /tmp/new-adk-packet --source-revision "$(git rev-parse HEAD)"
 ```
 
@@ -92,6 +93,7 @@ coverage. The plugin never replaces framework return values.
 python -m venv .reader-env
 .reader-env/bin/python -m pip install --require-hashes -r requirements-reader.lock
 .reader-env/bin/python -m pip install --no-deps selected-wheels/*.whl
+.reader-env/bin/python -m pip check
 .reader-env/bin/python -c "import importlib.util; assert importlib.util.find_spec('google') is None and importlib.util.find_spec('mcp') is None"
 .reader-env/bin/probity-adk-read /tmp/new-adk-packet --pins-file /path/to/host-policy.json
 .reader-env/bin/probity-adk-gate /tmp/new-adk-packet --reader "$PWD/.reader-env/bin/probity-adk-read" --policy /path/to/host-policy.json --policy-sha256 HOST_SELECTED_SHA256 --output /tmp/new-host-receipt

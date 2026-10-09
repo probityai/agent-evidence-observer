@@ -41,6 +41,7 @@ jobs:
           python -m pip install --require-hashes -r requirements.lock
           python -m pip wheel --no-deps --no-build-isolation ../.. . --wheel-dir "$RUNNER_TEMP/pydantic-wheels"
           python -m pip install --no-deps "$RUNNER_TEMP/pydantic-wheels/agent_evidence_observer-0.0.1-py3-none-any.whl" "$RUNNER_TEMP/pydantic-wheels/probity_pydantic_reference-0.0.1-py3-none-any.whl"
+          python -m pip check
       - name: Check native transcript and refusal controls
         shell: bash
         run: |
@@ -63,6 +64,7 @@ jobs:
           python -m venv "$RUNNER_TEMP/pydantic-reader"
           "$RUNNER_TEMP/pydantic-reader/bin/python" -m pip install --require-hashes -r requirements-reader.lock
           "$RUNNER_TEMP/pydantic-reader/bin/python" -m pip install --no-deps "$RUNNER_TEMP/pydantic-wheels/agent_evidence_observer-0.0.1-py3-none-any.whl" "$RUNNER_TEMP/pydantic-wheels/probity_pydantic_reference-0.0.1-py3-none-any.whl"
+          "$RUNNER_TEMP/pydantic-reader/bin/python" -m pip check
           "$RUNNER_TEMP/pydantic-reader/bin/python" -c "import importlib.util; assert importlib.util.find_spec('pydantic_ai') is None"
       - name: Consume fresh packet with separately supplied demonstration pins
         shell: bash

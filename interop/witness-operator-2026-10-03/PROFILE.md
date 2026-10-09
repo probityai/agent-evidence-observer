@@ -8,6 +8,7 @@ Install the retained core and operator wheels into each separate environment:
 uv venv /absolute/operator --python 3.12
 uv pip install --python /absolute/operator/bin/python --require-hashes -r requirements-reader.lock
 uv pip install --python /absolute/operator/bin/python --no-deps /absolute/wheels/*.whl
+uv pip check --python /absolute/operator/bin/python
 ```
 
 The core `WitnessPort` keeps existing local witness use compatible. `Broker` and

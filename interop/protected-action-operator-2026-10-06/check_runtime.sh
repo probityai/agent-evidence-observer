@@ -11,6 +11,7 @@ for package in "$source_root" "$source_root/interop/witness-operator-2026-10-03"
   "$evidence/runtime/bin/python" -I -B -m build --wheel --no-isolation --outdir "$evidence/wheels" "$package"
 done
 uv pip install --python "$evidence/runtime/bin/python" --no-deps "$evidence"/wheels/*.whl
+uv pip check --python "$evidence/runtime/bin/python"
 uv pip freeze --python "$evidence/runtime/bin/python" > "$evidence/runtime-install.txt"
 "$evidence/runtime/bin/python" -I -B "$profile/qualify_install.py" "$source_root" > "$evidence/installed-source-before.json"
 "$evidence/runtime/bin/python" -I -B -m pytest -c /dev/null "$source_root/tests" -q -p no:cacheprovider --junitxml="$evidence/core-tests.xml"

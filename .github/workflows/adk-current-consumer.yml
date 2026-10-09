@@ -53,9 +53,11 @@ jobs:
           "$RUNNER_TEMP/adk-producer/bin/python" -m pip wheel --no-deps --no-build-isolation "$GITHUB_WORKSPACE/selected-observer" "$GITHUB_WORKSPACE/selected-reference/interop/adk-ticket-2026-10-02" --wheel-dir "$RUNNER_TEMP/adk-wheels"
           "$RUNNER_TEMP/adk-producer/bin/python" -m pip install --no-compile --no-deps "$RUNNER_TEMP/adk-wheels/agent_evidence_observer-0.0.1-py3-none-any.whl" "$RUNNER_TEMP/adk-wheels/probity_adk_reference-0.0.1-py3-none-any.whl"
           "$RUNNER_TEMP/adk-producer/bin/python" -m pip install --no-compile --no-deps --no-build-isolation --force-reinstall "$GITHUB_WORKSPACE/selected-adk"
+          "$RUNNER_TEMP/adk-producer/bin/python" -m pip check
           python -m venv "$RUNNER_TEMP/adk-reader"
           "$RUNNER_TEMP/adk-reader/bin/python" -m pip install --no-compile --require-hashes -r "$profile/requirements-reader.lock"
           "$RUNNER_TEMP/adk-reader/bin/python" -m pip install --no-compile --no-deps "$RUNNER_TEMP/adk-wheels/agent_evidence_observer-0.0.1-py3-none-any.whl" "$RUNNER_TEMP/adk-wheels/probity_adk_reference-0.0.1-py3-none-any.whl"
+          "$RUNNER_TEMP/adk-reader/bin/python" -m pip check
       - name: Verify trusted host controls and actual current native population
         run: |
           set -euo pipefail

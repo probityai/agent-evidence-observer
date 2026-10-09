@@ -10,7 +10,7 @@ dependencies, and select a new output directory:
 
 ```sh
 uv venv .venv --python python3.12
-uv pip install --python .venv/bin/python -e '.[test,inspect,aae]'
+uv pip install --python .venv/bin/python -e '.[test,inspect]'
 .venv/bin/python interop/evaluation-contract-2026-10-01/inspect_ticket.py ./inspect-ticket-run --source-revision "$(git rev-parse HEAD)"
 ```
 

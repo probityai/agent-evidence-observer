@@ -6,10 +6,10 @@ on:
     - cron: '29 5 * * 0'
   push:
     branches: [main]
-    paths: ['interop/haystack-native-2026-10-03/**', '.github/workflows/haystack-native.yml']
+    paths: ['interop/haystack-native-2026-10-03/**', '.github/workflows/haystack-native.yml', 'pyproject.toml']
   pull_request:
     branches: [main]
-    paths: ['interop/haystack-native-2026-10-03/**', '.github/workflows/haystack-native.yml']
+    paths: ['interop/haystack-native-2026-10-03/**', '.github/workflows/haystack-native.yml', 'pyproject.toml']
 
 permissions:
   contents: read

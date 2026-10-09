@@ -60,6 +60,7 @@ From this directory, use an isolated Python 3.12 or 3.13 environment:
 ```bash
 python -m pip install --require-hashes --only-binary=:all: -r requirements.lock
 python -m pip install --no-deps -e ../..
+python -m pip check
 python -m ruff check joint_*.py joint_host_gate.py tests
 python -m ruff check --select C901 --config 'lint.mccabe.max-complexity=5' joint_*.py joint_host_gate.py tests
 python -m pytest -q

@@ -38,6 +38,7 @@ done
 "$evidence/operator/bin/python" -I -B -m build --wheel --no-isolation --outdir "$evidence/wheels" "$profile"
 for role in operator reader; do
   uv pip install --python "$evidence/$role/bin/python" --no-deps "$evidence"/wheels/*.whl
+  uv pip check --python "$evidence/$role/bin/python"
   uv pip freeze --python "$evidence/$role/bin/python" > "$evidence/$role-install.txt"
   "$evidence/$role/bin/python" -I -B - "$source_root" "$profile" > "$evidence/$role-installed-source.json" <<'PY'
 import hashlib, importlib.resources, json, pathlib, sys

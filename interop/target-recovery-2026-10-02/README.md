@@ -23,6 +23,7 @@ Run from this directory using Python 3.13:
 ```sh
 python -m pip install --require-hashes --only-binary=:all: -r requirements.lock
 python -m pip install --no-deps -e ../..
+python -m pip check
 python -m pytest -q
 python target_run.py NEW_PACKET --source-revision EXACT_CHECKOUT_COMMIT
 python target_reader.py NEW_PACKET --pins-file HOST_SELECTED_PINS

@@ -14,6 +14,7 @@ uv pip install --python "$evidence/reader/bin/python" --require-hashes -r "$evid
 "$evidence/producer/bin/python" -I -B -m build --wheel --no-isolation --outdir "$evidence/wheels" "$source_root"
 for role in producer reader; do
   uv pip install --python "$evidence/$role/bin/python" --no-deps "$evidence"/wheels/*.whl
+  uv pip check --python "$evidence/$role/bin/python"
   uv pip freeze --python "$evidence/$role/bin/python" > "$evidence/$role-install.txt"
   "$evidence/$role/bin/python" -I -B -c 'import platform; print(platform.python_version())' > "$evidence/$role-runtime.txt"
 done

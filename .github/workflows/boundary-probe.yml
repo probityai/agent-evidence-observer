@@ -18,7 +18,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: sudo apt-get update && sudo apt-get install -y bubblewrap
-      - run: python -m pip install -e '.[test,aae]'
+      - run: python -m pip install -e '.[test]'
       - run: pytest -q
       - run: python examples/admission_demo.py ./admission-run
       - run: python examples/protected_action_demo.py ./protected-action-run
@@ -96,7 +96,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: python -m pip install -e '.[test,aae]'
+      - run: python -m pip install -e '.[test]'
       - run: pytest -q tests/test_aae_enforce.py tests/test_aae_binding.py tests/test_aae_dispatch.py
       - run: python examples/aae_replay.py > aae-replay.json
       - run: python examples/aae_demo.py ./aae-run > aae-demo-stdout.json

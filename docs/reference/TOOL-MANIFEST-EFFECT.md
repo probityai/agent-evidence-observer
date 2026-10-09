@@ -25,7 +25,7 @@ The fixture is local. These commands make no MCP or scan-service request.
 ```sh
 set -eu
 uv venv .venv --python python3.12
-uv pip install --python .venv/bin/python -e '.[test,aae]'
+uv pip install --python .venv/bin/python -e '.[test]'
 .venv/bin/python examples/tool_manifest_effect.py ./manifest-effect-run > manifest-effect-run.stdout.json
 .venv/bin/python examples/tool_manifest_effect.py ./manifest-effect-run --verify --consumer-pins ./manifest-effect-run/tool-match/consumer-pins.json > manifest-effect-run.verification.json
 .venv/bin/pytest -q tests/test_tool_manifest_effect.py

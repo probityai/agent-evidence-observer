@@ -25,8 +25,10 @@ for variant in baseline proposed-fix; do
   producer="$evidence/$variant-producer/bin/python"
   uv pip install --python "$producer" --no-deps "$evidence"/wheels/*.whl
   uv pip install --python "$producer" --no-deps --reinstall "$evidence/$variant-sdk-wheel"/*.whl
+  uv pip check --python "$producer"
 done
 uv pip install --python "$evidence/reader/bin/python" --no-deps "$evidence"/wheels/*.whl
+uv pip check --python "$evidence/reader/bin/python"
 export ADK_FAILURE_READER_PYTHON="$evidence/reader/bin/python"
 "$build_python" -I -B -m pytest -c /dev/null "$source_root/tests" -q -p no:cacheprovider --junitxml="$evidence/core-tests.xml"
 for variant in baseline proposed-fix; do

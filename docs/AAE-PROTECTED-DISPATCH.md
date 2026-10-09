@@ -9,7 +9,7 @@ verify the whole retained relation after restart.
 Run the reference case:
 
 ```sh
-python -m pip install -e '.[test,aae]'
+python -m pip install -e '.[test]'
 pytest -q tests/test_aae_dispatch.py tests/test_aae_binding.py tests/test_aae_enforce.py
 python examples/aae_protected_dispatch_demo.py ./aae-protected-run
 ```

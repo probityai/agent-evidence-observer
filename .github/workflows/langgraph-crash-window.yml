@@ -10,6 +10,7 @@ on:
       - 'interop/langgraph-ticket-2026-10-02/**'
       - 'interop/target-recovery-2026-10-02/**'
       - 'src/probity_observer/**'
+      - 'pyproject.toml'
       - '.github/workflows/langgraph-crash-window.yml'
   push:
     branches: [main]
@@ -20,6 +21,7 @@ on:
       - 'interop/langgraph-ticket-2026-10-02/**'
       - 'interop/target-recovery-2026-10-02/**'
       - 'src/probity_observer/**'
+      - 'pyproject.toml'
       - '.github/workflows/langgraph-crash-window.yml'
 permissions:
   contents: read
@@ -41,6 +43,7 @@ jobs:
         run: |
           python -m pip install --require-hashes --only-binary=:all: -r ../joint-recovery-2026-10-02/requirements.lock --report install-report.json
           python -m pip install --no-deps -e ../..
+          python -m pip check
       - name: Verify native reconstruction and meaningful semantic refusals
         run: |
           python -m ruff check crash_*.py consume_installed.py tests

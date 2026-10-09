@@ -29,6 +29,7 @@ Run with explicit source and selections:
 ```sh
 python -m pip install --require-hashes --only-binary=:all: -r ../langgraph-ticket-2026-10-02/requirements-restart.lock
 python -m pip install --no-deps -e ../..
+python -m pip check
 python -m pytest -q tests
 python authority_run.py fresh-run --source-revision "$(git rev-parse HEAD)" > fresh-report.json
 cp fresh-run/consumer-pins.json /tmp/authority-selected-pins.json

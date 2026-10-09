@@ -8,6 +8,8 @@ on:
       - 'tests/**'
       - 'examples/tool_manifest_effect.py'
       - 'pyproject.toml'
+      - 'interop/**/requirements*.lock'
+      - 'scripts/check-runtime-locks.py'
       - 'docs/TOOL-MANIFEST-EFFECT.md'
       - 'docs/reference/TOOL-MANIFEST-EFFECT.md'
       - '.github/workflows/tool-manifest-effect.yml'
@@ -33,8 +35,9 @@ jobs:
       - name: Install and run the core source suite
         run: |
           uv venv .venv --python python3.12
-          uv pip install --python .venv/bin/python -e '.[test,aae]'
+          uv pip install --python .venv/bin/python -e '.[test]'
           uv pip check --python .venv/bin/python
+          .venv/bin/python scripts/check-runtime-locks.py
           .venv/bin/pytest -q
       - name: Retain and read the unchanged contributor case
         run: |
