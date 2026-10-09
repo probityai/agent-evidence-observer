@@ -16,7 +16,7 @@ from probity_observer.authorization import ActionRequest, GrantPolicy, verify_gr
 from probity_observer.crypto import SigningKey, VerificationError, canonical, digest, strict_loads
 from probity_observer.ticket_service import DOMAIN
 
-from authority_profile import (AUTHORITY_DOMAIN, CONTRACT_ID, MAX_AGE_SECONDS, PROFILE, RECORD_DOMAIN, check_authority,
+from authority_profile import (AUTHORITY_DOMAIN, CONTRACT_ID, RESIDUAL_RISKS, MAX_AGE_SECONDS, PROFILE, RECORD_DOMAIN, check_authority,
                                check_delegation, checked_record, content_bytes, reference_time, sign_record)
 from producer import START, _case, produce
 from reader import read_case, read_run
@@ -91,6 +91,12 @@ class TestAuthorityProfile:
             replacements = {"text": "changed", "media": b"changed", "destination": "destination-2", "catalogue": b"catalogue-2"}
             changed = {**original, field: replacements[field]}
             assert content_bytes(**original) != content_bytes(**changed)
+
+        def test_each_case_carries_the_residual_risks_the_profile_leaves(self, produced):
+            root, pins = produced
+            for case_id, risks in RESIDUAL_RISKS.items():
+                assert read_case(root / case_id, pins)["residualRisks"] == list(risks)
+            assert RESIDUAL_RISKS["authority-evidence-stale"] == ("status-source-trusted-within-freshness-limit",)
 
     class TestFailingCases:
         @pytest.mark.parametrize("change,reason", [
@@ -269,6 +275,29 @@ class TestReader:
                 payload["evidenceAgeSeconds"] = False
             if mutation == "limit":
                 payload["freshnessLimitSeconds"] = MAX_AGE_SECONDS + 1
+            (case / "record.json").write_bytes(canonical(sign_record(payload, keys["record"], RECORD_DOMAIN)))
+            with caplog.at_level(logging.WARNING), pytest.raises(VerificationError) as error:
+                read_case(case, pins)
+            assert str(error.value) == reason
+            assert "authority profile refused: " + reason in caplog.messages
+
+        @pytest.mark.parametrize("mutation,reason", [
+            ("dropped", "record closes a residual risk this profile leaves open"),
+            ("added", "residual risks differ from selected profile"),
+            ("not-a-list", "residual risks differ from selected profile"),
+        ])
+        def test_record_that_closes_a_residual_risk_is_rejected(self, signable_case, mutation, reason, caplog):
+            root, keys, pins = signable_case
+            _case(root, "authority-evidence-stale", keys)
+            case = root / "authority-evidence-stale"
+            assert read_case(case, pins)["residualRisks"] == ["status-source-trusted-within-freshness-limit"]
+            payload = json.loads((case / "record.json").read_text())["payload"]
+            if mutation == "dropped":
+                payload["residualRisks"] = []
+            if mutation == "added":
+                payload["residualRisks"].append("revocation-propagation-unmeasured")
+            if mutation == "not-a-list":
+                payload["residualRisks"] = "status-source-trusted-within-freshness-limit"
             (case / "record.json").write_bytes(canonical(sign_record(payload, keys["record"], RECORD_DOMAIN)))
             with caplog.at_level(logging.WARNING), pytest.raises(VerificationError) as error:
                 read_case(case, pins)

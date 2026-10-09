@@ -13,7 +13,7 @@ from probity_observer.authorization import ActionRequest, GrantPolicy, verify_gr
 from probity_observer.crypto import VerificationError, digest, strict_loads
 from probity_observer.ticket_service import DOMAIN, STATE_FIELDS, _checked as checked_native_receipt, _state_schema, verify_ticket_result
 
-from authority_profile import (AUTHORITY_DOMAIN, CASE_IDS, CONTRACT_ID, MAX_AGE_SECONDS, PROFILE, RECORD_DOMAIN, check_authority, check_delegation,
+from authority_profile import (AUTHORITY_DOMAIN, CASE_IDS, CONTRACT_ID, MAX_AGE_SECONDS, PROFILE, RECORD_DOMAIN, RESIDUAL_RISKS, check_authority, check_delegation,
                                checked_record, reference_time, refuse)
 
 
@@ -244,7 +244,7 @@ def _record_schema(payload: dict[str, Any]) -> None:
     """Check the finite profile's exact fields before interpreting its claims."""
     fields = {"contractId", "evidenceAgeSeconds", "freshnessLimitSeconds", "delegationRoot", "delegationHops", "profile", "caseId", "request", "grantPolicy", "grant", "authorityEvidence", "decisionAt",
               "requestDeadline", "humanReachable", "priorFallback", "attempts", "faultInjection",
-              "dispatchContentSha256", "taskTerminal", "readback", "coverage", "custody", "witnessScope"}
+              "dispatchContentSha256", "taskTerminal", "readback", "coverage", "custody", "witnessScope", "residualRisks"}
     if set(payload) != fields:
         refuse("profile record fields differ")
     if payload["caseId"] not in CASE_IDS or type(payload["decisionAt"]) is not int or type(payload["requestDeadline"]) is not int:
@@ -256,6 +256,23 @@ def _record_schema(payload: dict[str, Any]) -> None:
     if payload["coverage"] != "one-local-native-ticket-and-service-events":
         refuse("profile coverage exceeds selected boundary")
     _attempts(payload)
+    _residual_risks(payload)
+
+
+def _residual_risks(payload: dict[str, Any]) -> None:
+    """Refuse a record whose residual risks differ from the profile's for its case.
+
+    A record that omits a declared residual risk claims coverage this profile
+    does not provide, so it is refused rather than read as a stronger result.
+    """
+    risks = payload["residualRisks"]
+    expected = list(RESIDUAL_RISKS[payload["caseId"]])
+    if type(risks) is not list or any(type(risk) is not str for risk in risks) or len(set(risks)) != len(risks):
+        refuse("residual risks differ from selected profile")
+    if not set(risks) <= set(expected):
+        refuse("residual risks differ from selected profile")
+    if risks != expected:
+        refuse("record closes a residual risk this profile leaves open")
 
 
 def read_case(path: Path, pins: dict[str, str]) -> dict[str, Any]:
@@ -315,7 +332,8 @@ def read_case(path: Path, pins: dict[str, str]) -> dict[str, Any]:
             "taskTerminal": payload["taskTerminal"], "nativeCompletionProof": proof, "proofReason": proof_reason,
             "publicationReady": publication, "attemptCount": len(payload["attempts"]),
             "dispatchDecisions": [a["decision"] for a in payload["attempts"]], "witnessScope": "PEER",
-            "custody": "author-operated-local", "coverage": payload["coverage"]}
+            "custody": "author-operated-local", "coverage": payload["coverage"],
+            "residualRisks": payload["residualRisks"]}
 
 
 def read_run(root: Path, pins: dict[str, str]) -> dict[str, Any]:

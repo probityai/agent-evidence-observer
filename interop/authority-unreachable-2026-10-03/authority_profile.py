@@ -38,6 +38,23 @@ CASE_IDS = (
 )
 
 
+# Residual risks the reference profile leaves open, per case, as named in the
+# delegated-authority table of CONTRACT.md. A record must carry exactly these:
+# dropping one claims coverage this profile does not provide.
+_REVOCATION = ("revocation-propagation-unmeasured",)
+_REWRITE = ("post-effect-platform-rewrite-unobserved",)
+_CLOCK = ("reference-clock-trusted",)
+RESIDUAL_RISKS = {case_id: () for case_id in CASE_IDS} | {
+    "approver-revoked-at-dispatch": _REVOCATION, "revoked-between-intent-and-effect": _REVOCATION,
+    "effect-then-authority-revoked": _REVOCATION,
+    "media-bytes-mutated": _REWRITE, "platform-content-mutated": _REWRITE,
+    "catalogue-mutated": _REWRITE, "destination-mutated": _REWRITE,
+    "authority-evidence-stale": ("status-source-trusted-within-freshness-limit",),
+    "delegation-hop-amplified": ("two-hop-chain-only", "descendant-token-revocation-absent"),
+    "fallback-expired": _CLOCK, "late-approval-for-expired-request": _CLOCK,
+}
+
+
 def refuse(reason: str) -> None:
     """Raise a bounded, logged refusal without printing protected content.
 

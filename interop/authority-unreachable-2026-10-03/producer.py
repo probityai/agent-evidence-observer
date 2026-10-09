@@ -14,7 +14,7 @@ from probity_observer.authorization import ActionRequest, GrantPolicy, issue_gra
 from probity_observer.crypto import SigningKey, VerificationError, canonical
 from probity_observer.ticket_service import TicketStore
 
-from authority_profile import AUTHORITY_DOMAIN, CASE_IDS, CONTRACT_ID, MAX_AGE_SECONDS, PROFILE, RECORD_DOMAIN, content_bytes, dispatch, reference_time, sign_record
+from authority_profile import AUTHORITY_DOMAIN, CASE_IDS, CONTRACT_ID, MAX_AGE_SECONDS, PROFILE, RECORD_DOMAIN, RESIDUAL_RISKS, content_bytes, dispatch, reference_time, sign_record
 
 NATIVE_REVISION = "9db0558cf8cc8112ea31b601fa7c7d3c2f38c907"
 START = 1791028800
@@ -118,7 +118,8 @@ def _case(root: Path, case_id: str, keys: dict[str, SigningKey]) -> dict[str, An
                "dispatchContentSha256": hashlib.sha256(_action_bytes(case_id)).hexdigest(),
                "taskTerminal": "completed" if attempts[-1]["returnStatus"] == "completed" else "failed",
                "readback": readback, "coverage": "one-local-native-ticket-and-service-events",
-               "custody": "author-operated-local", "witnessScope": "PEER"}
+               "custody": "author-operated-local", "witnessScope": "PEER",
+               "residualRisks": list(RESIDUAL_RISKS[case_id])}
     if case_id == "incomplete-proof-after-effect":
         # The record remains signed, but the bounded native proof is intentionally incomplete.
         payload["readback"]["receipt"].pop("signature")
