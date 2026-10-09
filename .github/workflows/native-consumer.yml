@@ -13,8 +13,8 @@ jobs:
   native-consumer:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: '3.12'
       - name: Install producer and test environment
@@ -39,7 +39,7 @@ jobs:
           cd "$RUNNER_TEMP/native-consumer-cwd"
           "$RUNNER_TEMP/native-consumer-env/bin/python" "$GITHUB_WORKSPACE/examples/native_consumer_demo.py" --source-checkout "$GITHUB_WORKSPACE" --native-root "$GITHUB_WORKSPACE/native-producer" --output "$GITHUB_WORKSPACE/native-consumer-result"
           "$RUNNER_TEMP/native-consumer-env/bin/python" -c 'import importlib.util; assert importlib.util.find_spec("inspect_ai") is None; assert importlib.util.find_spec("a2a") is None'
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:
           name: native-consumer-reader

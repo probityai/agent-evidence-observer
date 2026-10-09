@@ -12,7 +12,7 @@ jobs:
   readme:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
       - name: the README stays one screen and every link in it resolves
         run: |
           python3 scripts/readme-lint.py README.md
