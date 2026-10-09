@@ -54,6 +54,19 @@ for source in "$source_root" "$aps_profile" "$evidence/PIC-source" "$profile"; d
     step "wheel-$name" env -u PYTHONDONTWRITEBYTECODE "$python" -I -B -m build --wheel --no-isolation --outdir "$evidence/wheels" "$source"
 done
 sha256sum "$evidence"/wheels/*.whl > "$evidence/wheel-SHA256.txt"
+step root-wheel-distribution "$python" -I -B "$source_root/scripts/check-distribution.py" "$evidence/wheels/agent_evidence_observer-0.0.1-py3-none-any.whl"
+export COVERAGE_FILE="$evidence/distribution.coverage"
+step distribution-refusal-controls "$python" -I -B -m coverage run --include='*/scripts/check-distribution-controls.py' "$source_root/scripts/check-distribution-controls.py" "$evidence/wheels/agent_evidence_observer-0.0.1-py3-none-any.whl"
+step distribution-control-coverage "$python" -I -B -m coverage json -o "$evidence/distribution-coverage.json"
+step distribution-coverage-floor "$python" -I -B - "$evidence/distribution-coverage.json" "$source_root/scripts/check-distribution-controls.py" <<'PY'
+import json, pathlib, sys
+files = json.loads(pathlib.Path(sys.argv[1]).read_bytes())["files"]
+expected = pathlib.Path(sys.argv[2]).resolve()
+summaries = [item["summary"] for name, item in files.items() if pathlib.Path(name).resolve() == expected]
+if len(summaries) != 1 or summaries[0]["percent_covered"] < 80:
+    raise SystemExit("distribution controls statement coverage is incomplete or below 80")
+print(json.dumps(summaries[0], sort_keys=True))
+PY
 step reader-wheel-install uv pip install --python "$python" --no-deps "$evidence"/wheels/*.whl
 step installed-package-check uv pip check --python "$python"
 step runtime-lock-inventory "$python" -I -B "$source_root/scripts/check-runtime-locks.py"
@@ -79,7 +92,7 @@ for package, source in (("probity_observer", root / "src/probity_observer"),
         checked[package + "/" + relative.as_posix()] = hashlib.sha256(actual).hexdigest()
 print(json.dumps({"nativePICCommit": _pic_source(), "installedSourceFiles": checked}, sort_keys=True))
 PY
-step source-lint "$python" -I -B -m ruff check "$profile/probity_pic_aps_refund" "$profile/test_reader.py"
+step source-lint "$python" -I -B -m ruff check "$profile/probity_pic_aps_refund" "$profile/test_reader.py" "$source_root/scripts/check-distribution-controls.py"
 step source-complexity "$python" -I -B -m radon cc -j "$profile/probity_pic_aps_refund"
 step complexity-contract "$python" -I -B - "$evidence/source-complexity.stdout" <<'PY'
 import json, pathlib, sys

@@ -55,7 +55,7 @@ The current source includes RFC8785 canonicalization as a core dependency.
 For maintainers, `scripts/compile-observer-locks.sh` regenerates the affected
 runtime locks from the root metadata and each profile's actual input. It keeps
 the existing versions as constraints. `scripts/check-runtime-locks.py` checks
-20 current-source locks against the core requirements. Each installed consumer
+21 current-source locks against the core requirements. Each installed consumer
 also runs its own package dependency check before it reads evidence. Historical
 source-selected builds keep their original dependency and extra contracts.
 
@@ -102,6 +102,7 @@ field uses its directory's `README.md`, the convention for the existing profiles
 | [local-model-tasks-2026-10-02](https://github.com/probityai/agent-evidence-observer/blob/main/interop/local-model-tasks-2026-10-02/README.md) | `probity-local-cpu-task-matrix` | `>=3.11` | Module/script entry points; follow the profile guide |
 | [local-model-vocabulary-2026-10-02](https://github.com/probityai/agent-evidence-observer/blob/main/interop/local-model-vocabulary-2026-10-02/README.md) | `probity-local-cpu-vocabulary` | `>=3.11` | Module/script entry points; follow the profile guide |
 | [openai-agents-ticket-2026-10-02](https://github.com/probityai/agent-evidence-observer/blob/main/interop/openai-agents-ticket-2026-10-02/README.md) | `probity-openai-agents-reference` | `>=3.13` | `probity-openai-run`, `probity-openai-read` |
+| [pic-aps-refund-reader-2026-10-09](https://github.com/probityai/agent-evidence-observer/blob/main/interop/pic-aps-refund-reader-2026-10-09/README.md) | `probity-pic-aps-refund-reader` | `>=3.12` | `probity-read-pic-aps-refund` |
 | [protected-action-operator-2026-10-06](https://github.com/probityai/agent-evidence-observer/blob/main/interop/protected-action-operator-2026-10-06/PROFILE.md) | `probity-protected-operator-reference` | `>=3.12` | `agent-evidence-authorization-witness` |
 | [pydantic-ai-native-2026-10-02](https://github.com/probityai/agent-evidence-observer/blob/main/interop/pydantic-ai-native-2026-10-02/README.md) | `probity-pydantic-reference` | `>=3.12` | `probity-pydantic-run`, `probity-pydantic-read` |
 | [pydantic-recovery-2026-10-03](https://github.com/probityai/agent-evidence-observer/blob/main/interop/pydantic-recovery-2026-10-03/README.md) | `probity-pydantic-recovery-reader` | `>=3.12` | `probity-read-pydantic-recovery` |
