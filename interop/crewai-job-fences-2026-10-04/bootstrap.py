@@ -107,18 +107,30 @@ def check_installation(probe, source, owned, role):
             "sdk-free-reader")
 
 
-def launch(producer, reader, wheels, sdk, output):
+def launch(producer, reader, wheels, sdk, observer, output):
     profile = Path(__file__).resolve().parent
-    selected_raw = (profile / "native-source-selection.json").read_bytes()
+    selected_raw = (profile / "runtime-source-selection.json").read_bytes()
     source = json.loads(selected_raw)
     require(source["revision"] == "738c8e19e35c2888d8e0663bc5cc45c5acf6ac2d", "unselected-crewai-source")
+    for name, expected in source["observerMetadataGitBlobs"].items():
+        path = observer / name
+        require(not path.is_symlink() and blob(path.read_bytes()) == expected,
+                "observer-source-metadata")
+    for name, expected in source["observerPythonGitBlobs"].items():
+        path = observer / "src" / name
+        require(not path.is_symlink() and blob(path.read_bytes()) == expected,
+                "observer-checkout-source")
+    for name, expected in source["runtimeDependencySHA256"].items():
+        path = profile / name
+        require(not path.is_symlink() and hashlib.sha256(path.read_bytes()).hexdigest() == expected,
+                "runtime-dependency-selection")
     require(not output.exists(), "output-already-exists")
     output.mkdir(parents=True)
     cwd = output / "empty-cwd"
     cwd.mkdir()
     owned = {str(p.relative_to(profile / "probity_crewai_jobs")): blob(p.read_bytes())
              for p in sorted((profile / "probity_crewai_jobs").glob("*.py"))}
-    (output / "native-source-selection.json").write_bytes(selected_raw)
+    (output / "runtime-source-selection.json").write_bytes(selected_raw)
     for component in source["components"].values():
         for name, expected in component["pythonGitBlobs"].items():
             relative = component["sourceRoot"] + "/" + name
@@ -166,6 +178,8 @@ def launch(producer, reader, wheels, sdk, output):
             "--output", str(output / f"decision-{index}.json")], output / f"offline-reader-{index}", cwd))
     require(decisions[0] == decisions[1], "offline-reader-byte-repeat")
     receipt = {"status": "finite-native-job-fences-and-effects-verified", "sourceRevision": source["revision"],
+               "observerRevision": source["observerRevision"],
+               "runtimeDependencySHA256": source["runtimeDependencySHA256"],
                "hostPolicySHA256": policy_sha, "wheelSHA256": wheel_digests,
                "nativePythonFiles": {name: len(item["pythonGitBlobs"]) for name, item in source["components"].items()},
                "nativeInstallationVerifiedBeforeImports": True, "readerFrameworkFree": True,
@@ -178,10 +192,10 @@ def launch(producer, reader, wheels, sdk, output):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    for name in ("producer", "reader", "wheels", "sdk", "output"):
+    for name in ("producer", "reader", "wheels", "sdk", "observer", "output"):
         parser.add_argument("--" + name, type=Path, required=True)
     args = parser.parse_args()
-    print(encoded(launch(args.producer, args.reader, args.wheels, args.sdk, args.output)).decode())
+    print(encoded(launch(args.producer, args.reader, args.wheels, args.sdk, args.observer, args.output)).decode())
     return 0
 
 

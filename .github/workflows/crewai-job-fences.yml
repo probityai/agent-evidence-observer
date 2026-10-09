@@ -38,7 +38,7 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           repository: probityai/agent-evidence-observer
-          ref: 8c074d7b8f380dd01fd55277b68a37ad8217c8cb
+          ref: e951e040d355f3f3108da7779c3dfcc8bbc0f523
           path: selected-observer
           persist-credentials: false
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
@@ -55,16 +55,15 @@ jobs:
           set -euo pipefail
           profile="$GITHUB_WORKSPACE/interop/crewai-job-fences-2026-10-04"
           mkdir -p "$profile/install-attempt"
-          cp "$profile/native-source-selection.json" "$profile/install-attempt/"
+          cp "$profile"/*source-selection.json "$profile"/requirements*.lock "$profile/install-attempt/"
           git rev-parse HEAD > "$profile/install-attempt/owned-head.txt"
           cp "$GITHUB_WORKSPACE/selected-crewai/uv.lock" "$profile/install-attempt/publisher-uv.lock"
           exec > >(tee "$profile/install-attempt/setup.log") 2>&1
           python -I -B -c 'import ast,sys;from pathlib import Path;[ast.parse(p.read_text(),filename=str(p)) for p in Path(sys.argv[1]).rglob("*.py")]' "$profile"
           python -m pip install --no-compile uv==0.11.15
           uv --version
-          uv export --quiet --project "$GITHUB_WORKSPACE/selected-crewai" --frozen --package crewai --no-dev --no-editable --no-emit-workspace --format requirements-txt --output-file "$profile/install-attempt/native-dependencies.lock"
           python -m venv "$RUNNER_TEMP/crewai-jobs-producer"
-          uv pip sync --python "$RUNNER_TEMP/crewai-jobs-producer/bin/python" --require-hashes "$profile/install-attempt/native-dependencies.lock"
+          uv pip sync --python "$RUNNER_TEMP/crewai-jobs-producer/bin/python" --require-hashes "$profile/requirements-native.lock"
           uv build --wheel --python "$(command -v python)" "$GITHUB_WORKSPACE/selected-crewai/lib/crewai-core" --out-dir "$RUNNER_TEMP/crewai-jobs-wheels"
           uv build --wheel --python "$(command -v python)" "$GITHUB_WORKSPACE/selected-crewai/lib/cli" --out-dir "$RUNNER_TEMP/crewai-jobs-wheels"
           uv build --wheel --python "$(command -v python)" "$GITHUB_WORKSPACE/selected-crewai/lib/crewai" --out-dir "$RUNNER_TEMP/crewai-jobs-wheels"
@@ -73,14 +72,14 @@ jobs:
           uv pip install --python "$RUNNER_TEMP/crewai-jobs-producer/bin/python" --no-deps "$RUNNER_TEMP/crewai-jobs-wheels/"*.whl
           uv pip check --python "$RUNNER_TEMP/crewai-jobs-producer/bin/python"
           python -m venv "$RUNNER_TEMP/crewai-jobs-reader"
-          uv pip install --python "$RUNNER_TEMP/crewai-jobs-reader/bin/python" --require-hashes -r "$profile/requirements-reader.lock"
+          uv pip install --python "$RUNNER_TEMP/crewai-jobs-reader/bin/python" --require-hashes -r "$profile/requirements-runtime-reader.lock"
           uv pip install --python "$RUNNER_TEMP/crewai-jobs-reader/bin/python" --no-deps "$RUNNER_TEMP/crewai-jobs-wheels/agent_evidence_observer-0.0.1-py3-none-any.whl" "$RUNNER_TEMP/crewai-jobs-wheels/probity_crewai_job_fences-0.0.1-py3-none-any.whl"
           uv pip check --python "$RUNNER_TEMP/crewai-jobs-reader/bin/python"
       - name: Run native fences and real threaded flows, then read twice offline
         run: |
           set -euo pipefail
           profile="$GITHUB_WORKSPACE/interop/crewai-job-fences-2026-10-04"
-          python -I -B "$profile/bootstrap.py" --producer "$RUNNER_TEMP/crewai-jobs-producer/bin/python" --reader "$RUNNER_TEMP/crewai-jobs-reader/bin/python" --wheels "$RUNNER_TEMP/crewai-jobs-wheels" --sdk "$GITHUB_WORKSPACE/selected-crewai" --output "$profile/actual-run"
+          python -I -B "$profile/bootstrap.py" --producer "$RUNNER_TEMP/crewai-jobs-producer/bin/python" --reader "$RUNNER_TEMP/crewai-jobs-reader/bin/python" --wheels "$RUNNER_TEMP/crewai-jobs-wheels" --sdk "$GITHUB_WORKSPACE/selected-crewai" --observer "$GITHUB_WORKSPACE/selected-observer" --output "$profile/actual-run"
       - name: Refuse thirty semantic mutations even when their hashes are reselected
         run: |
           set -euo pipefail
