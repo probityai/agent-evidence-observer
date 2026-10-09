@@ -30,7 +30,7 @@ file-tree snapshots found no change it did not make. It does not mean every agen
 
 ## Status
 
-Version 0.0.1, unreleased. Every record says `witnessScope: PEER`: the witness key runs on the same
+Version 0.0.1, tagged `v0.0.1` on GitHub with its wheels attached; not on PyPI. Every record says `witnessScope: PEER`: the witness key runs on the same
 host under the same operator, so the records show what this broker saw, not what an independent
 observer saw. Linux runs can launch a fixed workload under bubblewrap with only the broker's socket
 exposed. Running an unmodified agent that way, and a separately operated witness, are the next steps.

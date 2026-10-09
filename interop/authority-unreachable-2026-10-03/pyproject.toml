@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "agent-evidence-authority-reference"
-version = "0.0.1"
+version = "0.1.0"
 description = "Reference authority-at-dispatch and durable effect comparison"
 requires-python = ">=3.12"
 
