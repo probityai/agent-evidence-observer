@@ -7,7 +7,7 @@ source_root=$(cd "$profile/../.." && pwd)
 python3 -I -B - "$profile" <<'PY'
 import hashlib, json, pathlib, sys
 root = pathlib.Path(sys.argv[1])
-selection = json.loads((root / "source-selection.json").read_bytes())
+selection = json.loads((root / "source-selection-runtime-checks.json").read_bytes())
 for name, expected in selection["sourceFiles"].items():
     path = (root / name).resolve()
     if not path.is_relative_to(root) or hashlib.sha256(path.read_bytes()).hexdigest() != expected:
@@ -29,7 +29,7 @@ npm --version > "$evidence/npm-version.txt"
   npm ci --ignore-scripts
   npm ls --json > "$evidence/installed-npm.json"
 )
-cp "$profile"/package*.json "$profile"/requirements* "$profile/source-selection.json" "$evidence/"
+cp "$profile"/package*.json "$profile"/requirements* "$profile"/source-selection*.json "$evidence/"
 for role in operator reader; do
   uv venv "$evidence/$role" --python 3.12
   uv pip install --python "$evidence/$role/bin/python" --require-hashes -r "$profile/requirements.lock"
