@@ -219,7 +219,7 @@ class TestRefusalControls:
         path.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
         row = read_proofable(records / "proofable")
         assert result(row, "proofable-post-dispatch-deny-point-observed") == "fail"
-        assert "no complete, correctly ordered revocation event time" in row["contract"]["temporalRevocation"]
+        assert "no complete, correctly ordered, chronological revocation and dispatch sequence" in row["contract"]["temporalRevocation"]
 
     @pytest.mark.parametrize("event", ["revocation", "next_dispatch", "original_effect"])
     def test_incomplete_dispatch_sequence_does_not_establish_the_boundary(self, records, event):
@@ -276,6 +276,81 @@ class TestRefusalControls:
         envelopes = json.loads(path.read_bytes())
         path.write_text(json.dumps(envelopes[:-1]), encoding="utf-8")
         assert result(read_proofable(records / "proofable"), "proofable-envelope-count") == "fail"
+
+    def test_revocation_not_in_flight_does_not_establish_the_boundary(self, records):
+        def clear_in_flight(rows):
+            post = next(r for r in rows if r["case_id"] == "post_dispatch_revoke")
+            for step in post["dispatch_sequence"]:
+                if step["event"] == "revocation":
+                    step["observed_in_flight"] = False
+            return rows
+        edit_jsonl(records / "proofable" / "trace.jsonl", clear_in_flight)
+        assert result(read_proofable(records / "proofable"), "proofable-post-dispatch-deny-point-observed") == "fail"
+
+    def test_effect_not_observed_at_platform_does_not_establish_the_boundary(self, records):
+        def change_effect(rows):
+            post = next(r for r in rows if r["case_id"] == "post_dispatch_revoke")
+            for step in post["dispatch_sequence"]:
+                if step["event"] == "original_effect":
+                    step["committed_effect"] = "none_no_dispatch"
+            return rows
+        edit_jsonl(records / "proofable" / "trace.jsonl", change_effect)
+        assert result(read_proofable(records / "proofable"), "proofable-post-dispatch-deny-point-observed") == "fail"
+
+    def test_non_chronological_dispatch_sequence_does_not_establish_the_boundary(self, records):
+        """Correct event names in correct order are not enough: the recorded times must increase."""
+        def swap_times(rows):
+            post = next(r for r in rows if r["case_id"] == "post_dispatch_revoke")
+            sequence = post["dispatch_sequence"]
+            sequence[1]["at"], sequence[2]["at"] = sequence[2]["at"], sequence[1]["at"]
+            return rows
+        edit_jsonl(records / "proofable" / "trace.jsonl", swap_times)
+        assert result(read_proofable(records / "proofable"), "proofable-post-dispatch-deny-point-observed") == "fail"
+
+    def test_unparsable_dispatch_timestamp_does_not_establish_the_boundary(self, records):
+        def break_time(rows):
+            post = next(r for r in rows if r["case_id"] == "post_dispatch_revoke")
+            for step in post["dispatch_sequence"]:
+                if step["event"] == "next_dispatch":
+                    step["at"] = "not-a-timestamp"
+            return rows
+        edit_jsonl(records / "proofable" / "trace.jsonl", break_time)
+        assert result(read_proofable(records / "proofable"), "proofable-post-dispatch-deny-point-observed") == "fail"
+
+    @pytest.mark.parametrize("where", ["trace", "manifest"])
+    def test_envelope_qhash_sets_must_be_equal(self, records, where):
+        """A qHash that merely exists somewhere is not enough; the three sets must be identical."""
+        if where == "trace":
+            def retarget_terminal(rows):
+                post = next(r for r in rows if r["case_id"] == "hosted_allow")
+                post["terminal_receipt"]["qHash"] = "0x" + "11" * 32
+                return rows
+            edit_jsonl(records / "proofable" / "trace.jsonl", retarget_terminal)
+        else:
+            def retarget_reference(document):
+                document["portable_proofs"]["references"][0]["qHash"] = "0x" + "22" * 32
+            edit_json(records / "proofable" / "manifest.json", retarget_reference)
+        assert result(read_proofable(records / "proofable"), "proofable-envelope-count") == "fail"
+
+    @pytest.mark.parametrize("mutation", ["chain", "address"])
+    def test_mutated_did_with_recomputed_qhash_fails_identity_binding(self, records, mutation):
+        """The DID binds the chain and the EOA. Re-signing the qHash must not rescue a moved DID:
+        the original EIP-191 signature no longer matches the DID/signature identity."""
+        import portable_envelope
+        path = records / "proofable" / "portable-proofs.json"
+        envelopes = json.loads(path.read_bytes())
+        envelope = envelopes[0]
+        if mutation == "chain":
+            envelope["did"] = "did:pkh:eip155:1:" + envelope["walletAddress"]
+        else:
+            envelope["did"] = f"did:pkh:eip155:{envelope['chainId']}:0x" + "ab" * 20
+        envelope["qHash"] = portable_envelope.qhash(envelope)  # qHash now matches the mutated bytes
+        path.write_text(json.dumps(envelopes), encoding="utf-8")
+        row = read_proofable(records / "proofable")
+        assert result(row, "proofable-receipt-envelope-verified") == "fail"
+        detail = next(c["detail"] for c in row["checks"]
+                      if c["id"] == "proofable-receipt-envelope-verified")
+        assert "DID" in detail
 
     def test_unreachable_case_is_selected_by_identity(self, records):
         edit_json(records / "proofable" / "authority-effect-results.json",

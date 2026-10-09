@@ -289,25 +289,34 @@ def read_proofable(directory: Path) -> dict[str, Any]:
     revocation = sequence[1] if len(sequence) > 1 else {}
     original_effect = sequence[2] if len(sequence) > 2 else {}
     next_dispatch = sequence[3] if len(sequence) > 3 else {}
+    # Each event carries its own timestamp; require all four to parse and to be strictly increasing,
+    # so the recorded boundary is a real time order and not just a list order.
+    boundary_times: list[float] = []
+    if ordered:
+        try:
+            boundary_times = [unix(step["at"]) for step in sequence]
+        except (KeyError, TypeError, ValueError):
+            boundary_times = []
+    chronological = len(boundary_times) == 4 and all(
+        boundary_times[i] < boundary_times[i + 1] for i in range(3))
     boundary_observed = (
         ordered
-        and dispatch.get("decision") == "ALLOW"              # the in-flight action was allowed
-        and bool(dispatch.get("at"))                         # dispatch carries its own time
-        and bool(revocation.get("at"))                      # revocation event time
-        and bool(original_effect.get("at"))                 # effect observed before the refusal
-        and next_dispatch.get("decision") == "DENY"         # required deny point reached
-        and bool(next_dispatch.get("reason"))               # refusal carries its reason
-        and bool(next_dispatch.get("at"))                   # refusal carries its own time
+        and dispatch.get("decision") == "ALLOW"                          # the in-flight action was allowed
+        and revocation.get("observed_in_flight") is True                # revocation happened mid-flight
+        and original_effect.get("committed_effect") == "observed_at_platform"  # effect seen at the platform
+        and next_dispatch.get("decision") == "DENY"                     # required deny point reached
+        and bool(str(next_dispatch.get("reason") or "").strip())        # refusal carries its reason
+        and chronological                                              # t1 < t2 < t3 < t4, all parsed
     )
     revocation_detail = (
-        "trace.jsonl -> post_dispatch_revoke.dispatch_sequence records, in order, dispatch (ALLOW), "
-        "the revocation event time with in-flight status, the earlier action's platform-observed "
-        "effect, and the next dispatch refused (DENY) with reason; "
+        "trace.jsonl -> post_dispatch_revoke.dispatch_sequence records, in order and in time, dispatch "
+        "(ALLOW), the revocation event time with observed_in_flight true, the earlier action's "
+        "platform-observed effect, and the next dispatch refused (DENY) with reason; "
         "authority-effect-results.json -> cases[post_dispatch_revoke].temporal_revocation carries "
         "the same ordering, keeping the refusal separate from the already-committed effect"
         if boundary_observed else
         "the stated deny point is the next dispatch after revocation; the published trace provides "
-        "no complete, correctly ordered revocation event time and dispatch sequence, so that "
+        "no complete, correctly ordered, chronological revocation and dispatch sequence, so that "
         "boundary is not observed"
     )
     checks.add("proofable-post-dispatch-deny-point-observed", boundary_observed, revocation_detail)
@@ -319,18 +328,48 @@ def read_proofable(directory: Path) -> dict[str, Any]:
     # CAIP-380 check is performed here instead of skipped. Each envelope is verified
     # independently of Proofable's runtime and SDK: the qHash is recomputed from the
     # canonical subset and the EIP-191 signer is recovered from the published bytes.
+    # The disclosed envelopes are also bound to the trace: the qHash set derived from the
+    # trace records must equal the manifest references and the envelope file exactly, so a
+    # reference that merely happens to exist in the file is not enough.
     proofs_spec = manifest.get("portable_proofs") or {}
     proofs_file = proofs_spec.get("file")
     if proofs_file and (directory / proofs_file).is_file():
         import portable_envelope
         envelopes = json.loads((directory / proofs_file).read_bytes())
-        by_hash = {str(e.get("qHash", "")).lower(): e for e in envelopes}
-        references = proofs_spec.get("references", [])
+
+        def _trace_qhashes() -> list[str]:
+            """Every receipt/decision qHash the trace records name, across all four field shapes."""
+            found: list[str] = []
+            for record in trace:
+                receipt = record.get("terminal_receipt") or {}
+                if receipt.get("qHash"):
+                    found.append(str(receipt["qHash"]))
+                for value in (record.get("authority_decision_qHashes") or []):
+                    found.append(str(value))
+                for key in ("authority_decision_qHash", "next_authority_decision_qHash"):
+                    if record.get(key):
+                        found.append(str(record[key]))
+            return [value.lower() for value in found]
+
+        trace_hashes = _trace_qhashes()
+        reference_hashes = [str(r.get("qHash", "")).lower() for r in proofs_spec.get("references", [])]
+        envelope_hashes = [str(e.get("qHash", "")).lower() for e in envelopes]
+        counts_agree = (
+            len(envelopes) == proofs_spec.get("count") == 11
+            and len(trace_hashes) == len(set(trace_hashes))
+            and len(envelope_hashes) == len(set(envelope_hashes))
+            and len(reference_hashes) == len(set(reference_hashes))
+        )
+        sets_agree = (
+            set(trace_hashes) == set(envelope_hashes) == set(reference_hashes)
+            and len(trace_hashes) == len(set(trace_hashes))
+        )
         checks.add("proofable-envelope-count",
-                    len(envelopes) == proofs_spec.get("count") and len(envelopes) == len(by_hash)
-                    and all(str(r.get("qHash", "")).lower() in by_hash for r in references),
-                    f"{len(envelopes)} envelopes, {len(references)} references, "
-                    f"manifest count {proofs_spec.get('count')}")
+                    counts_agree and sets_agree,
+                    f"{len(envelopes)} envelopes, {len(reference_hashes)} manifest references, "
+                    f"{len(trace_hashes)} trace qHashes, manifest count {proofs_spec.get('count')}; "
+                    f"trace-only {sorted(set(trace_hashes) - set(envelope_hashes))}, "
+                    f"file-only {sorted(set(envelope_hashes) - set(trace_hashes))}")
         invalid = [{"qHash": e.get("qHash"), "errors": verdict["errors"]}
                    for e in envelopes if not (verdict := portable_envelope.verify(e))["valid"]]
         checks.add("proofable-receipt-envelope-verified", not invalid and bool(envelopes),
