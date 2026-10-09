@@ -1,11 +1,9 @@
 # Current ADK publication consumer
 
-This additive placement executes the unchanged twelve-case protected ticket
-reference against selected ADK source
-`e94c2e726a269e0f04e2e4b202f5c131c80c20de`. Its installed version remains
-2.11.0. That number alone does not select the current source: a standard-library
-probe verifies all 778 installed SDK Python Gitblob identities before importing
-the SDK or invoking the scripted native model.
+This placement runs the unchanged twelve-case protected ticket reference against
+selected ADK source `e94c2e726a269e0f04e2e4b202f5c131c80c20de`, version 2.11.0.
+A standard-library probe verifies all 778 installed SDK Python Gitblob identities
+before imports or scripted native calls.
 
 The original reference at
 `c774e0711e4a30c31cdfb184c1e4495a249fbdd0`, protected Observer target at
@@ -31,7 +29,9 @@ initialization and host working directory remain trusted. Python isolation and
 `-B` alone do not authenticate an arbitrary hostile installation.
 
 ```sh
-python bootstrap.py \
+# Starting directory: interop/adk-current-consumer-2026-10-03
+set -eu
+../../.venv/bin/python bootstrap.py \
   --producer /absolute/producer-env/bin/python \
   --reader /absolute/reader-env/bin/python \
   --wheels /absolute/selected-wheels \
@@ -57,7 +57,9 @@ Timeout, failed exit, malformed decision or changed repeated output fails the
 command and leaves the attempted receipts for inspection.
 
 ```sh
-python publish_reference.py /absolute/current-run/packet \
+# Starting directory: interop/adk-current-consumer-2026-10-03
+set -eu
+../../.venv/bin/python publish_reference.py /absolute/current-run/packet \
   --policy /absolute/current-run/host-policy.json \
   --policy-sha256 HOST_SELECTED_POLICY_SHA256 \
   --python /absolute/reader-env/bin/python \
@@ -81,10 +83,14 @@ callbacks, MCP error-as-success, omitted model/session history and failed or
 unclosed capture even after the mutant's artifact hashes are reselected.
 
 ```sh
-python -m pytest -c /dev/null test_bootstrap.py test_publish_reference.py -q
+# Starting directory: interop/adk-current-consumer-2026-10-03
+set -eu
+ADK_CURRENT_READER_PYTHON=/absolute/reader-env/bin/python \
+  ../../.venv/bin/python -m pytest -c /dev/null -o cache_dir=/absolute/owned-pytest-cache \
+  test_bootstrap.py test_publish_reference.py -q
 ADK_CURRENT_RETAINED_PACKET=/absolute/current-run/packet \
   /absolute/reader-env/bin/python -I -B -m pytest -c /dev/null \
-  test_native_current.py -q
+  -o cache_dir=/absolute/owned-pytest-cache test_native_current.py -q
 ```
 
 The observed native report preserves error after committed effect and incomplete
@@ -95,3 +101,9 @@ acceptance, recurring outside adoption and independent effect custody remain
 separate. No registry release, actual MCP transport or real-model quality is
 claimed. Compatibility maintenance remains with Probity through the Observer
 repository. The focused upstream sample is subject to host review and protections.
+
+The full upstream test job uses a separately selected correction to the
+Kubernetes executor and client-scoped cleanup tests. Its
+[source reference](../../docs/reference/ADK-FULL-TOX-SOURCE.md) records the patch,
+license, complete tree and refusal controls. The native SDK selection above
+stays unchanged.

@@ -36,5 +36,8 @@ commands, fields, refusal controls, and retained artifacts. Each profile's
 protocol and workflow remain the authority for reproducing that profile.
 Keep those references with the example when you review or automate it.
 
+The [ADK full-suite source reference](reference/ADK-FULL-TOX-SOURCE.md) separates
+the recorded upstream correction from the native consumer's original SDK pin.
+
 For implementation contracts, see the [design and trust boundary](DESIGN.md),
 [protected dispatch](PROTECTED-DISPATCH.md), and [consumer admission](CONSUMER-ADMISSION.md).
