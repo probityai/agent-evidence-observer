@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=82.0.1", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "probity-pic-aps-refund-reader"
+version = "0.0.1"
+description = "Read native PIC and retained APS refund evidence without creating authority or effects"
+requires-python = ">=3.12"
+dependencies = ["agent-evidence-observer==0.0.1", "probity-aps-refund-controls==0.0.1", "pic-standard[crypto]==0.9.0"]
+
+[project.scripts]
+probity-read-pic-aps-refund = "probity_pic_aps_refund.reader:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["probity_pic_aps_refund*"]
+
+[tool.setuptools.package-data]
+probity_pic_aps_refund = ["source-selection.json"]

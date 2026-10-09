@@ -1,0 +1,55 @@
+name: Native PIC and APS refund evidence
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'interop/pic-aps-refund-reader-2026-10-09/**'
+      - 'interop/aps-durable-refund-2026-10-05/**'
+      - 'src/probity_observer/**'
+      - 'pyproject.toml'
+      - 'interop/**/requirements*.lock'
+      - 'scripts/check-runtime-locks.py'
+      - 'docs/PIC-APS-REFUND-EVIDENCE.md'
+      - 'docs/reference/PIC-APS-REFUND-EVIDENCE.md'
+      - '.gitattributes'
+      - '.github/workflows/pic-aps-refund-evidence.yml'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  readonly-evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      TERM: dumb
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - uses: astral-sh/setup-uv@d0cc045d04ccac9d8b7881df0226f9e82c39688e
+        with:
+          version: '0.12.8'
+      - name: Build installed readers and check the original native evidence
+        run: |
+          set -euo pipefail
+          results="$RUNNER_TEMP/pic-aps-refund-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          bash interop/pic-aps-refund-reader-2026-10-09/verify_install.sh "$results"
+      - name: Retain every completed phase and refusal
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: pic-aps-refund-evidence
+          retention-days: 90
+          if-no-files-found: error
+          path: |
+            ${{ runner.temp }}/pic-aps-refund-${{ github.run_id }}-${{ github.run_attempt }}/
+            !${{ runner.temp }}/pic-aps-refund-${{ github.run_id }}-${{ github.run_attempt }}/.venv/
+            !${{ runner.temp }}/pic-aps-refund-${{ github.run_id }}-${{ github.run_attempt }}/PIC-source/
+            !${{ runner.temp }}/pic-aps-refund-${{ github.run_id }}-${{ github.run_attempt }}/.coverage

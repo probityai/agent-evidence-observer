@@ -1,0 +1,13 @@
+# Native PIC example runtime pins, plus build and read-only qualification tools.
+build==1.3.0
+setuptools==84.0.0
+wheel==0.48.0
+packaging==26.3
+cryptography==49.0.0
+pydantic==2.13.5
+jsonschema==4.26.0
+rfc8785==0.1.4
+pytest==8.4.2
+coverage==7.16.2
+ruff==0.15.6
+radon==6.0.1

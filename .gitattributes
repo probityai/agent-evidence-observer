@@ -1,2 +1,4 @@
 # Preserve the hash-selected format-patch bytes, including context/mail separators.
 interop/adk-current-consumer-2026-10-03/upstream-tox-corrections/two-commits.mbox -whitespace
+# Keep the contributor's exact CRLF fixture bytes and the ordinary whitespace rules.
+interop/pic-aps-refund-reader-2026-10-09/fixtures/PIC/fixtures/signed-proposal-example.json -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

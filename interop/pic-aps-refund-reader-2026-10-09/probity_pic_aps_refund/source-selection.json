@@ -1,0 +1,152 @@
+{
+  "APS": {
+    "captureScope": "author-operated native approval and local SQLite capture at its recorded historical clock",
+    "exampleCommit": "c31d94aad86713ae9b2e4cbc811deeab4b5d91ed",
+    "producerSource": "89ebae615ccf47b8de1fad92db30805d6d8a8278",
+    "readerSource": "00e92b0a3fcf53376ebafc6cc9b4abde7e9fdc8c",
+    "sdkVersion": "7.2.1"
+  },
+  "PIC": {
+    "exampleCommit": "236ecb81ad1cf2a44d8b3599734cccc334b12e95",
+    "packageFiles": {
+      "__init__.py": "1d8c0e433fe406b281804944123803ff59e442f05d51680334acb7076bc9a262",
+      "_rfc8785.py": "72802f156d16cba7ec61b7dce78a8f0561253cb94aa6742838b9c776ec6b5ee5",
+      "canonical.py": "1f9cdc59495b03ecdb962c83bd0702a55a7b7d9424f3b0361938282fc0418765",
+      "cli.py": "75025f7d54b2407cb316f99540c42a4d7f4de8c33fb0eee4a559392cb1ba6755",
+      "config.py": "973ccf90ce7815730b5fbad9ff7c1dfd19044ee3d34cc968a710977a048b5dec",
+      "errors.py": "ab89c258223f770c85e9fd2716e18a569559bde05d460606d9855630f95c2606",
+      "evidence.py": "cc5bfbeb6916166662880862b95e9e957929fe68734b9a69bb72ff223a035689",
+      "integrations/__init__.py": "a9f9bb37cbbcbaa290d2cc0f872c0f3ab21d5ae3984571e2c68f95ea736fc8fb",
+      "integrations/http_bridge.py": "8338946d5100f01d8a898ea6065fb55d7c60d2688d2ce62f0eed4e13fc555f51",
+      "integrations/langgraph_pic_toolnode.py": "ab9fc5c8e2cfee7ee1d82cd025a382e55a026b219115daa92c9f947dad723d8c",
+      "integrations/mcp_pic_guard.py": "ddcb5b0d50ef5483ab58282f8fc1b19c12c0dcfdfcd815ce035020d109fd56a6",
+      "keyring.py": "eb87b1ed4c5a23f93a4c600c73d682914106ac8592983670868090f3afc4c58c",
+      "pipeline.py": "2df95dcd2043c747b5f98e5683aaa494fb5b9a457a7521f7bed0f39dac687c79",
+      "policy.py": "dd2bb5e9e365ba901c771e5e0c674818a6dc53ba204806ad285678dcc681991f",
+      "schemas/proposal_schema.json": "f963aeeea1e2a3886b6a7758e9fb2f05c61937c864d1e01743033526d221fa32",
+      "verifier.py": "15f04b6873cdcc94b538a460c03cd25a7b7f56f69245988e598cc2e0cd77da84"
+    },
+    "repository": "pic-standard/pic-standard",
+    "sdkCommit": "330fdd817ef81d43461ea1787939e0d1cc87d589"
+  },
+  "combinedAdmissionEstablished": false,
+  "fixtureFiles": {
+    "fixtures/APS/after-intent/attempts.json": {
+      "SHA256": "74c1063f28ffc5648b32195fda9cc7386f193a7628ee2573545a27d9f0ca3079",
+      "bytes": 3986,
+      "retainedSource": "observer-host-boundary-r2/remote-r4-final/aps/native/after-intent/attempts.json"
+    },
+    "fixtures/APS/after-intent/host-policy.json": {
+      "SHA256": "578848606ac3032d6663231514219c0dc1704cbfb012991af6a5c93fe0fa5e26",
+      "bytes": 4139,
+      "retainedSource": "observer-host-boundary-r2/remote-r4-final/aps/native/after-intent/host-policy.json"
+    },
+    "fixtures/APS/after-intent/readback.json": {
+      "SHA256": "0ea6dbd93b10122080d29bcb4d93cf839ca0ade5a2a16cd49bb52218b30ad2bb",
+      "bytes": 1574,
+      "retainedSource": "observer-host-boundary-r2/remote-r4-final/aps/native/after-intent/readback.json"
+    },
+    "fixtures/APS/after-intent/receipt.json": {
+      "SHA256": "e4662aa10c4f7445d14af2763d316f7d2931ee82fbda2741deec81b40cc78ec9",
+      "bytes": 1341,
+      "retainedSource": "observer-host-boundary-r2/remote-r4-final/aps/native/after-intent/receipt.json"
+    },
+    "fixtures/APS/after-intent/service.sqlite": {
+      "SHA256": "7f363c65482162670fa2fee58e8339bc444ba876b79e41bbaa52828c57877f1c",
+      "bytes": 20480,
+      "retainedSource": "observer-host-boundary-r2/remote-r4-final/aps/native/after-intent/service.sqlite"
+    },
+    "fixtures/APS/approval-reissue/attempts.json": {
+      "SHA256": "6b0f1e8c212976ef1f52d93945227851c2c6e9aa53e3abc4abcae614e0dd2172",
+      "bytes": 17857,
+      "retainedSource": "observer-host-boundary-r2/remote-r4-final/aps/native/approval-reissue/attempts.json"
+    },
+    "fixtures/APS/approval-reissue/host-policy.json": {
+      "SHA256": "5b1dd4c627d4fa6467ee9586982d7b60130533d4923af2cd95347ef025691d08",
+      "bytes": 6082,
+      "retainedSource": "observer-host-boundary-r2/remote-r4-final/aps/native/approval-reissue/host-policy.json"
+    },
+    "fixtures/APS/approval-reissue/readback.json": {
+      "SHA256": "462e496d04ca5973a7f2ec51d21572402b48f561c39fb4a248266b6c88799895",
+      "bytes": 1773,
+      "retainedSource": "observer-host-boundary-r2/remote-r4-final/aps/native/approval-reissue/readback.json"
+    },
+    "fixtures/APS/approval-reissue/receipt.json": {
+      "SHA256": "9e9b5f3764181f436a90b12f47253ca5d38af20a4295cdba3d84b2be90b2bf93",
+      "bytes": 1424,
+      "retainedSource": "observer-host-boundary-r2/remote-r4-final/aps/native/approval-reissue/receipt.json"
+    },
+    "fixtures/APS/approval-reissue/service.sqlite": {
+      "SHA256": "e30918c825a6da68ab85cff3c4aee045ef09fd3591e7a27291251045d9f5e260",
+      "bytes": 20480,
+      "retainedSource": "observer-host-boundary-r2/remote-r4-final/aps/native/approval-reissue/service.sqlite"
+    },
+    "fixtures/APS/restart/attempts.json": {
+      "SHA256": "90ccbd93524dc436f1d8514e7b8632fa0e2395fc44d7b1811ea0475d3bf6c2d7",
+      "bytes": 14965,
+      "retainedSource": "observer-host-boundary-r2/remote-r4-final/aps/native/restart/attempts.json"
+    },
+    "fixtures/APS/restart/host-policy.json": {
+      "SHA256": "15f6f1c841d20fb8a15d0e70aeba22ca920296ef41a05a9fc24e9835e91aee3d",
+      "bytes": 4139,
+      "retainedSource": "observer-host-boundary-r2/remote-r4-final/aps/native/restart/host-policy.json"
+    },
+    "fixtures/APS/restart/readback.json": {
+      "SHA256": "ef209f2925be62c1b1da4b2375d5630862f88dd478dbd6db0c8825ffd97ec1c5",
+      "bytes": 1773,
+      "retainedSource": "observer-host-boundary-r2/remote-r4-final/aps/native/restart/readback.json"
+    },
+    "fixtures/APS/restart/receipt.json": {
+      "SHA256": "f7ff9781238832ec237614faccd65b73b3a8908ef791a15aaccf512d1fcdcb5e",
+      "bytes": 1424,
+      "retainedSource": "observer-host-boundary-r2/remote-r4-final/aps/native/restart/receipt.json"
+    },
+    "fixtures/APS/restart/service.sqlite": {
+      "SHA256": "b76f184a64a0c5dd5285c6c46764c3c17a196d0e341c56a5b2e9c306be450d5b",
+      "bytes": 20480,
+      "retainedSource": "observer-host-boundary-r2/remote-r4-final/aps/native/restart/service.sqlite"
+    },
+    "fixtures/PIC/LICENSE": {
+      "SHA256": "bf0faa9d3bc77be4deaff445f847bea6107ce9f6e2671af019e95882c0b00db2",
+      "bytes": 11354,
+      "gitBlobSHA": "09a5231a0ded3ea3853f6c5cda2718c142e51bd4"
+    },
+    "fixtures/PIC/constraints.txt": {
+      "SHA256": "6a8789f1e468138f5b0f7d038dca1a94bb94ea22612b20ca470cf2da3c8f398c",
+      "bytes": 878,
+      "gitBlobSHA": "9cf93fc63ce3808b49fcd4615b60d34f069f0168",
+      "sourceURL": "https://github.com/pic-standard/pic-standard/blob/236ecb81ad1cf2a44d8b3599734cccc334b12e95/examples/refund-approval/constraints.txt"
+    },
+    "fixtures/PIC/fixtures/merchant_decision.json": {
+      "SHA256": "6ded4ee905100b92c4902fc63ff06ebff54e6d91983d22545915601078dc78d6",
+      "bytes": 312,
+      "gitBlobSHA": "daa09df822bf4e2e723480bf58fb127f1d488bca",
+      "sourceURL": "https://github.com/pic-standard/pic-standard/blob/236ecb81ad1cf2a44d8b3599734cccc334b12e95/examples/refund-approval/fixtures/merchant_decision.json"
+    },
+    "fixtures/PIC/fixtures/signed-proposal-example.json": {
+      "SHA256": "f15d6e586f2c0e763418cbe93047ae8651b9e182653eab4f256452868a9e874e",
+      "bytes": 1441,
+      "gitBlobSHA": "062365a07ee4d1cc4e1e74dca1146eca87c576dd",
+      "sourceURL": "https://github.com/pic-standard/pic-standard/blob/236ecb81ad1cf2a44d8b3599734cccc334b12e95/examples/refund-approval/fixtures/signed-proposal-example.json"
+    },
+    "fixtures/PIC/keys/README.md": {
+      "SHA256": "88c37000c68b6326629ea42ddde0f5001d6c6efb78ea8386bb0dcea3b4587c6f",
+      "bytes": 1523,
+      "gitBlobSHA": "3557f9f6aa5e1e0e175d81c354dbfb48c2c677c8",
+      "sourceURL": "https://github.com/pic-standard/pic-standard/blob/236ecb81ad1cf2a44d8b3599734cccc334b12e95/examples/refund-approval/keys/README.md"
+    },
+    "fixtures/PIC/keys/merchant_test_public.hex": {
+      "SHA256": "40d359139cfd8af4ff3ebfbf9c8845468ca7876582189c11d3293b832f660632",
+      "bytes": 65,
+      "gitBlobSHA": "992aa3e65eb75ca4618dd15e3cf22e77ac83eb4e",
+      "sourceURL": "https://github.com/pic-standard/pic-standard/blob/236ecb81ad1cf2a44d8b3599734cccc334b12e95/examples/refund-approval/keys/merchant_test_public.hex"
+    },
+    "fixtures/PIC/keys/pic_keys.example.json": {
+      "SHA256": "dc8c6e27492398c7ec68cd0d2b4f101eadc73e1d90b0317fa2b795e90fddf172",
+      "bytes": 141,
+      "gitBlobSHA": "f5f21d5bb0a678dbda752aa99fdfc81e14b04d6f",
+      "sourceURL": "https://github.com/pic-standard/pic-standard/blob/236ecb81ad1cf2a44d8b3599734cccc334b12e95/examples/refund-approval/keys/pic_keys.example.json"
+    }
+  },
+  "noPrivateKeyCopied": true
+}
