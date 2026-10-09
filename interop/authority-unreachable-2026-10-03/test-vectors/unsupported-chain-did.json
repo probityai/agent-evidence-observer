@@ -1,0 +1,20 @@
+{
+  "qHash": "0xced8c6158e2d218255b9be89000ea873c5fee3dc9e2d5d47841ef978d46b550a",
+  "did": "did:pkh:eip155:84533:0xa41494e1e5f9e5eaf786961e6ef84cd1a3071eec",
+  "walletAddress": "0xa41494e1e5f9e5eaf786961e6ef84cd1a3071eec",
+  "verifierIds": [
+    "ownership-basic"
+  ],
+  "data": {
+    "owner": "0x0d4e513a3a7eb92bab65c97786c67b198d9dca15",
+    "content": "{\"version\":1,\"kind\":\"agent-job\",\"showContent\":true,\"jobId\":\"9b8e6fa8-77d6-4bbe-bbfc-704ea98a4b80\",\"agentId\":\"proofable-authority-review\",\"prompt\":\"Authority review probe. Return exactly REVIEW_OK. Do not call tools, write files, use the network, or send messages.\",\"status\":\"completed\",\"executionSteps\":[{\"id\":\"dispatch\",\"label\":\"Queued for execution\",\"status\":\"completed\",\"at\":\"2026-10-08T16:08:52.933Z\"},{\"id\":\"zeus-runtime\",\"label\":\"Run Agent runtime\",\"status\":\"completed\",\"at\":\"2026-10-08T16:08:52.933Z\"},{\"id\":\"complete\",\"label\":\"Finish and record result\",\"status\":\"completed\",\"at\":\"2026-10-08T16:08:52.933Z\"}],\"createdAt\":\"2026-10-08T16:08:50.577Z\",\"agentWallet\":\"0x738f1729be00dee66e3451156097c20a34ad3540\",\"schedule\":{\"type\":\"once\",\"runAtMs\":1791475730577},\"runAtMs\":1791475730577,\"result\":{\"response\":\"REVIEW_OK\",\"structuredOutput\":null,\"model\":\"default\",\"provider\":\"neus\",\"zeus\":{\"reasoning\":null,\"toolActivity\":null,\"receipts\":null}},\"completedAt\":\"2026-10-08T16:08:52.934Z\",\"durationMs\":2346,\"attemptHistory\":[{\"attemptId\":\"70363995-657f-4a2a-aeaf-f98db748317f\",\"attempt\":1,\"stepRound\":0,\"provider\":\"neus\",\"model\":\"default\",\"harness\":\"operator\",\"status\":\"completed\",\"startedAt\":1791475731536,\"actualProvider\":\"neus\",\"actualModel\":\"z-ai/glm-5.3-flash\",\"actualHarness\":\"operator\",\"completedAt\":1791475732908}],\"evaluation\":{\"version\":1,\"jobId\":\"9b8e6fa8-77d6-4bbe-bbfc-704ea98a4b80\",\"attempt\":1,\"taskClass\":\"general\",\"agentId\":\"proofable-authority-review\",\"agentWallet\":\"0x738f1729be00dee66e3451156097c20a34ad3540\",\"model\":\"z-ai/glm-5.3-flash\",\"provider\":\"neus\",\"requestedModel\":null,\"requestedProvider\":null,\"inferenceFallback\":false,\"harness\":\"operator\",\"transport\":null,\"policy\":{\"policyVersion\":null,\"harnessVersion\":null},\"status\":\"completed\",\"rawTaskSuccess\":true,\"accepted\":false,\"acceptedOutcome\":false,\"evaluator\":\"job-acceptance\",\"failureClass\":\"acceptance_not_met\",\"authoritySignal\":\"clean\",\"approval\":{\"required\":false,\"decided\":false,\"humanIntervention\":false},\"checks\":[],\"artifacts\":[],\"workRefs\":[],\"toolActions\":{\"count\":null,\"failed\":null},\"retrieval\":{\"indexVersion\":null,\"proofRefs\":null,\"count\":null},\"cost\":{\"tokens\":null,\"modelCalls\":null,\"currency\":null},\"durationMs\":2346,\"createdAt\":1791475730577,\"completedAt\":1791475732934,\"qHash\":null,\"terminalQHash\":null,\"recurrenceId\":null,\"runNumber\":null,\"evidenceComplete\":false}}",
+    "reference": {
+      "type": "job",
+      "id": "9b8e6fa8-77d6-4bbe-bbfc-704ea98a4b80"
+    }
+  },
+  "signedTimestamp": 1791475732945,
+  "signature": "0x143d05d2dfb8e244693077d85155df75920e6bdaf0bd3069edbe272c477da4c068195d0f36f7b11363aa0c8283491e99205b7deb84dac8c970b49d97ae232fec1b",
+  "signatureMethod": "eip191",
+  "chain": "84532"
+}
