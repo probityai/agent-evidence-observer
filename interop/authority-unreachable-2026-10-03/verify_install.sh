@@ -15,12 +15,20 @@ mkdir -p "$run_dir/wheels" "$run_dir/empty"
 sha256sum "$run_dir"/wheels/*.whl > "$run_dir/wheel-sha256.txt"
 
 for role in producer reader; do
-  "$authority_python" -m venv "$run_dir/$role-env"
-  "$run_dir/$role-env/bin/python" -m pip install -r "$profile_dir/requirements.txt" "$run_dir"/wheels/*.whl > "$run_dir/$role-install.txt"
+  "$authority_python" -m venv --without-pip "$run_dir/$role-env"
+  "$authority_python" -m pip --python "$run_dir/$role-env/bin/python" install -r "$profile_dir/requirements.txt" "$run_dir"/wheels/*.whl > "$run_dir/$role-install.txt"
+  "$run_dir/$role-env/bin/python" -m pip check > "$run_dir/$role-pip-check.txt"
+done
+
+"$authority_python" -m venv --without-pip "$run_dir/audit-env"
+"$authority_python" -m pip --python "$run_dir/audit-env/bin/python" install -r "$profile_dir/requirements-audit.txt" > "$run_dir/audit-install.txt"
+for role in producer reader; do
+  "$authority_python" "$profile_dir/audit_environment.py" "$run_dir/$role-env/bin/python" \
+    "$run_dir/audit-env/bin/python" "$run_dir/$role-dependency-audit.json"
 done
 
 cd "$run_dir/empty"
-env -u PYTHONPATH ALAKRIS_SOURCE="$alakris_source" "$run_dir/producer-env/bin/python" -m pytest "$profile_dir/test_authority_profile.py" "$profile_dir/test_implementation_records.py" --import-mode=importlib --junitxml="$run_dir/tests.xml"
+env -u PYTHONPATH ALAKRIS_SOURCE="$alakris_source" "$run_dir/producer-env/bin/python" -m pytest "$profile_dir/test_authority_profile.py" "$profile_dir/test_implementation_records.py" "$profile_dir/test_audit_environment.py" --import-mode=importlib --junitxml="$run_dir/tests.xml"
 env -u PYTHONPATH "$run_dir/producer-env/bin/python" -m producer "$run_dir/native" --source-revision "$source_revision"
 env -u PYTHONPATH "$run_dir/reader-env/bin/python" -m reader "$run_dir/native" --pins "$run_dir/native/consumer-pins.json" --output "$run_dir/reader-report.json"
 if [[ -n "$alakris_source" ]]; then

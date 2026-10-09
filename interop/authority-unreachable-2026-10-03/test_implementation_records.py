@@ -352,6 +352,56 @@ class TestRefusalControls:
                       if c["id"] == "proofable-receipt-envelope-verified")
         assert "DID" in detail
 
+    def test_alternate_chain_field_is_outside_the_evm_profile(self):
+        """An unchanged valid signature cannot admit an unsupported chain field."""
+        import portable_envelope
+
+        path = RECORDS.parent / "test-vectors" / "unsupported-chain-did.json"
+        envelope = json.loads(path.read_bytes())
+        original = json.loads((RECORDS / "proofable" / "portable-proofs.json").read_bytes())[0]
+        assert envelope["signature"] == original["signature"]
+        verdict = portable_envelope.verify(envelope)
+        assert not verdict["valid"]
+        assert any("positive integer chainId" in error for error in verdict["errors"])
+
+    @pytest.mark.parametrize("chain_id", [True, False, "84532", 84532.0, None, 0, -1])
+    def test_evm_chain_id_must_be_a_positive_json_integer(self, chain_id):
+        import portable_envelope
+
+        envelope = json.loads((RECORDS / "proofable" / "portable-proofs.json").read_bytes())[0]
+        envelope["chainId"] = chain_id
+        verdict = portable_envelope.verify(envelope)
+        assert not verdict["valid"]
+        assert any("positive integer chainId" in error for error in verdict["errors"])
+
+    @pytest.mark.parametrize("chain_reference", [
+        "+84532", "084532", "845_32", "８４５３２",
+        pytest.param("9" * 33, id="over-caip2-length"),
+        pytest.param("9" * 5000, id="over-integer-parser-limit"),
+    ])
+    def test_did_chain_reference_requires_canonical_decimal_digits(self, chain_reference):
+        import portable_envelope
+
+        envelope = json.loads((RECORDS / "proofable" / "portable-proofs.json").read_bytes())[0]
+        parts = envelope["did"].split(":")
+        parts[3] = chain_reference
+        envelope["did"] = ":".join(parts)
+        envelope["qHash"] = portable_envelope.qhash(envelope)
+        verdict = portable_envelope.verify(envelope)
+        assert not verdict["valid"]
+        assert verdict["signer"].lower() == envelope["walletAddress"].lower()
+        assert "did is not a did:pkh:eip155 CAIP-10 identifier" in verdict["errors"]
+
+    @pytest.mark.parametrize("chain", [None, "", False, "eip155:84532"])
+    def test_a_second_chain_field_is_refused_even_when_empty(self, chain):
+        import portable_envelope
+
+        envelope = json.loads((RECORDS / "proofable" / "portable-proofs.json").read_bytes())[0]
+        envelope["chain"] = chain
+        verdict = portable_envelope.verify(envelope)
+        assert not verdict["valid"]
+        assert any("positive integer chainId" in error for error in verdict["errors"])
+
     def test_unreachable_case_is_selected_by_identity(self, records):
         edit_json(records / "proofable" / "authority-effect-results.json",
                   lambda document: document["cases"].reverse())

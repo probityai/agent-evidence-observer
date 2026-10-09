@@ -13,6 +13,8 @@ Scope, stated precisely:
 - It enforces the CAIP-380 EVM binding: the DID must be `did:pkh:eip155:<chainId>:<address>`, the
   DID chain must equal the envelope `chainId`, the DID address must equal `walletAddress`
   (case-insensitive), and the recovered EIP-191 signer must be that same address.
+- This EVM profile requires a positive integer `chainId`. The `chain` field belongs to other
+  profiles and is refused here; a boolean is not a JSON integer.
 - It checks **historical receipt integrity** — the bytes hash and the signature binds the signer.
   It does **not** appraise freshness or validity *now*; envelope age, revocation state and expiry
   are a separate appraisal question this verifier does not answer.
@@ -62,22 +64,17 @@ def _canonical(value: Any) -> str:
 
 
 def canonical_subset(envelope: dict[str, Any]) -> dict[str, Any]:
-    """The CAIP-380 canonical subset: exactly one of chain / chainId is present."""
-    has_chain = isinstance(envelope.get("chain"), str) and bool(envelope["chain"].strip())
-    has_chain_id = isinstance(envelope.get("chainId"), int) and envelope["chainId"] > 0
-    if has_chain == has_chain_id:
-        raise ValueError("envelope must contain exactly one of chain or chainId")
-    subset = {
+    """Return the canonical subset for this packet's EIP-191 EVM profile."""
+    chain_id = envelope.get("chainId")
+    if "chain" in envelope or type(chain_id) is not int or chain_id <= 0:
+        raise ValueError("EIP-191 profile requires a positive integer chainId and no chain field")
+    return {
         "did": envelope["did"],
         "verifierIds": envelope["verifierIds"],
         "data": envelope["data"],
         "signedTimestamp": envelope["signedTimestamp"],
+        "chainId": chain_id,
     }
-    if has_chain:
-        subset["chain"] = envelope["chain"].strip()
-    else:
-        subset["chainId"] = envelope["chainId"]
-    return subset
 
 
 def qhash(envelope: dict[str, Any]) -> str:
@@ -89,11 +86,10 @@ def qhash(envelope: dict[str, Any]) -> str:
 def message(envelope: dict[str, Any]) -> str:
     """Rebuild the exact signer message the envelope's signature commits to."""
     subset = canonical_subset(envelope)
-    chain = subset.get("chain") if subset.get("chain") is not None else subset["chainId"]
     components = [
         SIGNER_HEADER,
         "Wallet: " + str(envelope["walletAddress"]).lower(),
-        "Chain: " + str(chain),
+        "Chain: " + str(subset["chainId"]),
         "Verifiers: " + ",".join(str(entry) for entry in envelope["verifierIds"]),
         "Data: " + _canonical(envelope["data"]),
         "Timestamp: " + str(envelope["signedTimestamp"]),
@@ -108,12 +104,12 @@ def _did_parts(did: Any) -> tuple[int, str] | None:
     parts = did.split(":")
     if len(parts) != 5 or parts[0] != "did" or parts[1] != "pkh" or parts[2] != "eip155":
         return None
-    try:
-        chain_id = int(parts[3])
-    except ValueError:
+    reference = parts[3]
+    if not 1 <= len(reference) <= 32 or not reference.isascii() or not reference.isdecimal():
         return None
+    chain_id = int(reference)
     address = parts[4]
-    if chain_id <= 0 or not address:
+    if chain_id <= 0 or str(chain_id) != reference or not address:
         return None
     return chain_id, address
 
