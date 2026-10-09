@@ -27,6 +27,7 @@ LOCKS = (
     "adk-a2a-failed-task-2026-10-03/requirements.lock",
     "adk-a2a-failed-task-2026-10-03/requirements-reader.lock",
     "aps-durable-refund-2026-10-05/requirements.lock",
+    "pic-aps-refund-reader-2026-10-09/requirements.lock",
     "haystack-native-2026-10-03/requirements.lock",
     "haystack-native-2026-10-03/requirements-reader.lock",
     "smolagents-native-2026-10-03/requirements.lock",

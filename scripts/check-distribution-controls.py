@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import base64
 import csv
+from email.parser import BytesParser
 import hashlib
 import io
 import json
@@ -16,6 +17,28 @@ import subprocess
 import sys
 import tempfile
 from zipfile import ZipFile
+
+from packaging.requirements import Requirement
+from packaging.utils import canonicalize_name
+
+
+def equivalent_core_requirement(raw_metadata: bytes) -> bytes:
+    """Change the actual selected core requirement, never a stale fixture string."""
+    metadata = BytesParser().parsebytes(raw_metadata)
+    selected = []
+    for value in metadata.get_all("Requires-Dist", []):
+        requirement = Requirement(value)
+        if canonicalize_name(requirement.name) == "cryptography" and requirement.marker is None:
+            selected.append((value, requirement))
+    if len(selected) != 1 or selected[0][1].url is not None:
+        raise RuntimeError("Equivalent control needs one ordinary core cryptography requirement")
+    value, requirement = selected[0]
+    specifiers = ", ".join(reversed(sorted(str(item) for item in requirement.specifier)))
+    before = ("Requires-Dist: " + value).encode()
+    after = ("Requires-Dist: Cryptography " + specifiers).encode()
+    if before == after or raw_metadata.count(before) != 1:
+        raise RuntimeError("Equivalent control input is missing, repeated or unchanged")
+    return raw_metadata.replace(before, after, 1)
 
 
 def run(wheel: Path, optimized: bool) -> None:
@@ -224,7 +247,7 @@ def run(wheel: Path, optimized: bool) -> None:
         expect("supported-wheel-metadata-extension", controlled_wheel("supported-wheel-metadata-extension", {},
             added={info + "/sboms/control.json": b"{}\n"}), True)
         expect("equivalent-wheel-dependency-specifiers", controlled_wheel("equivalent-wheel-dependency-specifiers", {
-            metadata: raw_metadata.replace(b"cryptography<47,>=46", b"Cryptography >=46, <47")
+            metadata: equivalent_core_requirement(raw_metadata)
         }), True)
         print(f"{receipts.count(False)} distribution substitutions refused; {receipts.count(True)} valid forms accepted; optimized={optimized}")
 
