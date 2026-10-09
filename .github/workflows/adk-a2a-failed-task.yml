@@ -17,18 +17,18 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
       - name: Check out immutable baseline native SDK
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: google/adk-python
           ref: 63aed55113d4fe78245d3d6667b6e87569888bf5
           path: vendor-adk-baseline
           persist-credentials: false
       - name: Check out immutable proposed failure fix
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: ferponse/adk-python
           ref: 23d253f2587ac090412394fe1a71ef5694fe2eda

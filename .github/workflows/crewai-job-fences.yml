@@ -25,23 +25,23 @@ jobs:
       OTEL_SDK_DISABLED: 'true'
       UV_PYTHON_DOWNLOADS: 'never'
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: crewAIInc/crewAI
           ref: 738c8e19e35c2888d8e0663bc5cc45c5acf6ac2d
           path: selected-crewai
           persist-credentials: false
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: probityai/agent-evidence-observer
           ref: e951e040d355f3f3108da7779c3dfcc8bbc0f523
           path: selected-observer
           persist-credentials: false
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: probityai/probity-verify
           ref: e835ce2bd6a960e7a1cc2fa6522f16d55dce728a

@@ -20,22 +20,22 @@ jobs:
       SOURCE_DATE_EPOCH: '946684800'
       PYTHONDONTWRITEBYTECODE: '1'
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: probityai/agent-evidence-observer
           ref: c774e0711e4a30c31cdfb184c1e4495a249fbdd0
           path: selected-reference
           persist-credentials: false
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: probityai/agent-evidence-observer
           ref: 4a50e61471355611121a578f3a4c22daa931d419
           path: selected-observer
           persist-credentials: false
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: google/adk-python
           ref: e94c2e726a269e0f04e2e4b202f5c131c80c20de
@@ -96,10 +96,10 @@ jobs:
           - {python: '3.13', tox: py313}
           - {python: '3.14', tox: py314}
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           repository: google/adk-python
           ref: e94c2e726a269e0f04e2e4b202f5c131c80c20de
