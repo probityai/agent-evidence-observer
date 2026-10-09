@@ -1,7 +1,23 @@
 # PIC and APS refund evidence: exact reference
 
-Start in the Observer repository root. Run the installed gate on an existing
-shared runner. The pool enforces its unchanged 15 GiB free-disk floor.
+Start in the Observer repository root on a Linux runner with Git, Node.js 22
+(including npm) and uv 0.12.8. The recipe creates its own Python 3.12 environment.
+
+```sh
+set -eu
+results="$(mktemp -d)/pic-aps-refund"
+bash interop/pic-aps-refund-reader-2026-10-09/verify_install.sh "$results"
+```
+
+This is the same script run by the profile's hosted workflow. The result directory
+contains `restart.json`, `after-intent.json` and `approval-reissue.json`, with the
+actual exit statuses and control outputs. The restart report checks the retained
+completion across a retry.
+
+<details>
+<summary>Run through the installed shared pool</summary>
+
+The pool enforces its unchanged 15 GiB free-disk floor.
 
 ```sh
 set -eu
@@ -9,6 +25,8 @@ BOX_RUN_NO_BURST=1 ~/.claude/scripts/box_run.sh pic-aps-readonly --no-sync -- \
   bash interop/pic-aps-refund-reader-2026-10-09/verify_install.sh \
   /home/gate/work/pic-aps-readonly-results
 ```
+
+</details>
 
 Use a fresh result path for each run. The recipe installs hash-locked dependencies,
 builds normal wheels, checks each installed source file, runs the controls, and
