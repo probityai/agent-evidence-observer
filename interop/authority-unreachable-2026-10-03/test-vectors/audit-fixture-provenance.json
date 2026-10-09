@@ -1,0 +1,32 @@
+{
+  "captured": "2026-10-09T18:20:35.841931+00:00",
+  "original_candidate": "573d73d9bd0d29ca3ab1dc6eb04567372aeaffaa",
+  "audit_tool": "pip-audit==2.10.1",
+  "files": {
+    "audit-original-inventory.json": {
+      "source_capture": "producer-list.stdout",
+      "bytes": 1854,
+      "sha256": "f47a24f46890c09cc6b0d6361c7d063dfe4092b2fa5f189d279144a2492d9785",
+      "kind": "actual original installed producer inventory/audit"
+    },
+    "audit-original-failure.json": {
+      "source_capture": "producer-audit.stdout",
+      "bytes": 57228,
+      "sha256": "f065e93b3df2fefcd53fb8ade43c18d597d6a556bb5220fb4b75fcccdff0e5f0",
+      "kind": "actual original installed producer inventory/audit"
+    },
+    "audit-prospective-inventory.json": {
+      "source_capture": "prospective-inventory.json",
+      "bytes": 2444,
+      "sha256": "aba0c0ae0ad3ef28b5bbaa44d8f42e691a30de0ab2de4f8c10aa59cc48ca552b",
+      "kind": "prospective transformed inventory control"
+    },
+    "audit-prospective-clean.json": {
+      "source_capture": "prospective-audit.stdout",
+      "bytes": 2586,
+      "sha256": "3a79bdf18cbd9abcfb965ef8cd3181de27257fea0e6ecb63a833bad40a1a6aca",
+      "kind": "prospective transformed inventory control"
+    }
+  },
+  "limits": "The prospective clean data is a test control; native installation and audit still run separately."
+}

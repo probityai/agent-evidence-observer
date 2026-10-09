@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools==80.9.0", "wheel==0.45.1"]
+requires = ["setuptools==83.0.0", "wheel==0.46.2"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,7 +7,7 @@ name = "agent-evidence-authority-reference"
 version = "0.0.1"
 description = "Reference authority-at-dispatch and durable effect comparison"
 requires-python = ">=3.12"
-dependencies = ["agent-evidence-observer==0.0.1", "eth-account==0.14.0"]
+dependencies = ["agent-evidence-observer==0.0.1", "cryptography==50.0.0", "eth-account==0.14.0"]
 
 [tool.setuptools]
 py-modules = ["authority_profile", "implementation_records", "portable_envelope", "producer", "reader", "source_discriminator"]
