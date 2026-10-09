@@ -15,8 +15,13 @@ from reader import read_run
 RECORDS = Path(__file__).resolve().parent / "implementation-records"
 MINTID_JSONL = "revocation-trace-testnet-20261006T073712Z.jsonl"
 MINTID_MANIFEST = "revocation-trace-testnet-20261006T073712Z.manifest.json"
-PROOFABLE_KNOWN_FAILURES = ["proofable-sha256sums-trace.jsonl", "proofable-manifest-trace-digest",
-                            "proofable-denials-carry-reason", "proofable-post-dispatch-deny-point-observed"]
+# REVIEWER PATCH (2026-10-08). The previous four "known failures" were properties of the pinned
+# 2026-10-06 package: a CRLF digest mismatch, a missing reason code on a denial, and a hard-coded
+# assertion that the schema could not carry the revocation boundary. The corrected 2026-10-08
+# package at the frozen proofable/docs commit 9851059 fixes all four and discloses portable
+# envelopes, so the expected outcome is now zero failures — and the refusal controls below still
+# fail closed.
+PROOFABLE_KNOWN_FAILURES: list[str] = []
 
 
 def result(row: dict, check_id: str) -> str:
@@ -62,7 +67,8 @@ def reference_report(tmp_path_factory):
 class TestPinnedRecords:
     def test_vendored_bytes_match_sources(self):
         checks = verify_sources(RECORDS)
-        assert checks.failed() == [] and len(checks.rows) == 21
+        # 1 schema + 3 completeness + 8 Alakris + 3 MintID + 8 Proofable files.
+        assert checks.failed() == [] and len(checks.rows) == 23
 
     def test_mintid_trace_rederives_every_manifest_claim(self):
         row = read_mintid(RECORDS / "mintid")
@@ -77,12 +83,21 @@ class TestPinnedRecords:
         assert row["contract"]["presentationLifetime"]["inRecord"] is False
         assert [p["requiredDenyPoint"]["boundSeconds"] for p in paths.values()] == [185, 245, 395, 395, 0]
 
-    def test_proofable_package_fails_exactly_its_four_contradictions(self):
+    def test_proofable_package_fails_exactly_its_named_contradictions(self):
         row = read_proofable(RECORDS / "proofable")
-        assert row["failed"] == PROOFABLE_KNOWN_FAILURES
-        digest = next(c for c in row["checks"] if c["id"] == "proofable-manifest-trace-digest")
-        assert digest["detail"] == "published digest is the CRLF form; published bytes use LF"
-        assert result(row, "proofable-receipt-envelope-verified") == "not-performed"
+        assert row["failed"] == PROOFABLE_KNOWN_FAILURES == []
+        assert result(row, "proofable-sha256sums-trace.jsonl") == "pass"
+        assert result(row, "proofable-manifest-trace-digest") == "pass"
+        assert result(row, "proofable-denials-carry-reason") == "pass"
+        assert result(row, "proofable-post-dispatch-deny-point-observed") == "pass"
+
+    def test_proofable_envelopes_verify_without_the_publisher_sdk(self):
+        """Every disclosed envelope must survive an independent qHash + EIP-191 check."""
+        row = read_proofable(RECORDS / "proofable")
+        assert result(row, "proofable-receipt-envelope-verified") == "pass"
+        assert result(row, "proofable-envelope-count") == "pass"
+        envelope_checks = [c for c in row["checks"] if c["id"].startswith("proofable-sha256sums-portable")]
+        assert envelope_checks and envelope_checks[0]["result"] == "pass"
 
     def test_alakris_rerun_matches_this_profile(self, reference_report):
         row = read_alakris(RECORDS / "alakris", reference_report, None)
@@ -171,12 +186,16 @@ class TestRefusalControls:
                    lambda events: [e for e in events if not (e["kind"] == "holder_refresh" and e["agent"] == "agent_kill_switch")])
         assert "mintid-kill_switch:agent_kill_switch-attributed" in read_mintid(records / "mintid")["failed"]
 
-    def test_crlf_trace_satisfies_the_published_digest(self, records):
-        path = records / "proofable" / "trace.jsonl"
-        path.write_bytes(path.read_bytes().replace(b"\n", b"\r\n"))
+    def test_published_trace_digest_is_the_lf_bytes(self, records):
+        """The published digests are computed over LF bytes; a CRLF rewrite must fail."""
         row = read_proofable(records / "proofable")
         assert result(row, "proofable-sha256sums-trace.jsonl") == "pass"
         assert result(row, "proofable-manifest-trace-digest") == "pass"
+        path = records / "proofable" / "trace.jsonl"
+        path.write_bytes(path.read_bytes().replace(b"\n", b"\r\n"))
+        row = read_proofable(records / "proofable")
+        assert result(row, "proofable-sha256sums-trace.jsonl") == "fail"
+        assert result(row, "proofable-manifest-trace-digest") == "fail"
 
     def test_reasoned_denials_pass(self, records):
         path = records / "proofable" / "trace.jsonl"
@@ -188,27 +207,64 @@ class TestRefusalControls:
         path.write_text("".join(json.dumps(r) + "\n" for r in records_), encoding="utf-8")
         assert result(read_proofable(records / "proofable"), "proofable-denials-carry-reason") == "pass"
 
-    @pytest.mark.parametrize("position", ["before", "after"])
-    @pytest.mark.parametrize("decision", ["ALLOW", "DENY"])
-    def test_same_delegation_does_not_establish_revocation_order(self, records, position, decision):
+    def test_unordered_revoke_rows_do_not_establish_the_boundary(self, records):
+        """A neighbouring row, or a moved line, must never stand in for the required ordering."""
         path = records / "proofable" / "trace.jsonl"
         rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
         post = next(r for r in rows if r["case_id"] == "post_dispatch_revoke")
-        dispatch = {"case_id": "another_dispatch", "observed": {"dispatch_decision": decision, "code": "REVOKED"},
+        dispatch = {"case_id": "another_dispatch", "observed": {"dispatch_decision": "DENY", "code": "REVOKED"},
                     "delegation_qHash": post["delegation_qHash"], "terminal_receipt": None}
-        rows.insert(0 if position == "before" else len(rows), dispatch)
+        rows.insert(0, dispatch)
+        post.pop("dispatch_sequence")
         path.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
         row = read_proofable(records / "proofable")
         assert result(row, "proofable-post-dispatch-deny-point-observed") == "fail"
-        assert "no revocation event time or dispatch sequence" in row["contract"]["temporalRevocation"]
+        assert "no complete revocation event time" in row["contract"]["temporalRevocation"]
 
-    def test_missing_delegation_hash_does_not_establish_revocation_order(self, records):
-        def remove_hashes(rows):
-            for row in rows:
-                row.pop("delegation_qHash", None)
+    @pytest.mark.parametrize("event", ["revocation", "next_dispatch", "original_effect"])
+    def test_incomplete_dispatch_sequence_does_not_establish_the_boundary(self, records, event):
+        def drop_event(rows):
+            post = next(r for r in rows if r["case_id"] == "post_dispatch_revoke")
+            post["dispatch_sequence"] = [s for s in post["dispatch_sequence"] if s["event"] != event]
             return rows
-        edit_jsonl(records / "proofable" / "trace.jsonl", remove_hashes)
+        edit_jsonl(records / "proofable" / "trace.jsonl", drop_event)
         assert result(read_proofable(records / "proofable"), "proofable-post-dispatch-deny-point-observed") == "fail"
+
+    def test_revocation_without_a_time_does_not_establish_the_boundary(self, records):
+        def strip_time(rows):
+            post = next(r for r in rows if r["case_id"] == "post_dispatch_revoke")
+            for step in post["dispatch_sequence"]:
+                if step["event"] == "revocation":
+                    step.pop("at")
+            return rows
+        edit_jsonl(records / "proofable" / "trace.jsonl", strip_time)
+        assert result(read_proofable(records / "proofable"), "proofable-post-dispatch-deny-point-observed") == "fail"
+
+    def test_next_dispatch_that_is_allowed_does_not_establish_the_boundary(self, records):
+        def allow_next(rows):
+            post = next(r for r in rows if r["case_id"] == "post_dispatch_revoke")
+            for step in post["dispatch_sequence"]:
+                if step["event"] == "next_dispatch":
+                    step["decision"] = "ALLOW"
+            return rows
+        edit_jsonl(records / "proofable" / "trace.jsonl", allow_next)
+        assert result(read_proofable(records / "proofable"), "proofable-post-dispatch-deny-point-observed") == "fail"
+
+    def test_tampered_envelope_signature_fails_verification(self, records):
+        """A modified envelope must fail the independent qHash/signature check."""
+        path = records / "proofable" / "portable-proofs.json"
+        envelopes = json.loads(path.read_bytes())
+        envelopes[0]["signature"] = "0x" + "00" * 65
+        path.write_text(json.dumps(envelopes), encoding="utf-8")
+        row = read_proofable(records / "proofable")
+        assert result(row, "proofable-receipt-envelope-verified") == "fail"
+        assert "recovered signer" in json.dumps(row).lower() or "recovery" in json.dumps(row).lower()
+
+    def test_envelope_count_must_match_the_manifest(self, records):
+        path = records / "proofable" / "portable-proofs.json"
+        envelopes = json.loads(path.read_bytes())
+        path.write_text(json.dumps(envelopes[:-1]), encoding="utf-8")
+        assert result(read_proofable(records / "proofable"), "proofable-envelope-count") == "fail"
 
     def test_unreachable_case_is_selected_by_identity(self, records):
         edit_json(records / "proofable" / "authority-effect-results.json",

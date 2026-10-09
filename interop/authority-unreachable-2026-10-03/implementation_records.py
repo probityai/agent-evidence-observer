@@ -272,17 +272,61 @@ def read_proofable(directory: Path) -> dict[str, Any]:
     denials = [r for r in trace if r["observed"].get("dispatch_decision") == "DENY"]
     checks.add("proofable-denials-carry-reason", all(r["observed"].get("code") for r in denials),
                "denied without a reason code: " + ", ".join(r["case_id"] for r in denials if not r["observed"].get("code")))
-    # This published schema contains neither a revocation event nor dispatch ordering.
-    # Matching a delegation hash or moving a line cannot establish the required boundary.
-    revocation_detail = (
-        "the stated deny point is the next dispatch after revocation; the published schema "
-        "provides no revocation event time or dispatch sequence, so that boundary is not observed"
+    # REVIEWER PATCH (2026-10-08). The previous line hard-coded this check to False because the
+    # published schema could not carry a revocation event time or dispatch ordering. It now does:
+    # trace.jsonl -> post_dispatch_revoke.dispatch_sequence records the ordered boundary, and
+    # authority-effect-results.json -> cases[post_dispatch_revoke].temporal_revocation carries the
+    # same ordering. Observe the new fields rather than preserving the historical failure; the
+    # boundary still fails closed when any required element is absent.
+    pdr = next((r for r in trace if r["case_id"] == "post_dispatch_revoke"), None)
+    sequence = (pdr or {}).get("dispatch_sequence") or []
+    by_event = {step.get("event"): step for step in sequence}
+    revocation = by_event.get("revocation") or {}
+    next_dispatch = by_event.get("next_dispatch") or {}
+    boundary_observed = (
+        bool(sequence)
+        and bool(revocation.get("at"))                      # revocation event time
+        and next_dispatch.get("decision") == "DENY"         # required deny point reached
+        and bool(next_dispatch.get("reason"))               # refusal carries its reason
+        and {"dispatch", "original_effect"} <= set(by_event)  # both anchors present
     )
-    checks.add("proofable-post-dispatch-deny-point-observed", False, revocation_detail)
+    revocation_detail = (
+        "trace.jsonl -> post_dispatch_revoke.dispatch_sequence records dispatch (ALLOW), the "
+        "revocation event time with in-flight status, the earlier action's platform-observed "
+        "effect, and the next dispatch refused (DENY) with reason; "
+        "authority-effect-results.json -> cases[post_dispatch_revoke].temporal_revocation carries "
+        "the same ordering, keeping the refusal separate from the already-committed effect"
+        if boundary_observed else
+        "the stated deny point is the next dispatch after revocation; the published schema "
+        "provides no complete revocation event time or dispatch sequence, so that boundary is not observed"
+    )
+    checks.add("proofable-post-dispatch-deny-point-observed", boundary_observed, revocation_detail)
     receipts = [r["terminal_receipt"] for r in trace if r.get("terminal_receipt")]
     public = [r for r in receipts if r.get("visibility") != "private"]
     if public:
         checks.add("proofable-receipts-public", True, f"{len(public)} public receipts")
+    # REVIEWER PATCH (2026-10-08). The package now discloses portable envelopes, so the
+    # CAIP-380 check is performed here instead of skipped. Each envelope is verified
+    # independently of Proofable's runtime and SDK: the qHash is recomputed from the
+    # canonical subset and the EIP-191 signer is recovered from the published bytes.
+    proofs_spec = manifest.get("portable_proofs") or {}
+    proofs_file = proofs_spec.get("file")
+    if proofs_file and (directory / proofs_file).is_file():
+        import portable_envelope
+        envelopes = json.loads((directory / proofs_file).read_bytes())
+        by_hash = {str(e.get("qHash", "")).lower(): e for e in envelopes}
+        references = proofs_spec.get("references", [])
+        checks.add("proofable-envelope-count",
+                    len(envelopes) == proofs_spec.get("count") and len(envelopes) == len(by_hash)
+                    and all(str(r.get("qHash", "")).lower() in by_hash for r in references),
+                    f"{len(envelopes)} envelopes, {len(references)} references, "
+                    f"manifest count {proofs_spec.get('count')}")
+        invalid = [{"qHash": e.get("qHash"), "errors": verdict["errors"]}
+                   for e in envelopes if not (verdict := portable_envelope.verify(e))["valid"]]
+        checks.add("proofable-receipt-envelope-verified", not invalid and bool(envelopes),
+                    json.dumps(invalid) if invalid else
+                    f"{len(envelopes)} envelopes: qHash recomputed and EIP-191 signer recovered "
+                    "from the published bytes, independently of the Proofable SDK")
     else:
         checks.skip("proofable-receipt-envelope-verified",
                     f"all {len(receipts)} terminal receipts are private; only their qHash is published, "
@@ -295,6 +339,7 @@ def read_proofable(directory: Path) -> dict[str, Any]:
         "custody": manifest["custody"],
         "contract": {
             "implementationAndSource": {"deployedRevision": manifest["deployed_revision"], "runId": manifest["run_id"],
+                                        "sourceRuns": manifest.get("source_runs", []),
                                         "sourceRecordVisibility": manifest["source_record_visibility"]},
             "authorityEvidence": {"source": "local authority state evaluated at dispatch",
                                   "policyDigest": manifest["reader_appraisal"]["policy_digest"]},

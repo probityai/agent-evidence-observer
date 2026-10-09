@@ -72,37 +72,47 @@
       "tag": "public-v2026-10-07"
     },
     "proofable": {
-      "commit": "3a45f026fd0c06b9d1d411c053597584b6b1c3dc",
+      "commit": "9851059900e29ba701bb0f4df2bf89a2107f430c",
       "files": {
         "README.md": {
-          "bytes": 2409,
-          "sha256": "67dcbff2c2045f421ad8ef8dd1926f0ff967870c66570cd45575d13a127cda4a",
-          "url": "https://raw.githubusercontent.com/proofable/docs/3a45f026fd0c06b9d1d411c053597584b6b1c3dc/public/evidence/aaif/authority-at-dispatch/2026-10-06/README.md"
+          "bytes": 3947,
+          "sha256": "e32b2580d2ff33d7379b3fc686855c389bcb113beeaf9c44a8e3e4db48e13271",
+          "url": "https://raw.githubusercontent.com/proofable/docs/9851059900e29ba701bb0f4df2bf89a2107f430c/public/evidence/aaif/authority-at-dispatch/2026-10-08/README.md"
         },
         "SHA256SUMS": {
-          "bytes": 424,
-          "sha256": "3ddf1e631c23f5b26442a06b57d153b9976bddbc6721cbef40b296ff81a06c5d",
-          "url": "https://raw.githubusercontent.com/proofable/docs/3a45f026fd0c06b9d1d411c053597584b6b1c3dc/public/evidence/aaif/authority-at-dispatch/2026-10-06/SHA256SUMS"
+          "bytes": 604,
+          "sha256": "ec9222646d8edfa5954949cf0bdca0765e428f6c18d6ed34000ccfb325ddd001",
+          "url": "https://raw.githubusercontent.com/proofable/docs/9851059900e29ba701bb0f4df2bf89a2107f430c/public/evidence/aaif/authority-at-dispatch/2026-10-08/SHA256SUMS"
         },
         "authority-effect-results.json": {
-          "bytes": 5650,
-          "sha256": "c4b35ed7c2f08dc8924979934a137a9bfd673436a4c98f89395d3d6ece7dd92f",
-          "url": "https://raw.githubusercontent.com/proofable/docs/3a45f026fd0c06b9d1d411c053597584b6b1c3dc/public/evidence/aaif/authority-at-dispatch/2026-10-06/authority-effect-results.json"
+          "bytes": 5971,
+          "sha256": "45c953291efce44499cb995f5c7d271683399a04bc155aea1389b78468cbe7e0",
+          "url": "https://raw.githubusercontent.com/proofable/docs/9851059900e29ba701bb0f4df2bf89a2107f430c/public/evidence/aaif/authority-at-dispatch/2026-10-08/authority-effect-results.json"
         },
         "authority-effect-results.md": {
-          "bytes": 4569,
-          "sha256": "0338ff2367ef06568301bed497d2f067fd7650499b07fd6f540b69781cef9702",
-          "url": "https://raw.githubusercontent.com/proofable/docs/3a45f026fd0c06b9d1d411c053597584b6b1c3dc/public/evidence/aaif/authority-at-dispatch/2026-10-06/authority-effect-results.md"
+          "bytes": 4099,
+          "sha256": "60a6d77a1705c6e0152e0fb72131824715966cd3c2574f5a3b06820ecd8ab47b",
+          "url": "https://raw.githubusercontent.com/proofable/docs/9851059900e29ba701bb0f4df2bf89a2107f430c/public/evidence/aaif/authority-at-dispatch/2026-10-08/authority-effect-results.md"
         },
         "manifest.json": {
-          "bytes": 1840,
-          "sha256": "f0a6bc2243e753c437215476d466094ca6c7b889701b64edf221f6ddbbc8660d",
-          "url": "https://raw.githubusercontent.com/proofable/docs/3a45f026fd0c06b9d1d411c053597584b6b1c3dc/public/evidence/aaif/authority-at-dispatch/2026-10-06/manifest.json"
+          "bytes": 5362,
+          "sha256": "90638a7e27b42ab784070ca6cea5dbc6add33671a3277744a9534cb7b51a424c",
+          "url": "https://raw.githubusercontent.com/proofable/docs/9851059900e29ba701bb0f4df2bf89a2107f430c/public/evidence/aaif/authority-at-dispatch/2026-10-08/manifest.json"
+        },
+        "portable-proofs.json": {
+          "bytes": 21805,
+          "sha256": "74ef851d4001a572d841bcfa27cfb1216dc2d5be063049196986d00c69b5e7cc",
+          "url": "https://raw.githubusercontent.com/proofable/docs/9851059900e29ba701bb0f4df2bf89a2107f430c/public/evidence/aaif/authority-at-dispatch/2026-10-08/portable-proofs.json"
         },
         "trace.jsonl": {
-          "bytes": 2757,
-          "sha256": "8df7ed9d49d1d6fb696a05661fd11db194db7c808719a66cadbf0f0a562cc1e2",
-          "url": "https://raw.githubusercontent.com/proofable/docs/3a45f026fd0c06b9d1d411c053597584b6b1c3dc/public/evidence/aaif/authority-at-dispatch/2026-10-06/trace.jsonl"
+          "bytes": 4239,
+          "sha256": "96241d8409c4661f8e60cd0904e7245434f48bf5711d9c377706f29ff721a0c8",
+          "url": "https://raw.githubusercontent.com/proofable/docs/9851059900e29ba701bb0f4df2bf89a2107f430c/public/evidence/aaif/authority-at-dispatch/2026-10-08/trace.jsonl"
+        },
+        "verify-portable-proofs.mjs": {
+          "bytes": 440,
+          "sha256": "f7eb8f74885518b3ba0d945f60500e3236a25ad569fdcc6c8e44af462eaa3248",
+          "url": "https://raw.githubusercontent.com/proofable/docs/9851059900e29ba701bb0f4df2bf89a2107f430c/public/evidence/aaif/authority-at-dispatch/2026-10-08/verify-portable-proofs.mjs"
         }
       },
       "name": "Proofable",
