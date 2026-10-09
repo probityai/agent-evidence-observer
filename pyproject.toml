@@ -22,7 +22,7 @@ Issues = "https://github.com/probityai/agent-evidence-observer/issues"
 
 [project.optional-dependencies]
 test = ["pytest>=8,<10", "hypothesis>=6,<7"]
-inspect = ["inspect-ai==0.3.273"]
+inspect = ["inspect-ai==0.3.276"]
 
 [project.scripts]
 agent-evidence-observer = "probity_observer.cli:main"
