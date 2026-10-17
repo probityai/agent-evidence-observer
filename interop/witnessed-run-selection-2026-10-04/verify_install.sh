@@ -19,7 +19,7 @@ for role in producer reader; do
   "$evidence/$role/bin/python" -I -B -c 'import platform; print(platform.python_version())' > "$evidence/$role-runtime.txt"
 done
 export COVERAGE_FILE="$evidence/.coverage"
-"$evidence/producer/bin/python" -I -B -m coverage run --source=probity_observer.run_selection,probity_observer.selection_profile -m pytest -c /dev/null "$source_root/tests" --ignore="$source_root/tests/witness" -q -p no:cacheprovider --junitxml="$evidence/core-tests.xml"
+"$evidence/producer/bin/python" -I -B -m coverage run --source=probity_observer.run_selection,probity_observer.selection_profile -m pytest -c /dev/null "$source_root/tests" --ignore="$source_root/tests/witness" --ignore="$source_root/tests/done" -q -p no:cacheprovider --junitxml="$evidence/core-tests.xml"
 "$evidence/producer/bin/python" -I -B -m coverage report > "$evidence/coverage.txt"
 "$evidence/producer/bin/python" -I -B -m coverage json -o "$evidence/coverage.json"
 "$evidence/producer/bin/python" -I -B -m ruff check --isolated --select E,F,I,B "$source_root/src/probity_observer/run_selection.py" "$source_root/src/probity_observer/selection_profile.py" "$source_root/tests/test_run_selection.py" "$source_root/tests/test_selection_profile.py"

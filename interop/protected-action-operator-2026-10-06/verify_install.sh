@@ -52,7 +52,7 @@ for role in issuer gateway witness consumer workload; do
 done
 chmod -R a+rX "$native_runtime/python"
 "${environments[witness]}/bin/python" -I -B -m radon cc -j "$profile/probity_protected_operator" "$profile/coordinate_root.py" > "$evidence/protected-operator-complexity.json"
-"${environments[witness]}/bin/python" -I -B -m pytest -c /dev/null "$source_root/tests" --ignore="$source_root/tests/witness" -q -p no:cacheprovider --junitxml="$evidence/core-tests.xml"
+"${environments[witness]}/bin/python" -I -B -m pytest -c /dev/null "$source_root/tests" --ignore="$source_root/tests/witness" --ignore="$source_root/tests/done" -q -p no:cacheprovider --junitxml="$evidence/core-tests.xml"
 "${environments[witness]}/bin/python" -I -B -m pytest -c /dev/null "$source_root/interop/witness-operator-2026-10-03/test_operator.py" "$source_root/interop/witness-operator-2026-10-03/test_retention.py" "$source_root/interop/witness-operator-2026-10-03/test_reader_fork.py" "$profile/test_authorization_operator.py" --import-mode=importlib -q -p no:cacheprovider --junitxml="$evidence/operator-tests.xml"
 "${environments[witness]}/bin/python" -I -B "$source_root/interop/witness-operator-2026-10-03/check_complexity.py" > "$evidence/existing-witness-complexity.json"
 if [ "$mode" = --root-coordinator ]; then

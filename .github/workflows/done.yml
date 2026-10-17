@@ -1,0 +1,28 @@
+name: Done gate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  done:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: '3.12'
+      - name: Install the package with the done extra (builds probityai from its pinned commit)
+        run: python -m pip install -e '.[test,done,witness,cover]'
+      - name: Contract, held-out, mutant, grading, receipt, policy and command-line tests
+        run: python -m coverage run --source=probity_observer.done -m pytest -q -p no:cacheprovider tests/done
+      - name: Every done module is at least 80 percent covered
+        run: python -m coverage report --show-missing && python scripts/check-done-coverage.py

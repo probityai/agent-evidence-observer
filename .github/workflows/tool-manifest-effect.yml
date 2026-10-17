@@ -38,7 +38,7 @@ jobs:
           uv pip install --python .venv/bin/python -e '.[test,witness]'
           uv pip check --python .venv/bin/python
           .venv/bin/python scripts/check-runtime-locks.py
-          .venv/bin/pytest -q
+          .venv/bin/pytest -q --ignore=tests/done
       - name: Retain and read the unchanged contributor case
         run: |
           .venv/bin/python examples/tool_manifest_effect.py ./manifest-effect-run > manifest-effect-run.stdout.json

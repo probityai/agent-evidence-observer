@@ -14,5 +14,5 @@ uv pip install --python "$evidence/runtime/bin/python" --no-deps "$evidence"/whe
 uv pip check --python "$evidence/runtime/bin/python"
 uv pip freeze --python "$evidence/runtime/bin/python" > "$evidence/runtime-install.txt"
 "$evidence/runtime/bin/python" -I -B "$profile/qualify_install.py" "$source_root" > "$evidence/installed-source-before.json"
-"$evidence/runtime/bin/python" -I -B -m pytest -c /dev/null "$source_root/tests" --ignore="$source_root/tests/witness" -q -p no:cacheprovider --junitxml="$evidence/core-tests.xml"
+"$evidence/runtime/bin/python" -I -B -m pytest -c /dev/null "$source_root/tests" --ignore="$source_root/tests/witness" --ignore="$source_root/tests/done" -q -p no:cacheprovider --junitxml="$evidence/core-tests.xml"
 "$evidence/runtime/bin/python" -I -B -m pytest -c /dev/null "$source_root/interop/witness-operator-2026-10-03/test_operator.py" "$source_root/interop/witness-operator-2026-10-03/test_retention.py" "$source_root/interop/witness-operator-2026-10-03/test_reader_fork.py" "$profile/test_authorization_operator.py" --import-mode=importlib -q -p no:cacheprovider --junitxml="$evidence/operator-tests.xml"

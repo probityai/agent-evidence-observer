@@ -31,7 +31,7 @@ uv pip check --python "$evidence/producer/bin/python"
 uv pip install --python "$evidence/reader/bin/python" --no-deps "$evidence"/wheels/agent_evidence_observer-*.whl "$evidence"/wheels/probity_smolagents_reference-*.whl
 uv pip check --python "$evidence/reader/bin/python"
 export SMOLAGENTS_READER_PYTHON="$evidence/reader/bin/python"
-"$evidence/producer/bin/python" -I -B -m pytest -c /dev/null "$source_root/tests" --ignore="$source_root/tests/witness" -q -p no:cacheprovider --junitxml="$evidence/core-tests.xml"
+"$evidence/producer/bin/python" -I -B -m pytest -c /dev/null "$source_root/tests" --ignore="$source_root/tests/witness" --ignore="$source_root/tests/done" -q -p no:cacheprovider --junitxml="$evidence/core-tests.xml"
 "$evidence/producer/bin/python" -I -B -m pytest -c /dev/null "$profile/test_native.py" -q -p no:cacheprovider --junitxml="$evidence/native-tests.xml"
 "$evidence/producer/bin/python" -I -B -m probity_smolagents.producer "$evidence/native"
 policy_sha=$(sha256sum "$evidence/native/host-policy.json" | cut -d' ' -f1)

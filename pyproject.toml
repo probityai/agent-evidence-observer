@@ -24,6 +24,11 @@ Issues = "https://github.com/probityai/agent-evidence-observer/issues"
 test = ["pytest>=8,<10", "hypothesis>=6,<7", "jsonschema>=4,<5"]
 inspect = ["inspect-ai==0.3.273"]
 witness = ["probityai @ git+https://github.com/probityai/jcs-admit@58a48b2f33b55cafb72de9f187f0fa53eed74d95#subdirectory=python"]
+cover = ["coverage>=7.10,<8"]
+done = [
+    "probityai @ git+https://github.com/probityai/jcs-admit@58a48b2f33b55cafb72de9f187f0fa53eed74d95#subdirectory=python",
+    "probity-verify @ git+https://github.com/probityai/probity-verify@adb2201356260931a75322d541c11fb311e24d3f",
+]
 
 [project.scripts]
 agent-evidence-observer = "probity_observer.cli:main"
@@ -32,9 +37,13 @@ agent-evidence-read-native = "probity_observer.native_reader:main"
 agent-evidence-read-atomic = "probity_observer.atomic_reader:main"
 agent-evidence-read-refund-handoff = "probity_observer.refund_handoff:main"
 agent-evidence-witness = "probity_observer.witness.cli:main"
+probity-done = "probity_observer.done.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+"probity_observer.done" = ["prompts/*.txt"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

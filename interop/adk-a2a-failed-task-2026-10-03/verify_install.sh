@@ -30,7 +30,7 @@ done
 uv pip install --python "$evidence/reader/bin/python" --no-deps "$evidence"/wheels/*.whl
 uv pip check --python "$evidence/reader/bin/python"
 export ADK_FAILURE_READER_PYTHON="$evidence/reader/bin/python"
-"$build_python" -I -B -m pytest -c /dev/null "$source_root/tests" --ignore="$source_root/tests/witness" -q -p no:cacheprovider --junitxml="$evidence/core-tests.xml"
+"$build_python" -I -B -m pytest -c /dev/null "$source_root/tests" --ignore="$source_root/tests/witness" --ignore="$source_root/tests/done" -q -p no:cacheprovider --junitxml="$evidence/core-tests.xml"
 for variant in baseline proposed-fix; do
   producer="$evidence/$variant-producer/bin/python"
   ADK_FAILURE_VARIANT="$variant" "$producer" -I -B -m pytest -c /dev/null "$profile/test_native.py" --import-mode=importlib -q -p no:cacheprovider --junitxml="$evidence/$variant-native-tests.xml"

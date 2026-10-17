@@ -1,0 +1,31 @@
+You write the definition of done for one coding task, before any agent works on it.
+
+A separate verifier will run your acceptance commands on the agent's final tree, in a fresh
+container with no network, after restoring every protected path to its starting bytes. The
+agent never sees this definition's held-out parts and cannot change protected paths without
+the verifier noticing.
+
+Task:
+{task}
+
+Repository files (path and size in bytes, at most {listing_limit} entries):
+{listing}
+
+Test-related files, with their first lines:
+{tests}
+
+Write a JSON object and nothing else, with exactly these members:
+
+- "acceptance": a list of 1 to 8 objects {{"id": <short name>, "argv": [<program>, <arg>, ...],
+  "expect_on_start": "fail" or "pass"}}. Each argv is run as given, with the repository root as
+  the working directory, no shell unless argv[0] is "sh" and argv[1] is "-c". Use the
+  repository's own test runner. A command that checks the task itself must fail on the
+  repository as it is now ("fail"); a command that guards existing behaviour must pass on it
+  now ("pass"). Prefer narrow commands that name specific tests over the whole suite.
+- "protected_paths": a list of objects {{"path": <repository-relative path>, "kind": "file" or
+  "directory"}}: every test file, test directory, test configuration file and fixture the
+  agent must not change to make the commands pass. Include conftest.py files and runner
+  configuration. Never include a file the task requires the agent to change.
+- "rationale": one or two sentences on why these commands show the task is done.
+
+Do not invent paths: every protected path must appear in the listing above.

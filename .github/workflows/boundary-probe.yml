@@ -18,7 +18,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: sudo apt-get update && sudo apt-get install -y bubblewrap
-      - run: python -m pip install -e '.[test,witness]'
+      - run: python -m pip install -e '.[test,witness,done]'
       - run: pytest -q
       - run: python examples/admission_demo.py ./admission-run
       - run: python examples/protected_action_demo.py ./protected-action-run

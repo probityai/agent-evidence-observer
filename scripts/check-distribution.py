@@ -27,6 +27,19 @@ def require(condition: bool, message: str) -> None:
         raise ValueError(message)
 
 
+def package_files(root: Path, project_toml: dict) -> set[str]:
+    """Source modules plus the data files ``[tool.setuptools.package-data]`` declares."""
+    found = {path.relative_to(root / "src").as_posix()
+             for path in (root / "src/probity_observer").rglob("*.py")}
+    declared = project_toml.get("tool", {}).get("setuptools", {}).get("package-data", {})
+    for package, patterns in declared.items():
+        base = root / "src" / package.replace(".", "/")
+        for pattern in patterns:
+            found.update(path.relative_to(root / "src").as_posix() for path in base.glob(pattern)
+                         if path.is_file())
+    return found
+
+
 def profile_guides(root: Path) -> dict[Path, Path]:
     """Use declared readme files, or the existing profiles' README convention."""
     routes = {}
@@ -94,7 +107,8 @@ def check_record(archive: ZipFile, names: list[str], info: str) -> None:
 
 def check(wheel: Path, sdist: Path | None = None, source_root: Path | None = None) -> None:
     root = source_root.resolve() if source_root is not None else Path(__file__).resolve().parent.parent
-    project = tomllib.loads((root / "pyproject.toml").read_text())["project"]
+    pyproject = tomllib.loads((root / "pyproject.toml").read_text())
+    project = pyproject["project"]
     if sdist is not None:
         # Isolated Python excludes sibling imports. Load this optional release
         # helper from the checker's own directory, never the working directory.
@@ -166,10 +180,7 @@ def check(wheel: Path, sdist: Path | None = None, source_root: Path | None = Non
         installed = {
             name for name in names if name.startswith("probity_observer/")
         }
-        expected = {
-            str(path.relative_to(root / "src"))
-            for path in (root / "src/probity_observer").rglob("*.py")
-        }
+        expected = package_files(root, pyproject)
         require(installed == expected, "root module population")
         for name in sorted(expected):
             require(archive.read(name) == (root / "src" / name).read_bytes(), f"wheel module bytes: {name}")
@@ -182,7 +193,7 @@ def check(wheel: Path, sdist: Path | None = None, source_root: Path | None = Non
               "all member sizes and hashes and profile routes match")
     if sdist is not None:
         authored = {"LICENSE", "README.md", "pyproject.toml"}
-        authored.update(path.relative_to(root).as_posix() for path in (root / "src/probity_observer").rglob("*.py"))
+        authored.update("src/" + name for name in package_files(root, pyproject))
         authored.update(path.relative_to(root).as_posix() for path in (root / "tests").glob("test*.py"))
         release_checks.check_source_archive(sdist, root, project, metadata_raw, authored,
                              "src/agent_evidence_observer.egg-info", "probity_observer")

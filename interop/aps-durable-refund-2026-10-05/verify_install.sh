@@ -66,7 +66,7 @@ patch = ["subprocess"]
 data_file = "${APS_CORE_COVERAGE_FILE?}"
 CORE_TOML
 export APS_CORE_COVERAGE_FILE="$evidence/.core-coverage"
-"$evidence/operator/bin/python" -I -B -m coverage run --rcfile="$evidence/core-coverage.toml" -m pytest -c /dev/null "$source_root/tests" --ignore="$source_root/tests/witness" -q -p no:cacheprovider --junitxml="$evidence/core-tests.xml"
+"$evidence/operator/bin/python" -I -B -m coverage run --rcfile="$evidence/core-coverage.toml" -m pytest -c /dev/null "$source_root/tests" --ignore="$source_root/tests/witness" --ignore="$source_root/tests/done" -q -p no:cacheprovider --junitxml="$evidence/core-tests.xml"
 "$evidence/operator/bin/python" -I -B -m coverage combine --rcfile="$evidence/core-coverage.toml"
 "$evidence/operator/bin/python" -I -B -m coverage json --rcfile="$evidence/core-coverage.toml" -o "$evidence/core-coverage.json"
 "$evidence/operator/bin/python" -I -B - "$evidence/core-coverage.json" <<'CORE_PY'

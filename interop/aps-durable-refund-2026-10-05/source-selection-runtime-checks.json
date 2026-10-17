@@ -38,7 +38,7 @@
     "test_controls.py": "5b97fbe005d2e35cdec24e78bae13a496f9a02df4e020c683d64c8768fc9a308",
     "test_reader.py": "77d890a9af884780f2fe8b757a772d46e7b2ded4c004b779900f21d95d105d7d",
     "verify-aps.mjs": "b0a6742b4c540e5fe4bea6d096b0c94a7e5c235c5c7ad288ba47c73f6e6d20a6",
-    "verify_install.sh": "fc9b6cf8a2d768fd14c4e129ed9d0170bc1c51b86b7fefc3a5838db695dbc83a"
+    "verify_install.sh": "7d32f11a779d9d008c6bd40cd8de1e8fe5a3f5e69a13933ac9256c1b4330fb56"
   },
   "witnessScope": "PEER"
 }
